@@ -8,8 +8,8 @@ Thumbs.db
 # 依赖
 node_modules/
 
-# 本地临时 / 调试脚本（不入库）
-dev/
+# 本地临时 / 调试脚本（不入库，仅限仓库根级 dev/）
+/dev/
 .workbuddy/
 
 # 截图等二进制
