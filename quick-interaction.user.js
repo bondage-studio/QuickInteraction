@@ -5822,7 +5822,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 })();
 
 
-    /* ===== 20. 内置小酥动作包（XiaoSuActivity 动作预编译，离线可用） ===== */
+    /* ===== 22. 内置小酥动作包（XiaoSuActivity 动作预编译，离线可用） ===== */
     /* 由 tools/build-xiaosu-pack.mjs 从 XiaoSuActivity 仓库生成；原作 MIT 许可，作者 XiaoSu。
        动作以 QiAct_ 自定义动作形式内置，无需安装原版插件即可使用，且对原版停更/故障免疫。 */
     var XIAOSU_PACKED = [

@@ -1,0 +1,39 @@
+name: CI — 构建产物一致性校验
+
+# 防止「改了 src/ 却忘记重新 build 根脚本」导致用户装到过期代码。
+# 每次 push / PR 都从 src/ 重新构建 quick-interaction.user.js，
+# 与已提交的版本做 diff；不一致则立即失败并提示本地补构建。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-consistency:
+    name: 校验根脚本与 src/ 同步
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 从 src/ 重新构建 quick-interaction.user.js
+        run: node build.mjs
+
+      - name: 校验产物未被遗漏
+        run: |
+          if ! git diff --quiet HEAD -- quick-interaction.user.js; then
+            echo "::error::构建产物 quick-interaction.user.js 与已提交的 src/ 不一致！"
+            echo "::error::你改动了 src/ 但忘记运行『node build.mjs』重新生成根脚本。本地执行该命令后再提交即可。"
+            git --no-pager diff --stat HEAD -- quick-interaction.user.js
+            exit 1
+          fi
+          echo "✅ quick-interaction.user.js 与 src/ 完全一致，无需重新构建"
