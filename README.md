@@ -44,7 +44,7 @@
 2. 粘贴下面一行并回车：
 
 ```js
-var s=document.createElement('script');s.src='https://heitaoplay.github.io/QuickInteraction/assets/main.js?v='+Date.now();document.head.appendChild(s);
+var s=document.createElement('script');s.src='https://bondage-studio.github.io/QuickInteraction/assets/main.js?v='+Date.now();document.head.appendChild(s);
 ```
 
 3. 右下角出现闪电开关即成功（**每次刷新页面需重新粘贴一次**）
@@ -54,7 +54,7 @@ var s=document.createElement('script');s.src='https://heitaoplay.github.io/Quick
 2. 网址填下面整行（复制时不要漏掉开头的 `javascript:`）：
 
 ```
-javascript:(function(){var s=document.createElement('script');s.src='https://heitaoplay.github.io/QuickInteraction/assets/main.js?v='+Date.now();s.onload=function(){setTimeout(function(){if(window.__QiAct)alert('快捷互动已加载 ✓ 右下角应出现闪电图标');else alert('脚本已注入，但未检测到入口——请确认你正处于 BC 聊天室页面（已登录）');},800);};s.onerror=function(){alert('加载失败：请检查网络，或稍后重试');};document.head.appendChild(s);})();
+javascript:(function(){var s=document.createElement('script');s.src='https://bondage-studio.github.io/QuickInteraction/assets/main.js?v='+Date.now();s.onload=function(){setTimeout(function(){if(window.__QiAct)alert('快捷互动已加载 ✓ 右下角应出现闪电图标');else alert('脚本已注入，但未检测到入口——请确认你正处于 BC 聊天室页面（已登录）');},800);};s.onerror=function(){alert('加载失败：请检查网络，或稍后重试');};document.head.appendChild(s);})();
 ```
 
 3. **先进入 BC 聊天室并登录**，再点一下这个书签即可加载（**每次刷新页面需重新点一次**）
