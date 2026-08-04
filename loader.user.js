@@ -24,4 +24,4 @@
  * QiAct Loader
  * 本脚本只负责加载主脚本。刷新 BC 页面时自动拉取最新版本。
  */
-import('https://heitaoplay.github.io/QuickInteraction/assets/main.js?v=' + Date.now());
+import('https://bondage-studio.github.io/QuickInteraction/assets/main.js?v=' + Date.now());

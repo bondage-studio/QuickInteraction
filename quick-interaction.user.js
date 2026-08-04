@@ -2,7 +2,7 @@
 // @name         快捷互动 (QiAct)
 // @name:zh      快捷互动
 // @namespace    https://github.com/bondage-studio/QuickInteraction
-// @version      1.3.0
+// @version      1.3.1
 // @description  Bondage Club - 统一动作操作台。一键进入动作模式，在聊天室场景内直接点人物部位选动作，绕过原生5步嵌套菜单。
 // @author       Tao MUSE
 // @homepageURL  https://github.com/bondage-studio/QuickInteraction
@@ -75,7 +75,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
     }
 
-    const VERSION = '1.3.0';
+    const VERSION = '1.3.1';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -5464,86 +5464,6 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         });
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // 设置页面注册
-    // ════════════════════════════════════════════════════════════════════════
-
-    function registerSettings() {
-        if (typeof PreferenceRegisterExtensionSetting === 'undefined') return;
-        PreferenceRegisterExtensionSetting({
-            Identifier: 'QiAct',
-            ButtonText: '快速动作',
-            Image: 'Icons/End.png',
-            load: function() {},
-            run: function() {
-                // 兜底：绘制异常绝不能再冒泡杀掉 BC 主渲染循环（曾导致进入子页后整页卡死）。
-                try {
-                    var X0 = 1770; // 左边界
-                    var Y0 = 135;   // 顶边界
-                    var W = 420;    // 面板宽度
-
-                    // ── 标题栏 ──
-                    DrawText('QiAct 快速动作', X0 + 10, Y0 + 22, 'Black', 'Gray');
-                    DrawText('v' + (window.__QiAct && window.__QiAct.version ? window.__QiAct.version : ''), X0 + W - 60, Y0 + 22, '#888888', 'Gray');
-
-                    // 分隔线
-                    DrawRect(X0, Y0 + 35, W, 1, '#555555');
-
-                    // ── 动作统计 ──
-                    DrawText('动作统计', X0 + 10, Y0 + 58, '#AAAAAA', 'Gray');
-                    var acts = (window.__QiAct && window.__QiAct.getCustomActions) ? window.__QiAct.getCustomActions() : [];
-                    var nNative = acts.filter(function(a) { return a.source === 'native'; }).length;
-                    var nEcho = acts.filter(function(a) { return a.source === 'echo'; }).length;
-                    var nXs = acts.filter(function(a) { return a.source === 'xiaosu'; }).length;
-                    var statY = Y0 + 82;
-                    DrawText('总计 ' + acts.length + '  |  自建 ' + nNative + '  |  Echo ' + nEcho + '  |  小酥 ' + nXs, X0 + 10, statY, '#CCCCCC', 'Gray');
-
-                    // 分隔线
-                    DrawRect(X0, Y0 + 105, W, 1, '#333333');
-
-                    // ── 模式开关（只读展示，实际操作走聊天室面板）──
-                    DrawText('当前状态', X0 + 10, Y0 + 125, '#AAAAAA', 'Gray');
-                    var modeY = Y0 + 148;
-                    var isSelf = !!(window.__Qiact && window.__QiAct.selfModeActive) || !!(window.__QiAct && window.__QiAct.selfModeActive);
-                    var isFav = !!(window.__QiAct && window.__QiAct.favModeActive);
-                    var isXsPack = (window.__QiAct && window.__QiAct.getXiaosuPack) ? window.__QiAct.getXiaosuPack() : false;
-                    DrawText('自我模式: ' + (isSelf ? 'ON' : 'OFF') + '   收藏模式: ' + (isFav ? 'ON' : 'OFF') + '   小酥包: ' + (isXsPack ? 'ON' : 'OFF'), X0 + 10, modeY, '#BBBBBB', 'Gray');
-
-                    // 分隔线
-                    DrawRect(X0, Y0 + 172, W, 1, '#333333');
-
-                    // ── 操作按钮区 ──
-                    var btnY = Y0 + 190;
-                    var isActive = !!(window.__QiAct && window.__QiAct.isActive);
-                    // 注意 DrawButton 签名：X,Y,W,H,Text,Color,Image,Tooltip,Callback
-                    DrawButton(X0 + 10, btnY, W - 20, 36,
-                        isActive ? '已激活 — 点击退出动作模式' : '进入快速动作模式',
-                        isActive ? '#FF5C7A' : '#White', '', '',
-                        function() {
-                            if (window.__QiAct) {
-                                if (window.__QiAct.isActive) window.__QiAct.exit();
-                                else window.__QiAct.enter();
-                            }
-                        }
-                    );
-
-                    // 返回按钮
-                    DrawButton(X0 + W - 100, btnY + 50, 90, 90, '', '#White', 'Icons/Exit.png',
-                        (typeof T !== 'undefined' && T.Back) ? T.Back : '返回',
-                        PreferenceExit
-                    );
-
-                    // 底部提示
-                    DrawText('主操作界面在聊天室中（左下角切换按钮）', X0 + 10, btnY + 70, '#666666', 'Gray');
-                } catch (e) {
-                    console.error('[QiAct] 扩展设置子页绘制异常（已隔离，不影响游戏）:', e && e.message);
-                }
-            },
-            click: function() {},
-            unload: function() {},
-            exit: function() {}
-        });
-    }
 
     // ════════════════════════════════════════════════════════════════════════
     // 更新 / 公告检测（脚本内 5 分钟轮询，玩家端收得到，无需刷新页面）
@@ -5552,7 +5472,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
 
     /* ===== 14.5 更新与公告 ===== */
-    const VERSION_INFO_URL = 'https://heitaoplay.github.io/QuickInteraction/version.json';
+    const VERSION_INFO_URL = 'https://bondage-studio.github.io/QuickInteraction/version.json';
 
     function compareVersion(a, b) {
         var pa = String(a || '').split('.').map(function(x) { return parseInt(x, 10) || 0; });
@@ -5759,9 +5679,6 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
         // 自定义 tooltip（替换原生 title，仅作用于本插件 UI）
         try { initTooltip(); } catch (e) { console.warn('[QiAct] initTooltip 失败:', e); }
-
-        // 注册设置
-        try { registerSettings(); } catch (e) { console.warn('[QiAct] registerSettings 失败:', e); }
 
         // 安装 hooks
         try { setupHooks(); } catch (e) { console.error('[QiAct] setupHooks 失败:', e); }

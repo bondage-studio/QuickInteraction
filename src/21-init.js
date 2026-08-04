@@ -84,9 +84,6 @@
         // 自定义 tooltip（替换原生 title，仅作用于本插件 UI）
         try { initTooltip(); } catch (e) { console.warn('[QiAct] initTooltip 失败:', e); }
 
-        // 注册设置
-        try { registerSettings(); } catch (e) { console.warn('[QiAct] registerSettings 失败:', e); }
-
         // 安装 hooks
         try { setupHooks(); } catch (e) { console.error('[QiAct] setupHooks 失败:', e); }
 

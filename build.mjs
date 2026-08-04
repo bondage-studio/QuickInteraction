@@ -52,7 +52,7 @@ const versionInfo = {
     date: base.date || new Date().toISOString().slice(0, 10),
     severity: base.severity || 'normal',
     summary: base.summary || [],
-    detailsUrl: base.detailsUrl || `https://github.com/heitaoplay/QuickInteraction/releases/tag/v${version}`,
+    detailsUrl: base.detailsUrl || `https://github.com/bondage-studio/QuickInteraction/releases/tag/v${version}`,
     announcement: (base.announcement !== undefined ? base.announcement : undefined),
 };
 fs.writeFileSync(path.join(outDir, 'version.json'), JSON.stringify(versionInfo, null, 2) + '\n');

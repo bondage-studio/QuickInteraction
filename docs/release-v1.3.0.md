@@ -45,5 +45,5 @@
 - **小酥包说明**：默认开启；如不需要，进「我的动作」切到「小酥」分类，关掉顶部开关即可。
 
 ## 反馈渠道
-- GitHub Issues：https://github.com/heitaoplay/QuickInteraction/issues
+- GitHub Issues：https://github.com/bondage-studio/QuickInteraction/issues
 - 游戏内或通过书签安装的聊天窗入口反馈

@@ -1,5 +1,5 @@
     /* ===== 14.5 更新与公告 ===== */
-    const VERSION_INFO_URL = 'https://heitaoplay.github.io/QuickInteraction/version.json';
+    const VERSION_INFO_URL = 'https://bondage-studio.github.io/QuickInteraction/version.json';
 
     function compareVersion(a, b) {
         var pa = String(a || '').split('.').map(function(x) { return parseInt(x, 10) || 0; });
