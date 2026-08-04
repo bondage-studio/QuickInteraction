@@ -53,7 +53,7 @@
         }
     }
 
-    const VERSION = '1.3.1';
+    const VERSION = '1.3.2';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -70,6 +70,8 @@
     const S_UPDATE_DISMISSED = 'xsact_qa_update_dismissed';
     const S_LAST_ANNOUNCE = 'xsact_qa_last_announce';
     const S_LAST_ANNOUNCE_VER = 'xsact_qa_last_announce_ver'; // 公告去重：记录上次见到公告时的版本号
+    const S_LAST_SEEN_VERSION = 'xsact_qa_last_seen_version'; // 已安装版本：用于「更新成功」一次性通知
+    const S_UPDATE_ERROR_LOG = 'xsact_qa_update_errlog';      // 更新检测失败的结构化错误日志（最近 10 条）
     const S_ECHO_SUPPRESS = 'xsact_qa_echo_suppressed'; // 已导入并屏蔽的 echo 原始动作名
     const S_XIAOSU_PACK = 'xsact_qa_xiaosu_pack'; // 是否启用内置「小酥动作包」（预编译进插件，离线可用）
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'

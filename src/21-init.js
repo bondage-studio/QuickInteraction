@@ -99,6 +99,8 @@
 
         // 启动更新/公告检测（脚本内 5 分钟轮询，玩家端收到，无需刷新页面）
         try { startUpdateChecker(); } catch (e) { console.warn('[QiAct] 启动更新检测失败:', e); }
+        // 更新成功通知：若本机版本高于上次记录，提示「已更新到 vX」（加载即触发，不依赖轮询）
+        try { notifyIfUpdated(); } catch (e) { console.warn('[QiAct] 更新成功通知失败:', e); }
 
         // 暴露调试/控制接口（无论前面是否出错，必须暴露）
         window.__QiAct = {
@@ -174,6 +176,9 @@
             version: VERSION,
             // ── 更新 / 公告 ──
             checkUpdate: checkUpdate,
+            startUpdateChecker: startUpdateChecker,
+            notifyIfUpdated: notifyIfUpdated,
+            getUpdateErrorLog: getUpdateErrorLog,
             showUpdateBanner: showUpdateBanner,
             showAnnounceBanner: showAnnounceBanner,
             hideUpdateBanner: hideUpdateBanner
