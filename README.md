@@ -4,7 +4,7 @@
 
 > 为 Bondage Club 设计的即时互动工具：点选角色身体部位，一键触发对应动作。
 
-[![Version](https://img.shields.io/badge/version-1.3.0-FF5C7A)](https://github.com/bondage-studio/QuickInteraction/commits)
+[![Version](https://img.shields.io/badge/version-1.4.0-FF5C7A)](https://github.com/bondage-studio/QuickInteraction/commits)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -16,6 +16,7 @@
 - **动作收藏**：按身体部位隔离收藏，高频动作触手可及
 - **连招编排**：多部位动作组合为序列，单次触发依次执行
 - **双主题**：深／浅色界面随账号同步，跨设备一致
+- **多语言界面**：支持 简中 / 繁中 / 英 / 德 / 法 / 俄 / 乌 共 7 种语言 + 自动，自定义深色语言下拉（语言代码徽章 + 原生名 + 勾选标记），缺失键自动回退永不空白
 - **生态兼容**：原生支持 ECHO、LSCG、Liko 等社区动作扩展
 - **小酥动作包（内置）**：XiaoSuActivity 全部 51 个动作预编译进插件，**离线可用、无需安装原版小酥插件**，对其停更 / 加载故障完全免疫；面板内一键开关，默认开启
 - **分类筛选**：「我的动作」按「全部 / 小酥 / 我的 / echo」一键过滤动作列表（编辑模式同样可用），每个分类显示实时数量，空分类自动置灰
