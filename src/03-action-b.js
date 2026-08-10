@@ -217,10 +217,10 @@
 
         try {
             var packet = makeActivityPacket(charObj, group, name, activityItem);
-            if (!packet) { toast('该动作需要特定道具', '#FF5C5C'); return false; }
+            if (!packet) { toast(QiActT('toast.need_item'), '#FF5C5C'); return false; }
             // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）
             if (!findAllowedActivity(charObj, group, name)) {
-                toast('该动作当前不可用', '#FF5C5C'); return false;
+                toast(QiActT('toast.unavailable'), '#FF5C5C'); return false;
             }
 
             // 先执行 BC 原生 ActivityRun(..., false) 触发本地副作用：
@@ -267,20 +267,20 @@
             }
 
             // 最终兜底：如果 ActivityRun 也拿不到，提示不可用
-            toast('该动作暂不可用', '#FF5C5C');
+            toast(QiActT('toast.temporarily_unavailable'), '#FF5C5C');
             return false;
         } catch (e) {
             console.error('[QiAct] 执行动作异常:', e);
-            toast('执行失败: ' + e.message, '#FF5C5C');
+            toast(QiActT('toast.exec_failed', { msg: e.message }), '#FF5C5C');
             return false;
         }
     }
 
     /** 对房间内所有其他成员执行同一动作（PAT ALL 同款广播） */
     function executeActionAll() {
-        if (!state.selectedAction || !state.selectedPart) { toast('请先选择一个动作', '#FF5C5C'); return; }
+        if (!state.selectedAction || !state.selectedPart) { toast(QiActT('toast.pick_action'), '#FF5C5C'); return; }
         var chars = getRoomCharacters();
-        if (!Array.isArray(chars) || chars.length === 0) { toast('房间内没有其他人', '#888'); return; }
+        if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         // 如果当前选中了目标，则把目标排到第一个执行，其余随后
         var ordered = orderBySelectedTarget(chars);
@@ -303,7 +303,7 @@
             setTimeout(next, delay);
         }
         next();
-        toast('开始对所有成员执行：' + getActivityLabel(name, group), '#FF5C7A');
+        toast(QiActT('toast.exec_all', { name: getActivityLabel(name, group) }), '#FF5C7A');
     }
 
     /* ══════════════════════════════════════════════════════════════

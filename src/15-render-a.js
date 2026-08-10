@@ -22,13 +22,13 @@
 
         // 「动作」模式：必须先选中人物与身体部位
         if (!state.selectedTarget) {
-            if (titleEl) titleEl.textContent = '选择动作...';
-            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">点击左侧 ◀ 按钮选择人物和部位</div>';
+            if (titleEl) titleEl.textContent = QiActT('render.select_action');
+            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>';
             return;
         }
         if (!state.selectedPart) {
-            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → 选择部位';
-            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">请在左侧人物浮层选择身体部位</div>';
+            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → ' + QiActT('target.select_part');
+            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.pick_part_hint') + '</div>';
             return;
         }
         updateActionPanel(state.selectedTarget, state.selectedPart);
@@ -49,21 +49,21 @@
 
     /** 刷新面板状态（用于刷新按钮）：重新读取当前部位/人物的可执行动作或组合列表 */
     function refreshPanelState() {
-        if (!state.actionPanelEl) { toast('请先开启动作模式', '#888'); return; }
+        if (!state.actionPanelEl) { toast(QiActT('toast.mode_on_first'), '#888'); return; }
         if (state.panelMode === 'custom') {
             updateCustomActionPanel(state.selectedTarget);
-            toast('我的动作列表已刷新', '#FF5C7A');
+            toast(QiActT('toast.refreshed_custom'), '#FF5C7A');
         } else if (state.panelMode === 'combo') {
             // 重新从存储加载组合，并刷新视图
             state.combos = loadSetting(S_COMBOS, []);
             updateComboPanel(state.selectedTarget);
-            toast('组合列表已刷新', '#FF5C7A');
+            toast(QiActT('toast.refreshed_combo'), '#FF5C7A');
         } else {
             // 「动作」模式才需要选中人物 + 部位
-            if (!state.selectedTarget || !state.selectedPart) { toast('请先选择一个人物部位', '#888'); return; }
+            if (!state.selectedTarget || !state.selectedPart) { toast(QiActT('toast.pick_part'), '#888'); return; }
             // 重新渲染当前部位动作列表（ActivityAllowedForGroup 会实时重新计算）
             updateActionPanel(state.selectedTarget, state.selectedPart);
-            toast('动作列表已刷新', '#FF5C7A');
+            toast(QiActT('toast.refreshed_actions'), '#FF5C7A');
         }
     }
 
@@ -79,22 +79,22 @@
             // ── 编辑视图 ──
             var combo = getCombo(state.editingComboId);
             if (!combo) { state.editingComboId = null; updateComboPanel(charObj); return; }
-            titleEl.textContent = '编辑：' + combo.name;
+            titleEl.textContent = QiActT('combo.edit_title', { name: combo.name });
             if (allBtn) allBtn.disabled = false;
 
             var html = '<div class="xsact-combo-editor">';
             // 名称输入
             html += '<div class="xsact-combo-field"><input type="text" id="xsact-combo-name" value="' +
-                escapeHtml(combo.name) + '" placeholder="组合名称"></div>';
+                escapeHtml(combo.name) + '" placeholder="' + QiActT('combo.name_ph') + '"></div>';
             // 动作间隔（延迟）滑块
             var curDelay = comboDelay(combo);
             html += '<div class="xsact-combo-field xsact-combo-delay">' +
-                '<label>动作间隔 <span id="xsact-delay-val">' + curDelay + '</span>ms</label>' +
+                '<label>' + QiActT('combo.delay_label', { n: curDelay }) + '</label>' +
                 '<input type="range" id="xsact-combo-delay" min="50" max="2000" step="50" value="' + curDelay + '">' +
                 '</div>';
             // 条目列表
             if (!combo.items.length) {
-                html += '<div class="xsact-qa-empty">请到「动作」模式，点击动作旁的「加入」按钮添加</div>';
+                html += '<div class="xsact-qa-empty">' + QiActT('combo.add_hint') + '</div>';
             } else {
                 html += '<div class="xsact-combo-items">';
                 combo.items.forEach(function(it, idx) {
@@ -103,24 +103,24 @@
                         '<span class="xsact-combo-item-num">' + (idx + 1) + '</span>' +
                         '<span class="xsact-combo-item-part">' + escapeHtml(partLbl) + '</span>' +
                         '<span class="xsact-combo-item-action">' + escapeHtml(it.label || it.action) + '</span>' +
-                        '<button class="xsact-combo-item-up" title="上移">' + svgIcon('up', 13) + '</button>' +
-                        '<button class="xsact-combo-item-down" title="下移">' + svgIcon('down', 13) + '</button>' +
-                        '<button class="xsact-combo-item-del" title="删除" data-tooltip-type="danger">' + svgIcon('close', 13) + '</button>' +
+                        '<button class="xsact-combo-item-up" title="' + QiActT('combo.up') + '">' + svgIcon('up', 13) + '</button>' +
+                        '<button class="xsact-combo-item-down" title="' + QiActT('combo.down') + '">' + svgIcon('down', 13) + '</button>' +
+                        '<button class="xsact-combo-item-del" title="' + QiActT('combo.item_del') + '" data-tooltip-type="danger">' + svgIcon('close', 13) + '</button>' +
                         '</div>';
                 });
                 html += '</div>';
             }
             // 操作按钮
             html += '<div class="xsact-combo-actions">' +
-                '<button class="xsact-combo-save-btn">保存</button>' +
-                '<button class="xsact-combo-cancel-btn">返回</button>' +
+                '<button class="xsact-combo-save-btn">' + QiActT('combo.save') + '</button>' +
+                '<button class="xsact-combo-cancel-btn">' + QiActT('combo.cancel') + '</button>' +
                 '</div>';
             html += '</div>';
             listEl.innerHTML = html;
 
             // 绑定
             var nameInput = listEl.querySelector('#xsact-combo-name');
-            if (nameInput) nameInput.addEventListener('change', function() { renameCombo(combo.id, nameInput.value); titleEl.textContent = '编辑：' + combo.name; });
+            if (nameInput) nameInput.addEventListener('change', function() { renameCombo(combo.id, nameInput.value); titleEl.textContent = QiActT('combo.edit_title', { name: combo.name }); });
             // 延迟滑块
             var delayInput = listEl.querySelector('#xsact-combo-delay');
             var delayVal = listEl.querySelector('#xsact-delay-val');
@@ -150,35 +150,35 @@
                 });
             });
             var saveBtn = listEl.querySelector('.xsact-combo-save-btn');
-            if (saveBtn) saveBtn.addEventListener('click', function() { stopEditCombo(); toast('组合已保存', '#46E0A0'); });
+            if (saveBtn) saveBtn.addEventListener('click', function() { stopEditCombo(); toast(QiActT('toast.combo_saved'), '#46E0A0'); });
             var cancelBtn = listEl.querySelector('.xsact-combo-cancel-btn');
             if (cancelBtn) cancelBtn.addEventListener('click', stopEditCombo);
             return;
         }
 
         // ── 列表视图 ──
-        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + '组合动作';
+        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('render.combo_title');
         if (allBtn) allBtn.disabled = false;
 
         var html = '';
         if (!state.combos.length) {
-            html = '<div class="xsact-qa-empty">暂无组合。点击下方「新建组合」，然后到「动作」模式点击动作旁的「加入」按钮添加动作。</div>';
+            html = '<div class="xsact-qa-empty">' + QiActT('combo.empty') + '</div>';
         } else {
             state.combos.forEach(function(c) {
                 html += '<div class="xsact-combo-card" data-id="' + c.id + '">' +
                     '<div class="xsact-combo-info">' +
                     '<span class="xsact-combo-name">' + escapeHtml(c.name) + '</span>' +
-                    '<span class="xsact-combo-count">' + c.items.length + ' 步</span>' +
+                    '<span class="xsact-combo-count">' + c.items.length + QiActT('combo.count', { n: c.items.length }) + '</span>' +
                     '</div>' +
                     '<div class="xsact-combo-btns">' +
-                    '<button class="xsact-combo-run" title="执行">' + svgIcon('play', 14) + '</button>' +
-                    '<button class="xsact-combo-edit" title="编辑">' + svgIcon('pencil', 14) + '</button>' +
-                    '<button class="xsact-combo-delete" title="删除" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button>' +
+                    '<button class="xsact-combo-run" title="' + QiActT('combo.exec') + '">' + svgIcon('play', 14) + '</button>' +
+                    '<button class="xsact-combo-edit" title="' + QiActT('combo.edit') + '">' + svgIcon('pencil', 14) + '</button>' +
+                    '<button class="xsact-combo-delete" title="' + QiActT('combo.item_del') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button>' +
                     '</div>' +
                     '</div>';
             });
         }
-        html += '<button class="xsact-combo-new-btn" id="xsact-new-combo-btn">' + svgIcon('plus', 15) + '新建组合</button>';
+        html += '<button class="xsact-combo-new-btn" id="xsact-new-combo-btn">' + svgIcon('plus', 15) + ' ' + QiActT('combo.new_btn') + '</button>';
         listEl.innerHTML = html;
 
         listEl.querySelectorAll('.xsact-combo-run').forEach(function(btn) {
@@ -188,7 +188,7 @@
                 var c = getCombo(id);
                 if (!c || !c.items.length) return;
                 if (state.allModeActive) { runComboAll(c); return; }
-                if (!charObj) { toast('请先在左侧选择人物', '#FF5C5C'); return; }
+                if (!charObj) { toast(QiActT('toast.pick_char'), '#FF5C5C'); return; }
                 runComboOnTarget(charObj, c);
             });
         });
@@ -202,7 +202,7 @@
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 var id = btn.closest('.xsact-combo-card').dataset.id;
-                qiactConfirm({ title: '删除组合', body: '确定删除这个组合吗？', confirmText: '删除', danger: true }).then(function(ok) {
+                qiactConfirm({ title: QiActT('combo.delete_confirm_title'), body: QiActT('combo.delete_confirm_body'), confirmText: QiActT('combo.delete_confirm_btn'), danger: true }).then(function(ok) {
                     if (!ok) return;
                     deleteCombo(id); updateComboPanel(charObj);
                 });
@@ -210,7 +210,7 @@
         });
         var newBtn = listEl.querySelector('#xsact-new-combo-btn');
         if (newBtn) newBtn.addEventListener('click', function() {
-            var c = addCombo('新组合');
+            var c = addCombo(QiActT('combo.new_name'));
             startEditCombo(c.id);
         });
     }

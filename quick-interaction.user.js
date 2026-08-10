@@ -1,8 +1,422 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// QiAct 多语言引擎（i18n）
+// 设计：对齐 liko 上游框架 window.Liko.__Sys_i18n__.register(ns, dict)，
+//       但翻译字典在「构建期内联」进单文件（而非运行时动态 import），
+//       更适配本插件「拼接成单文件 + GitHub Pages」的发布模型。
+//
+// 安全铁律：
+//   1) QiActT() 永不抛错——任何异常都降级为 key（英文），绝不中断业务逻辑。
+//   2) 引擎自身零依赖 BC 就绪：即使 BC 全局未加载，resolveLang() 也安全回退 EN。
+//   3) 字典缺失某语言 → 回退 EN → 再缺失 → 回退 key，显示永远不空白、不崩。
+//
+// 调用约定：各模块使用全局 QiActT('命名空间.键', {var}) 取译文。
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    'use strict';
+
+    // 支持语言（顺序无关；兜底固定走 EN）
+    var LANGS = ['TW', 'CN', 'EN', 'DE', 'FR', 'RU', 'UA'];
+    // 强制三语：构建校验要求 CN/EN/TW 必填；DE/FR/RU/UA 缺则 EN 兜底（不阻塞发版）
+    var REQUIRED = ['CN', 'EN', 'TW'];
+    // 语言原生名（用于下拉菜单展示，不随界面语言翻译）
+    var LANG_META = {
+        auto: { code: 'A', native: 'Auto' },
+        TW: { code: 'TW', native: '繁體中文' },
+        CN: { code: 'CN', native: '简体中文' },
+        EN: { code: 'EN', native: 'English' },
+        DE: { code: 'DE', native: 'Deutsch' },
+        FR: { code: 'FR', native: 'Français' },
+        RU: { code: 'RU', native: 'Русский' },
+        UA: { code: 'UA', native: 'Українська' }
+    };
+
+    // 扁平字典： 'ns.key' -> { TW, CN, EN, DE, FR, RU, UA }
+    var DICT = {};
+
+    // 注册某命名空间的字典（照搬 liko 的 register 范式）
+    function register(ns, dict) {
+        if (!dict || typeof dict !== 'object') return;
+        for (var k in dict) {
+            if (!Object.prototype.hasOwnProperty.call(dict, k)) continue;
+            DICT[ns + '.' + k] = dict[k];
+        }
+    }
+
+    // 解析当前语言：手动覆盖(localStorage) > BC TranslationLanguage(auto) > 浏览器 > EN
+    function resolveLang() {
+        try {
+            var ov = null;
+            try { ov = localStorage.getItem('QiActLang'); } catch (e) { /* localStorage 不可用：跳过 */ }
+            if (ov && ov !== 'auto' && LANGS.indexOf(ov) >= 0) return ov;
+            // auto：跟随 BC 游戏语言（与 liko 一致）
+            var bc = (typeof TranslationLanguage !== 'undefined' && TranslationLanguage)
+                ? String(TranslationLanguage).toUpperCase() : '';
+            if (LANGS.indexOf(bc) >= 0) return bc;
+            // 回退浏览器语言
+            var nav = (typeof navigator !== 'undefined' && navigator.language)
+                ? navigator.language.toUpperCase() : 'EN';
+            if (nav.indexOf('ZH') === 0) return nav.indexOf('TW') >= 0 ? 'TW' : 'CN';
+            if (nav.indexOf('DE') === 0) return 'DE';
+            if (nav.indexOf('FR') === 0) return 'FR';
+            if (nav.indexOf('RU') === 0) return 'RU';
+            if (nav.indexOf('UK') === 0) return 'UA';
+            return 'EN';
+        } catch (e) { return 'EN'; }
+    }
+
+    // 永不抛错的翻译函数
+    function QiActT(key, vars) {
+        try {
+            if (key == null) return '';
+            var entry = DICT[key];
+            if (!entry || typeof entry !== 'object') return String(key);
+            var lang = resolveLang();
+            var val = entry[lang];
+            // 兜底链：请求语言缺失时，TW 优先回退 CN（同为中文），其余语言回退 EN
+            if (val == null) {
+                if (lang === 'TW' && entry['CN'] != null) val = entry['CN'];
+                else val = entry['EN'];
+            }
+            if (val == null) val = key;
+            if (vars && typeof vars === 'object') {
+                for (var v in vars) {
+                    if (!Object.prototype.hasOwnProperty.call(vars, v)) continue;
+                    var rep = (vars[v] == null) ? '' : String(vars[v]);
+                    val = String(val).split('{' + v + '}').join(rep);
+                }
+            }
+            return (val == null) ? String(key) : String(val);
+        } catch (e) {
+            return (key == null) ? '' : String(key);
+        }
+    }
+
+    // 手动设置语言（设置面板调用）：'auto' 或具体语言码；写入 localStorage
+    function setLang(code) {
+        try {
+            if (!code || code === 'auto') { try { localStorage.removeItem('QiActLang'); } catch (e) {} }
+            else localStorage.setItem('QiActLang', code);
+        } catch (e) { /* 忽略：存储不可用时保持 auto */ }
+    }
+
+    // 暴露全局 API
+    window.QiActI18n = {
+        register: register,
+        t: QiActT,
+        getCurrentLang: resolveLang,
+        setLang: setLang,
+        LANGS: LANGS.slice(),
+        REQUIRED: REQUIRED.slice(),
+        LANG_META: LANG_META
+    };
+    // 全局便捷函数（唯一命名，避免与 BC/其他 mod 的全局 t 冲突）
+    window.QiActT = QiActT;
+})();
+
+
+/* === locales/dictionary.js === */
+// ─────────────────────────────────────────────────────────────────────────────
+// QiAct 多语言字典（构建期内联进单文件）
+// 命名空间：ui / target / common / toast / custom / editor / combo / update / part / render
+// 每键至少提供 CN（简体）+ EN；TW 缺失由引擎回退 CN，DE/FR/RU/UA 由引擎回退 EN。
+// 仅承载用户界面显示文本；逻辑键 / 协议串 / 动作内容数据一律不在此处。
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+    if (typeof QiActI18n === 'undefined' || !QiActI18n) return; // 引擎未就绪则跳过（防御，运行时不会触发）
+
+    // ⚠️ 机器翻译草稿（Google 免费端点自动生成，DE/FR/RU/UA/TW）。术语与情色语境措辞需人工校对后再正式发布。
+
+    // ui 命名空间
+    QiActI18n.register('ui', {
+        'toggle_on'        :        { TW: '開啟快速動作模式', CN: '开启快速动作模式', EN: 'Enter Quick Action mode', DE: 'Wechseln Sie in den Schnellaktionsmodus', FR: 'Passer en mode action rapide', RU: 'Войдите в режим быстрого действия', UA: 'Увійдіть у режим швидкої дії' },
+        'toggle_off'       :        { TW: '退出快速動作模式', CN: '退出快速动作模式', EN: 'Exit Quick Action mode', DE: 'Verlassen Sie den Schnellaktionsmodus', FR: 'Quitter le mode Action rapide', RU: 'Выйти из режима быстрого действия', UA: 'Вийти з режиму швидкої дії' },
+        'toggle_on_active' :        { TW: '退出快速動作模式 · 已激活', CN: '退出快速动作模式 · 已激活', EN: 'Exit Quick Action mode · Active', DE: 'Schnellaktionsmodus verlassen · Aktiv', FR: 'Quitter le mode Action rapide · Actif', RU: 'Выход из режима быстрого действия · Активно', UA: 'Вийти з режиму швидкої дії · Активний' },
+        'theme_dark'       :        { TW: '深色', CN: '深色', EN: 'Dark', DE: 'Dunkel', FR: 'Sombre', RU: 'Темный', UA: 'Темний' },
+        'theme_light'      :        { TW: '淺色', CN: '浅色', EN: 'Light', DE: 'Licht', FR: 'Lumière', RU: 'Свет', UA: 'світло' },
+        'theme_switched'   :        { TW: '已切換為{theme}主題', CN: '已切换为{theme}主题', EN: 'Switched to {theme} theme', DE: 'Zum Thema {theme} gewechselt', FR: 'Passé au thème {theme}', RU: 'Переключился на тему {theme}', UA: 'Переключено на тему {theme}' },
+        'drag_panel'       :        { TW: '拖曳面板', CN: '拖动面板', EN: 'Drag panel', DE: 'Panel ziehen', FR: 'Faites glisser le panneau', RU: 'Перетащите панель', UA: 'Панель перетягування' },
+        'theme_toggle'     :        { TW: '切換深色/淺色主題', CN: '切换深色/浅色主题', EN: 'Toggle dark/light theme', DE: 'Schalten Sie das dunkle/helle Thema um', FR: 'Basculer le thème sombre/clair', RU: 'Переключить темную/светлую тему', UA: 'Перемикати темну/світлу тему' },
+        'lang_title'       :        { TW: '語言', CN: '语言', EN: 'Language', DE: 'Sprache', FR: 'Langue', RU: 'Язык', UA: 'Мова' },
+        'lang_auto'        :        { TW: '自動', CN: '自动', EN: 'Auto', DE: 'Auto', FR: 'Auto', RU: 'Авто', UA: 'Авто' },
+        'refresh'          :        { TW: '刷新目前部位/人物的動作清單狀態', CN: '刷新当前部位/人物的动作列表状态', EN: 'Refresh the current part/character action list', DE: 'Aktualisieren Sie die aktuelle Aktionsliste für Teile/Charaktere', FR: 'Actualiser la liste actuelle des actions des parties/personnages', RU: 'Обновить текущий список действий части/персонажа.', UA: 'Оновити поточний список дій частини/персонажа' },
+        'exit_mode'        :        { TW: '退出快速動作模式 (Esc)', CN: '退出快速动作模式 (Esc)', EN: 'Exit Quick Action mode (Esc)', DE: 'Schnellaktionsmodus verlassen (Esc)', FR: 'Quitter le mode Action rapide (Esc)', RU: 'Выход из режима быстрого действия (Esc)', UA: 'Вийти з режиму швидкої дії (Esc)' },
+        'mode_part'        :        { TW: '動作', CN: '动作', EN: 'Action', DE: 'Aktion', FR: 'Action', RU: 'Действие', UA: 'Дія' },
+        'mode_part_title'  :        { TW: '單部位動作：點人物部位後直接觸發', CN: '单部位动作：点人物部位后直接触发', EN: 'Single-part action: trigger directly after clicking a body part', DE: 'Einzelaktion: Direkt nach dem Anklicken eines Körperteils auslösen', FR: 'Action en une seule partie : déclenchez-la directement après avoir cliqué sur une partie du corps', RU: 'Действие для одной части: срабатывает сразу после щелчка по части тела.', UA: 'Однокомпонентна дія: активується безпосередньо після клацання частини тіла' },
+        'mode_combo'       :        { TW: '組合動作', CN: '组合动作', EN: 'Combo', DE: 'Combo', FR: 'Combo', RU: 'Комбо', UA: 'комбо' },
+        'mode_combo_title' :        { TW: '組合動作：手動組裝多部位動作並一鍵執行', CN: '组合动作：手动拼装多部位动作并一键执行', EN: 'Combo: assemble multi-part actions and run with one click', DE: 'Combo: Mehrteilige Aktionen zusammenstellen und mit einem Klick ausführen', FR: 'Combo : assemblez des actions en plusieurs parties et exécutez-les en un seul clic', RU: 'Комбо: соберите действия из нескольких частей и запустите их одним щелчком мыши.', UA: 'Комбінація: збирайте дії з кількох частин і запускайте їх одним клацанням миші' },
+        'mode_custom'      :        { TW: '我的動作', CN: '我的动作', EN: 'My Actions', DE: 'Meine Aktionen', FR: 'Mes actions', RU: 'Мои действия', UA: 'Мої дії' },
+        'mode_custom_title':        { TW: '我的動作：建立/管理自訂動作（替代 echo/迴聲）。', CN: '我的动作：创建/管理自定义动作（替代 echo/回声）。当前为测试版(Beta)', EN: 'My Actions: create/manage custom actions (replaces echo). Currently Beta', DE: 'Meine Aktionen: Benutzerdefinierte Aktionen erstellen/verwalten (ersetzt Echo).', FR: 'Mes actions : créer/gérer des actions personnalisées (remplace echo).', RU: 'Мои действия: создание и управление пользовательскими действиями (заменяет echo).', UA: 'Мої дії: створювати/керувати спеціальними діями (замінює echo).' },
+        'beta_badge'       :        { TW: '測試版', CN: '测试版', EN: 'Beta', DE: 'Beta', FR: 'Bêta', RU: 'Бета', UA: 'Бета' },
+        'self'             :        { TW: '自己', CN: '自己', EN: 'Self', DE: 'Selbst', FR: 'Soi', RU: 'Себя', UA: 'себе' },
+        'self_title'       :        { TW: '切換自己模式', CN: '切换自己模式', EN: 'Toggle self mode', DE: 'Schalten Sie den Selbstmodus um', FR: 'Basculer en mode autonome', RU: 'Переключить самостоятельный режим', UA: 'Увімкнути режим себе' },
+        'all'              :        { TW: '全員', CN: '全员', EN: 'All', DE: 'Alle', FR: 'Tous', RU: 'Все', UA: 'все' },
+        'all_title'        :        { TW: '切換全員範圍：開啟後，動作將對房間內所有人執行', CN: '切换全员范围：开启后，动作将对房间内所有人执行', EN: 'Toggle all-range: when on, actions run on everyone in the room', DE: 'Gesamtbereich umschalten: Wenn diese Option aktiviert ist, werden Aktionen für alle Personen im Raum ausgeführt', FR: 'Activer toute la plage : lorsque cette option est activée, les actions s\'exécutent sur toutes les personnes présentes dans la pièce', RU: 'Переключить весь диапазон: если включено, действия выполняются для всех в комнате.', UA: 'Перемкнути весь діапазон: коли ввімкнено, дії виконуються для всіх у кімнаті' },
+        'fav'              :        { TW: '收藏', CN: '收藏', EN: 'Favorite', DE: 'Favorit', FR: 'Préféré', RU: 'Любимый', UA: 'улюблений' },
+        'fav_title'        :        { TW: '收藏模式：開啟後點選動作會加入/取消收藏', CN: '收藏模式：开启后点击动作会加入/取消收藏', EN: 'Favorite mode: clicking an action adds/removes it from favorites', DE: 'Favoritenmodus: Durch Klicken auf eine Aktion wird diese zu den Favoriten hinzugefügt bzw. daraus entfernt', FR: 'Mode favori : cliquer sur une action l\'ajoute/supprime des favoris', RU: 'Режим избранного: нажатие на действие добавляет или удаляет его из избранного.', UA: 'Режим вибраного: клацання дії додає або видаляє його з вибраного' },
+        'fav_clear'        :        { TW: '清空全部收藏動作', CN: '清空全部收藏动作', EN: 'Clear all favorite actions', DE: 'Löschen Sie alle bevorzugten Aktionen', FR: 'Effacer toutes les actions favorites', RU: 'Очистить все избранные действия', UA: 'Очистити всі улюблені дії' },
+        'x3'               :        { TW: '×3', CN: '×3', EN: '×3', DE: '×3', FR: '×3', RU: '×3', UA: '×3' },
+        'x3_title'         :        { TW: '連續3次', CN: '连续3次', EN: 'Continuous x3', DE: 'Kontinuierlich x3', FR: 'Continu x3', RU: 'Непрерывный x3', UA: 'Безперервний х3' },
+        'version'          :        { TW: '目前插件版本', CN: '当前插件版本', EN: 'Current plugin version', DE: 'Aktuelle Plugin-Version', FR: 'Version actuelle du plugin', RU: 'Текущая версия плагина', UA: 'Поточна версія плагіна' },
+        'resize'           :        { TW: '拖曳縮放面板', CN: '拖动缩放面板', EN: 'Drag to resize panel', DE: 'Ziehen Sie, um die Größe des Bedienfelds zu ändern', FR: 'Faites glisser pour redimensionner le panneau', RU: 'Перетащите, чтобы изменить размер панели', UA: 'Перетягніть, щоб змінити розмір панелі' },
+        'popover_back'     :        { TW: '返回人物列表', CN: '返回人物列表', EN: 'Back to character list', DE: 'Zurück zur Charakterliste', FR: 'Retour à la liste des personnages', RU: 'Вернуться к списку персонажей', UA: 'Назад до списку символів' },
+        'popover_close'    :        { TW: '關閉', CN: '关闭', EN: 'Close', DE: 'Schließen', FR: 'Fermer', RU: 'Закрывать', UA: 'Закрити' },
+        'chars'            :        { TW: '人物列表', CN: '人物列表', EN: 'Character list', DE: 'Charakterliste', FR: 'Liste des personnages', RU: 'Список персонажей', UA: 'Список символів' }
+    });
+
+    // target 命名空间
+    QiActI18n.register('target', {
+        'empty'      :        { TW: '房間無人', CN: '房间无人', EN: 'Room is empty', DE: 'Der Raum ist leer', FR: 'La salle est vide', RU: 'Комната пуста', UA: 'Кімната порожня' },
+        'pick_part'  :        { TW: '點擊身體部位選擇動作', CN: '点击身体部位选择动作', EN: 'Click a body part to choose an action', DE: 'Klicken Sie auf einen Körperteil, um eine Aktion auszuwählen', FR: 'Cliquez sur une partie du corps pour choisir une action', RU: 'Нажмите на часть тела, чтобы выбрать действие', UA: 'Натисніть частину тіла, щоб вибрати дію' },
+        'select_part':        { TW: '選擇部位', CN: '选择部位', EN: 'Select part', DE: 'Teil auswählen', FR: 'Sélectionner une pièce', RU: 'Выберите часть', UA: 'Виберіть частину' }
+    });
+
+    // common 命名空间
+    QiActI18n.register('common', {
+        'self'             :        { TW: '自己', CN: '自己', EN: 'Self', DE: 'Selbst', FR: 'Soi', RU: 'Себя', UA: 'себе' },
+        'other'            :        { TW: '對方', CN: '对方', EN: 'Target', DE: 'Ziel', FR: 'Cible', RU: 'Цель', UA: 'Цільова' },
+        'someone'          :        { TW: '某人', CN: '某人', EN: 'Someone', DE: 'Jemand', FR: 'Quelqu\'un', RU: 'Кто-то', UA: 'Хтось' },
+        'enter_mode'       :        { TW: '動作模式已開啟', CN: '动作模式已开启', EN: 'Action mode enabled', DE: 'Aktionsmodus aktiviert', FR: 'Mode action activé', RU: 'Режим действий включен', UA: 'Режим дії ввімкнено' },
+        'exit_mode'        :        { TW: '已退出動作模式', CN: '已退出动作模式', EN: 'Exited action mode', DE: 'Aktionsmodus verlassen', FR: 'Quitter le mode action', RU: 'Выход из режима действий', UA: 'Вийшов з режиму дії' },
+        'all_on'           :        { TW: '全員範圍：開啟', CN: '全员范围：开启', EN: 'All-range: ON', DE: 'Gesamtbereich: EIN', FR: 'Toute la gamme : ON', RU: 'Вседиапазонный: ВКЛ.', UA: 'Весь діапазон: УВІМК' },
+        'all_off'          :        { TW: '全員範圍：關閉', CN: '全员范围：关闭', EN: 'All-range: OFF', DE: 'Gesamtbereich: AUS', FR: 'Toute la gamme : OFF', RU: 'Весь диапазон: ВЫКЛ.', UA: 'Весь діапазон: ВИМК' },
+        'fav_on'           :        { TW: '收藏模式：開啟 · 點選動作加入收藏', CN: '收藏模式：开启 · 点击动作加入收藏', EN: 'Favorite mode: ON · click an action to add', DE: 'Lieblingsmodus: EIN · Klicken Sie auf eine Aktion, um sie hinzuzufügen', FR: 'Mode favori : ON · cliquez sur une action à ajouter', RU: 'Режим избранного: ВКЛ. · щелкните действие, чтобы добавить его.', UA: 'Улюблений режим: УВІМКНЕНО · натисніть дію, щоб додати' },
+        'fav_off'          :        { TW: '收藏模式：關閉', CN: '收藏模式：关闭', EN: 'Favorite mode: OFF', DE: 'Lieblingsmodus: AUS', FR: 'Mode favori : OFF', RU: 'Любимый режим: ВЫКЛ.', UA: 'Улюблений режим: ВИМК' },
+        'fav_add'          :        { TW: '已收藏：{name}', CN: '已收藏：{name}', EN: 'Favorited: {name}', DE: 'Favorit: {name}', FR: 'Favoris : {name}', RU: 'Избранное: {name}', UA: 'Вибрано: {name}' },
+        'fav_remove'       :        { TW: '取消收藏', CN: '取消收藏', EN: 'Unfavorited', DE: 'Nicht favorisiert', FR: 'Défavorisé', RU: 'Избранное', UA: 'Не додано до вибраного' },
+        'self_on'          :        { TW: '自己模式：開啟', CN: '自己模式：开启', EN: 'Self mode: ON', DE: 'Selbstmodus: EIN', FR: 'Mode autonome : activé', RU: 'Авторежим: ВКЛ.', UA: 'Автономний режим: УВІМК' },
+        'self_off'         :        { TW: '自己模式：關閉', CN: '自己模式：关闭', EN: 'Self mode: OFF', DE: 'Selbstmodus: AUS', FR: 'Mode autonome : OFF', RU: 'Авторежим: ВЫКЛ.', UA: 'Авторежим: ВИМК' },
+        'no_fav'           :        { TW: '目前沒有收藏動作', CN: '当前没有收藏动作', EN: 'No favorite actions yet', DE: 'Noch keine Lieblingsaktionen', FR: 'Aucune action favorite pour l\'instant', RU: 'Избранных действий пока нет', UA: 'Ще немає улюблених дій' },
+        'clear_fav_title'  :        { TW: '清空全部收藏', CN: '清空全部收藏', EN: 'Clear all favorites', DE: 'Alle Favoriten löschen', FR: 'Effacer tous les favoris', RU: 'Очистить все избранное', UA: 'Очистити всі вибрані' },
+        'clear_fav_body'   :        { TW: '確定清空全部收藏動作嗎？', CN: '确定清空全部收藏动作吗？此操作无法撤销。', EN: 'Clear all favorite actions? This cannot be undone.', DE: 'Alle bevorzugten Aktionen löschen?', FR: 'Effacer toutes les actions favorites ?', RU: 'Очистить все избранные действия?', UA: 'Очистити всі улюблені дії?' },
+        'clear_fav_confirm':        { TW: '全部清空', CN: '全部清空', EN: 'Clear all', DE: 'Alles löschen', FR: 'Tout effacer', RU: 'Очистить все', UA: 'Очистити все' },
+        'cleared_fav'      :        { TW: '已清空全部收藏', CN: '已清空全部收藏', EN: 'All favorites cleared', DE: 'Alle Favoriten gelöscht', FR: 'Tous les favoris effacés', RU: 'Все избранное удалено', UA: 'Усі вибрані видалено' },
+        'confirm_title'    :        { TW: '確認操作', CN: '确认操作', EN: 'Confirm', DE: 'Bestätigen', FR: 'Confirmer', RU: 'Подтверждать', UA: 'Підтвердити' },
+        'confirm_ok'       :        { TW: '確定', CN: '确定', EN: 'OK', DE: 'OK', FR: 'D\'ACCORD', RU: 'ХОРОШО', UA: 'добре' },
+        'confirm_cancel'   :        { TW: '取消', CN: '取消', EN: 'Cancel', DE: 'Stornieren', FR: 'Annuler', RU: 'Отмена', UA: 'Скасувати' }
+    });
+
+    // toast 命名空间
+    QiActI18n.register('toast', {
+        'need_item'              :        { TW: '該動作需要特定道具', CN: '该动作需要特定道具', EN: 'This action requires a specific item', DE: 'Für diese Aktion ist ein bestimmtes Element erforderlich', FR: 'Cette action nécessite un élément spécifique', RU: 'Для этого действия требуется определенный элемент', UA: 'Для цієї дії потрібен певний предмет' },
+        'unavailable'            :        { TW: '該動作目前不可用', CN: '该动作当前不可用', EN: 'This action is currently unavailable', DE: 'Diese Aktion ist derzeit nicht verfügbar', FR: 'Cette action est actuellement indisponible', RU: 'Это действие в настоящее время недоступно', UA: 'Ця дія зараз недоступна' },
+        'temporarily_unavailable':        { TW: '該動作暫不可用', CN: '该动作暂不可用', EN: 'This action is temporarily unavailable', DE: 'Diese Aktion ist vorübergehend nicht verfügbar', FR: 'Cette action est temporairement indisponible', RU: 'Это действие временно недоступно', UA: 'Ця дія тимчасово недоступна' },
+        'exec_failed'            :        { TW: '執行失敗: {msg}', CN: '执行失败: {msg}', EN: 'Execution failed: {msg}', DE: 'Ausführung fehlgeschlagen: {msg}', FR: 'Échec de l\'exécution : {msg}', RU: 'Не удалось выполнить: {msg}', UA: 'Помилка виконання: {msg}' },
+        'pick_action'            :        { TW: '請先選擇一個動作', CN: '请先选择一个动作', EN: 'Please select an action first', DE: 'Bitte wählen Sie zunächst eine Aktion aus', FR: 'Veuillez d\'abord sélectionner une action', RU: 'Сначала выберите действие', UA: 'Спочатку виберіть дію' },
+        'no_others'              :        { TW: '房間內沒有其他人', CN: '房间内没有其他人', EN: 'No other members in the room', DE: 'Keine anderen Mitglieder im Raum', FR: 'Aucun autre membre dans la salle', RU: 'В комнате нет других участников', UA: 'У кімнаті немає інших учасників' },
+        'exec_all'               :        { TW: '開始對所有成員執行：{name}', CN: '开始对所有成员执行：{name}', EN: 'Executing on all members: {name}', DE: 'Wird auf allen Mitgliedern ausgeführt: {name}', FR: 'Exécution sur tous les membres : {name}', RU: 'Выполняется на всех участниках: {name}', UA: 'Виконується для всіх учасників: {name}' },
+        'no_last'                :        { TW: '沒有上次的動作紀錄', CN: '没有上次的动作记录', EN: 'No last action recorded', DE: 'Keine letzte Aktion aufgezeichnet', FR: 'Aucune dernière action enregistrée', RU: 'Последнее действие не записано', UA: 'Остання дія не записана' },
+        'target_not_in_room'     :        { TW: '目標不在房間內', CN: '目标不在房间内', EN: 'Target is not in the room', DE: 'Ziel ist nicht im Raum', FR: 'La cible n\'est pas dans la pièce', RU: 'Цель не в комнате', UA: 'Цілі немає в кімнаті' },
+        'repeat'                 :        { TW: '重複：{name}', CN: '重复：{name}', EN: 'Repeat: {name}', DE: 'Wiederholen Sie: {name}', FR: 'Répéter : {name}', RU: 'Повторите: {name}', UA: 'Повтор: {name}' },
+        'pick_part'              :        { TW: '請先選擇一個人物部位', CN: '请先选择一个人物部位', EN: 'Please select a character part first', DE: 'Bitte wählen Sie zuerst einen Charakterteil aus', FR: 'Veuillez d\'abord sélectionner une partie de personnage', RU: 'Пожалуйста, сначала выберите часть персонажа', UA: 'Спочатку виберіть частину персонажа' },
+        'mode_on_first'          :        { TW: '請先開啟動作模式', CN: '请先开启动作模式', EN: 'Please enable action mode first', DE: 'Bitte aktivieren Sie zuerst den Aktionsmodus', FR: 'Veuillez d\'abord activer le mode action', RU: 'Пожалуйста, сначала включите режим действия', UA: 'Спочатку ввімкніть режим дії' },
+        'refreshed_custom'       :        { TW: '我的動作清單已刷新', CN: '我的动作列表已刷新', EN: 'My Actions list refreshed', DE: 'Meine Aktionsliste wurde aktualisiert', FR: 'Ma liste d\'actions actualisée', RU: 'Список моих действий обновлен.', UA: 'Список моїх дій оновлено' },
+        'refreshed_combo'        :        { TW: '組合清單已刷新', CN: '组合列表已刷新', EN: 'Combo list refreshed', DE: 'Kombinationsliste aktualisiert', FR: 'Liste combinée actualisée', RU: 'Список комбинаций обновлен.', UA: 'Комбінований список оновлено' },
+        'refreshed_actions'      :        { TW: '動作清單已刷新', CN: '动作列表已刷新', EN: 'Action list refreshed', DE: 'Aktionsliste aktualisiert', FR: 'Liste d\'actions actualisée', RU: 'Список действий обновлен.', UA: 'Список дій оновлено' },
+        'pick_char'              :        { TW: '請先在左側選擇人物', CN: '请先在左侧选择人物', EN: 'Please select a character on the left first', DE: 'Bitte wählen Sie zunächst links ein Zeichen aus', FR: 'Veuillez d\'abord sélectionner un personnage à gauche', RU: 'Пожалуйста, сначала выберите символ слева', UA: 'Спочатку виберіть символ ліворуч' },
+        'executed'               :        { TW: '已執行：{name}', CN: '已执行：{name}', EN: 'Executed: {name}', DE: 'Ausgeführt: {name}', FR: 'Exécuté : {name}', RU: 'Выполнено: {name}', UA: 'Виконано: {name}' },
+        'added_to_combo'         :        { TW: '已加入「{name}」', CN: '已加入「{name}」', EN: 'Added to "{name}"', DE: 'Hinzugefügt zu „{name}“', FR: 'Ajouté à "{name}"', RU: 'Добавлено в "{name}"', UA: 'Додано до "{name}"' },
+        'combo_empty'            :        { TW: '組合為空', CN: '组合为空', EN: 'Combo is empty', DE: 'Combo ist leer', FR: 'La combinaison est vide', RU: 'Комбо пусто', UA: 'Комбо порожнє' },
+        'exec_combo'             :        { TW: '執行組合“{name}”· {n} 步', CN: '执行组合「{name}」· {n} 步', EN: 'Executing combo "{name}" · {n} steps', DE: 'Kombination „{name}“ · {n} Schritte wird ausgeführt', FR: 'Exécution du combo "{name}" · {n} étapes', RU: 'Выполнение комбо "{name}" · {n} шагов', UA: 'Виконання комбо "{name}" · {n} кроків' },
+        'exec_combo_all'         :        { TW: '開始對所有人執行組合“{name}”', CN: '开始对所有人执行组合「{name}」', EN: 'Executing combo "{name}" on everyone', DE: 'Die Kombination „{name}“ wird für alle ausgeführt', FR: 'Exécution du combo "{name}" sur tout le monde', RU: 'Выполнение комбо "{name}" для всех', UA: 'Виконання комбо "{name}" для всіх' },
+        'sync_failed'            :        { TW: '設定同步到伺服器失敗，已保留在本地', CN: '设置同步到服务器失败，已保留在本地', EN: 'Failed to sync settings to server; kept locally', DE: 'Die Einstellungen konnten nicht mit dem Server synchronisiert werden.', FR: 'Échec de la synchronisation des paramètres avec le serveur ;', RU: 'Не удалось синхронизировать настройки с сервером;', UA: 'Не вдалося синхронізувати налаштування із сервером;' },
+        'combo_saved'            :        { TW: '組合已儲存', CN: '组合已保存', EN: 'Combo saved', DE: 'Combo gespeichert', FR: 'Combinaison enregistrée', RU: 'Комбо сохранено.', UA: 'Комбінацію збережено' },
+        'custom_saved'           :        { TW: '自訂動作已儲存', CN: '自定义动作已保存', EN: 'Custom action saved', DE: 'Benutzerdefinierte Aktion gespeichert', FR: 'Action personnalisée enregistrée', RU: 'Специальное действие сохранено.', UA: 'Власну дію збережено' },
+        'deleted'                :        { TW: '已刪除', CN: '已删除', EN: 'Deleted', DE: 'Gelöscht', FR: 'Supprimé', RU: 'Удалено', UA: 'Видалено' },
+        'fill_name'              :        { TW: '請填寫動作名稱', CN: '请填写动作名称', EN: 'Please enter an action name', DE: 'Bitte geben Sie einen Aktionsnamen ein', FR: 'Veuillez saisir un nom d\'action', RU: 'Введите название действия', UA: 'Введіть назву дії' },
+        'fill_dialog'            :        { TW: '請填寫對話文本', CN: '请填写对话文本', EN: 'Please enter dialog text', DE: 'Bitte geben Sie den Dialogtext ein', FR: 'Veuillez saisir le texte de la boîte de dialogue', RU: 'Пожалуйста, введите текст диалога', UA: 'Будь ласка, введіть текст діалогу' },
+        'echo_notfound'          :        { TW: '未找到 echo 數據', CN: '未找到 echo 数据', EN: 'echo data not found', DE: 'Echodaten nicht gefunden', FR: 'données d\'écho introuvables', RU: 'эхо-данные не найдены', UA: 'ехо-дані не знайдені' },
+        'echo_cleaned'           :        { TW: '已清理原 echo 資料（{n} 項）', CN: '已清理原 echo 数据（{n} 项）', EN: 'Cleared original echo data ({n} items)', DE: 'Ursprüngliche Echodaten gelöscht ({n} Elemente)', FR: 'Données d\'écho d\'origine effacées ({n} éléments)', RU: 'Исходные эхо-данные удалены (элементов: {n})', UA: 'Очищено оригінальні ехо-дані ({n} елементів)' },
+        'echo_clean_failed'      :        { TW: '清理失敗：{msg}', CN: '清理失败：{msg}', EN: 'Cleanup failed: {msg}', DE: 'Bereinigung fehlgeschlagen: {msg}', FR: 'Échec du nettoyage : {msg}', RU: 'Очистка не удалась: {msg}', UA: 'Помилка очищення: {msg}' },
+        'import_echo_notfound'   :        { TW: '未找到 echo/迴聲 的動作數據', CN: '未找到 echo/回声 的动作数据', EN: 'echo action data not found', DE: 'Echo-Aktionsdaten nicht gefunden', FR: 'données d\'action d\'écho introuvables', RU: 'данные эхо-действия не найдены', UA: 'дані дії echo не знайдено' },
+        'imported_echo'          :        { TW: '已從 echo/迴聲 匯入 {n} 個動作', CN: '已从 echo/回声 导入 {n} 个动作', EN: 'Imported {n} actions from echo', DE: '{n} Aktionen aus Echo importiert', FR: '{n} actions importées depuis echo', RU: 'Импортировано {n} действий из echo.', UA: 'Імпортовано {n} дій із echo' },
+        'import_failed'          :        { TW: '導入失敗：{msg}', CN: '导入失败：{msg}', EN: 'Import failed: {msg}', DE: 'Import fehlgeschlagen: {msg}', FR: 'Échec de l\'importation : {msg}', RU: 'Не удалось импортировать: {msg}', UA: 'Помилка імпорту: {msg}' },
+        'exported'               :        { TW: '已匯出 {n} 個動作', CN: '已导出 {n} 个动作', EN: 'Exported {n} actions', DE: '{n} Aktionen exportiert', FR: '{n} actions exportées', RU: 'Экспортировано {n} действий.', UA: 'Експортовано {n} дій' },
+        'export_failed'          :        { TW: '匯出失敗：{msg}', CN: '导出失败：{msg}', EN: 'Export failed: {msg}', DE: 'Export fehlgeschlagen: {msg}', FR: 'Échec de l\'exportation : {msg}', RU: 'Не удалось экспортировать: {msg}', UA: 'Помилка експорту: {msg}' },
+        'file_format_err'        :        { TW: '文件格式錯誤：應為動作物件數組', CN: '文件格式错误：应为动作对象数组', EN: 'Invalid file format: expected an array of action objects', DE: 'Ungültiges Dateiformat: Es wurde ein Array von Aktionsobjekten erwartet', FR: 'Format de fichier invalide : un tableau d\'objets d\'action attendu', RU: 'Неверный формат файла: ожидается массив объектов действий.', UA: 'Недійсний формат файлу: очікується масив об’єктів дії' },
+        'json_parse_failed'      :        { TW: 'JSON 解析失敗：{msg}', CN: 'JSON 解析失败：{msg}', EN: 'JSON parse failed: {msg}', DE: 'JSON-Analyse fehlgeschlagen: {msg}', FR: 'Échec de l\'analyse JSON : {msg}', RU: 'Ошибка анализа JSON: {msg}', UA: 'Помилка аналізу JSON: {msg}' },
+        'read_file_failed'       :        { TW: '讀取文件失敗', CN: '读取文件失败', EN: 'Failed to read file', DE: 'Datei konnte nicht gelesen werden', FR: 'Échec de la lecture du fichier', RU: 'Не удалось прочитать файл', UA: 'Не вдалося прочитати файл' },
+        'exec_custom'            :        { TW: '執行：{name}', CN: '执行：{name}', EN: 'Execute: {name}', DE: 'Ausführen: {name}', FR: 'Exécuter : {name}', RU: 'Выполнить: {name}', UA: 'Виконати: {name}' },
+        'read_ext_failed'        :        { TW: '讀取擴充設定失敗', CN: '读取扩展设置失败', EN: 'Failed to read extension settings', DE: 'Erweiterungseinstellungen konnten nicht gelesen werden', FR: 'Échec de la lecture des paramètres de l\'extension', RU: 'Не удалось прочитать настройки расширения.', UA: 'Не вдалося прочитати налаштування розширення' },
+        'import_done'            :        { TW: '導入完成：新增 {n} 個，更新 {m} 個', CN: '导入完成：新增 {n} 个，更新 {m} 个', EN: 'Import done: {n} new, {m} updated', DE: 'Import abgeschlossen: {n} neu, {m} aktualisiert', FR: 'Importation terminée : {n} nouveaux, {m} mis à jour', RU: 'Импорт выполнен: новых: {n}, обновленных: {m}.', UA: 'Імпорт завершено: {n} нових, {m} оновлено' }
+    });
+
+    // custom 命名空间
+    QiActI18n.register('custom', {
+        'title'                   :        { TW: '我的動作（測試版）', CN: '我的动作（测试版）', EN: 'My Actions (Beta)', DE: 'Meine Aktionen (Beta)', FR: 'Mes actions (bêta)', RU: 'Мои действия (бета)', UA: 'Мої дії (бета)' },
+        'search_placeholder'      :        { TW: '搜尋動作...', CN: '搜索动作...', EN: 'Search actions...', DE: 'Suchaktionen...', FR: 'Actions de recherche...', RU: 'Поиск действий...', UA: 'Пошукові дії...' },
+        'new'                     :        { TW: '新建', CN: '新建', EN: 'New', DE: 'Neu', FR: 'Nouveau', RU: 'Новый', UA: 'новий' },
+        'import'                  :        { TW: '導入', CN: '导入', EN: 'Import', DE: 'Import', FR: 'Importer', RU: 'Импорт', UA: 'Імпорт' },
+        'import_tooltip'          :        { TW: '從 echo/迴聲 或本地 JSON 匯入自訂動作', CN: '从 echo/回声 或本地 JSON 导入自定义动作', EN: 'Import custom actions from echo or local JSON', DE: 'Importieren Sie benutzerdefinierte Aktionen aus Echo oder lokalem JSON', FR: 'Importer des actions personnalisées depuis echo ou JSON local', RU: 'Импортируйте пользовательские действия из echo или локального JSON.', UA: 'Імпорт спеціальних дій із echo або локального JSON' },
+        'import_echo'             :        { TW: '從 echo/迴聲 導入', CN: '从 echo/回声 导入', EN: 'Import from echo', DE: 'Import aus Echo', FR: 'Importer depuis echo', RU: 'Импорт из эха', UA: 'Імпорт з echo' },
+        'import_file'             :        { TW: '從本地 JSON 匯入', CN: '从本地 JSON 导入', EN: 'Import from local JSON', DE: 'Import aus lokalem JSON', FR: 'Importer à partir du JSON local', RU: 'Импорт из локального JSON', UA: 'Імпорт з локального JSON' },
+        'export'                  :        { TW: '導出為 JSON', CN: '导出为 JSON', EN: 'Export as JSON', DE: 'Als JSON exportieren', FR: 'Exporter au format JSON', RU: 'Экспортировать в формате JSON', UA: 'Експорт як JSON' },
+        'editmode_on'             :        { TW: '完成編輯', CN: '完成编辑', EN: 'Finish editing', DE: 'Beenden Sie die Bearbeitung', FR: 'Terminer la modification', RU: 'Завершить редактирование', UA: 'Завершити редагування' },
+        'editmode_off'            :        { TW: '編輯模式：拖曳排序與批次管理', CN: '编辑模式：拖动排序与批量管理', EN: 'Edit mode: drag to reorder & batch manage', DE: 'Bearbeitungsmodus: Zum Neuanordnen und Stapelverwalten ziehen', FR: 'Mode édition : faites glisser pour réorganiser et gérer les lots', RU: 'Режим редактирования: перетащите, чтобы изменить порядок и управлять пакетами', UA: 'Режим редагування: перетягніть, щоб змінити порядок і пакетне керування' },
+        'toggleall_on'            :        { TW: '目前全部開啟，點選全部關閉', CN: '当前全部开启，点击全部关闭', EN: 'All on; click to turn all off', DE: 'Alles an;', FR: 'Tout est allumé ;', RU: 'Все включено;', UA: 'Все включено;' },
+        'toggleall_off'           :        { TW: '目前全部關閉，點選全部開啟', CN: '当前全部关闭，点击全部开启', EN: 'All off; click to turn all on', DE: 'Alles aus;', FR: 'Tout est éteint ;', RU: 'Все выключено;', UA: 'Все вимкнено;' },
+        'chip_all'                :        { TW: '全部', CN: '全部', EN: 'All', DE: 'Alle', FR: 'Tous', RU: 'Все', UA: 'все' },
+        'chip_xiaosu'             :        { TW: '小酥', CN: '小酥', EN: 'XiaoSu', DE: 'XiaoSu', FR: 'XiaoSu', RU: 'СяоСу', UA: 'СяоСу' },
+        'chip_native'             :        { TW: '我的', CN: '我的', EN: 'Mine', DE: 'Meins', FR: 'Le mien', RU: 'Мой', UA: 'моя' },
+        'select_all'              :        { TW: '全選', CN: '全选', EN: 'Select all', DE: 'Alles auswählen', FR: 'Tout sélectionner', RU: 'Выбрать все', UA: 'Вибрати все' },
+        'selected_count'          :        { TW: '已選 {n} 個', CN: '已选 {n} 个', EN: '{n} selected', DE: '{n} ausgewählt', FR: '{n} sélectionné', RU: '{n} выбрано', UA: 'Вибрано {n}' },
+        'cancel_select_all'       :        { TW: '取消全選', CN: '取消全选', EN: 'Deselect all', DE: 'Alle abwählen', FR: 'Tout désélectionner', RU: 'Отменить выбор всех', UA: 'Зняти вибір із усіх' },
+        'batch_close'             :        { TW: '大量關閉', CN: '批量关闭', EN: 'Batch off', DE: 'Batch ab', FR: 'Lot', RU: 'Пакетное отключение', UA: 'Вимкнути партію' },
+        'batch_delete'            :        { TW: '大量刪除', CN: '批量删除', EN: 'Batch delete', DE: 'Stapellöschung', FR: 'Suppression par lots', RU: 'Пакетное удаление', UA: 'Пакетне видалення' },
+        'beta_banner'             :        { TW: '自訂動作功能目前為【測試版(Beta)】，仍在開發中，可能存在不穩定或未完善之處，建議謹慎使用並及時回饋問題。', CN: '自定义动作功能当前为【测试版(Beta)】，仍在开发中，可能存在不稳定或未完善之处，建议谨慎使用并及时反馈问题。', EN: 'Custom Actions is currently [Beta], still in development; may be unstable. Use with caution and report issues.', DE: 'Benutzerdefinierte Aktionen befinden sich derzeit in der [Beta]-Phase und befinden sich noch in der Entwicklung.', FR: 'Les actions personnalisées sont actuellement en [bêta], toujours en développement ;', RU: 'Пользовательские действия в настоящее время находятся в стадии [бета-версии] и все еще находятся в разработке;', UA: 'Спеціальні дії наразі [бета], ще в розробці;' },
+        'echo_clean_text'         :        { TW: '偵測到原 echo/迴聲 中仍有 {n} 個自訂動作資料。', CN: '检测到原 echo/回声 中仍有 {n} 个自定义动作数据。迁移完成后建议清理，避免动作重复显示与使用后乱码。', EN: 'Detected {n} custom action entries still in original echo. Clean up after migration to avoid duplicates and garbled text.', DE: 'Es wurden {n} benutzerdefinierte Aktionseinträge erkannt, die sich immer noch im ursprünglichen Echo befinden.', FR: '{n} entrées d\'action personnalisée détectées, toujours dans l\'écho d\'origine.', RU: 'Обнаружено {n} записей специальных действий, которые все еще находятся в исходном эхе.', UA: 'Виявлено {n} записів користувацьких дій, які все ще залишаються в оригінальному відлунні.' },
+        'echo_clean_btn'          :        { TW: '清理原 echo 數據', CN: '清理原 echo 数据', EN: 'Clean original echo data', DE: 'Bereinigen Sie die ursprünglichen Echodaten', FR: 'Nettoyer les données d\'écho d\'origine', RU: 'Очистить исходные эхо-данные', UA: 'Очистити оригінальні ехо-дані' },
+        'xiaosu_pack_label'       :        { TW: '內建小酥動作包', CN: '内置小酥动作包', EN: 'Built-in XiaoSu pack', DE: 'Integriertes XiaoSu-Paket', FR: 'Pack XiaoSu intégré', RU: 'Встроенный пакет XiaoSu.', UA: 'Вбудований пакет XiaoSu' },
+        'xiaosu_pack_title'       :        { TW: '內建小酥動作包（XiaoSuActivity 全部 51 個動作，預編譯進插件，離線可用，無需原版插件）', CN: '内置小酥动作包（XiaoSuActivity 全部 51 个动作，预编译进插件，离线可用，无需原版插件）', EN: 'Built-in XiaoSu pack (all 51 XiaoSuActivity actions, precompiled, works offline, no original plugin needed)', DE: 'Integriertes XiaoSu-Paket (alle 51 XiaoSuActivity-Aktionen, vorkompiliert, funktioniert offline, kein Original-Plugin erforderlich)', FR: 'Pack XiaoSu intégré (les 51 actions XiaoSuActivity, précompilées, fonctionne hors ligne, aucun plugin d\'origine requis)', RU: 'Встроенный пакет XiaoSu (все 51 действие XiaoSuActivity предварительно скомпилированы, работают в автономном режиме, оригинальный плагин не требуется)', UA: 'Вбудований пакет XiaoSu (всі 51 дія XiaoSuActivity, попередньо скомпільовані, працюють в автономному режимі, оригінальний плагін не потрібен)' },
+        'xiaosu_pack_toggle_title':        { TW: '開啟後，「我的動作」與 BC 原生動作清單顯示小酥動作拓展的全部動作', CN: '开启后，「我的动作」与 BC 原生动作列表显示小酥动作拓展的全部动作', EN: 'When on, My Actions and BC native action list show all XiaoSu extended actions', DE: 'Wenn diese Option aktiviert ist, werden in „Meine Aktionen“ und in der BC-nativen Aktionsliste alle erweiterten XiaoSu-Aktionen angezeigt', FR: 'Lorsque cette option est activée, Mes actions et la liste d\'actions natives BC affichent toutes les actions étendues de XiaoSu.', RU: 'Если этот параметр включен, в списке «Мои действия» и собственном списке действий BC отображаются все расширенные действия XiaoSu.', UA: 'Коли ввімкнено, Мої дії та рідний список дій BC показують усі розширені дії XiaoSu' },
+        'xiaosu_pack_src_title'   :        { TW: '內建小酥動作包（預編譯，無需原版插件）', CN: '内置小酥动作包（预编译，无需原版插件）', EN: 'Built-in XiaoSu pack (precompiled, no original plugin needed)', DE: 'Integriertes XiaoSu-Paket (vorkompiliert, kein Original-Plugin erforderlich)', FR: 'Pack XiaoSu intégré (précompilé, aucun plugin d\'origine requis)', RU: 'Встроенный пакет XiaoSu (предварительно скомпилированный, оригинальный плагин не требуется)', UA: 'Вбудований пакет XiaoSu (попередньо скомпільований, оригінальний плагін не потрібен)' },
+        'src_echo_title'          :        { TW: '來自 echo/迴聲 導入', CN: '来自 echo/回声 导入', EN: 'Imported from echo', DE: 'Von Echo importiert', FR: 'Importé depuis echo', RU: 'Импортировано из эха', UA: 'Імпортовано з echo' },
+        'src_qiact_title'         :        { TW: '本插件創建', CN: '本插件创建', EN: 'Created by this plugin', DE: 'Erstellt von diesem Plugin', FR: 'Créé par ce plugin', RU: 'Создано этим плагином', UA: 'Створено цим плагіном' },
+        'empty'                   :        { TW: '還沒有自訂動作。', CN: '还没有自定义动作。点「新建」创建，或点「导入」从 echo/回声 迁移。', EN: 'No custom actions yet. Click "New" to create, or "Import" to migrate from echo.', DE: 'Noch keine benutzerdefinierten Aktionen.', FR: 'Aucune action personnalisée pour l\'instant.', RU: 'Специальных действий пока нет.', UA: 'Спеціальних дій ще немає.' },
+        'filter_empty'            :        { TW: '目前分類下沒有動作。', CN: '当前分类下没有动作。', EN: 'No actions in this category.', DE: 'Keine Aktionen in dieser Kategorie.', FR: 'Aucune action dans cette catégorie.', RU: 'В этой категории нет действий.', UA: 'Жодних дій у цій категорії.' },
+        'scope_self'              :        { TW: '僅自己', CN: '仅自己', EN: 'Self only', DE: 'Nur ich selbst', FR: 'Soi seulement', RU: 'Только для себя', UA: 'Тільки для себе' },
+        'scope_other'             :        { TW: '僅他人', CN: '仅他人', EN: 'Others only', DE: 'Nur andere', FR: 'Autres seulement', RU: 'Только другие', UA: 'Лише інші' },
+        'scope_any'               :        { TW: '皆可', CN: '皆可', EN: 'Anyone', DE: 'Irgendjemand', FR: 'N\'importe qui', RU: 'Любой', UA: 'хто завгодно' },
+        'src_xiaosu'              :        { TW: '小酥', CN: '小酥', EN: 'XiaoSu', DE: 'XiaoSu', FR: 'XiaoSu', RU: 'СяоСу', UA: 'СяоСу' },
+        'src_echo'                :        { TW: 'echo', CN: 'echo', EN: 'echo', DE: 'Echo', FR: 'écho', RU: 'эхо', UA: 'луна' },
+        'src_qiact'               :        { TW: 'QiAct', CN: 'QiAct', EN: 'QiAct', DE: 'QiAct', FR: 'QiAct', RU: 'QiAct', UA: 'QiAct' },
+        'drag_handle'             :        { TW: '拖曳排序', CN: '拖动排序', EN: 'Drag to reorder', DE: 'Zum Neuanordnen ziehen', FR: 'Faites glisser pour réorganiser', RU: 'Перетащите, чтобы изменить порядок', UA: 'Перетягніть, щоб змінити порядок' },
+        'vis_on'                  :        { TW: '顯示中', CN: '显示中', EN: 'Visible', DE: 'Sichtbar', FR: 'Visible', RU: 'Видимый', UA: 'Видно' },
+        'vis_off'                 :        { TW: '已隱藏', CN: '已隐藏', EN: 'Hidden', DE: 'Versteckt', FR: 'Caché', RU: 'Скрытый', UA: 'Прихований' },
+        'vis_toggle_title'        :        { TW: '在「動作」面板和 BC 原生動作清單中顯示', CN: '在「动作」面板和 BC 原生动作列表中显示', EN: 'Show in Action panel and BC native action list', DE: 'Im Aktionsbereich und in der BC-nativen Aktionsliste anzeigen', FR: 'Panneau Afficher dans l\'action et liste d\'actions natives de la Colombie-Britannique', RU: 'Показывать на панели действий и в собственном списке действий BC.', UA: 'Показати на панелі дій і списку власних дій BC' },
+        'vis_label_on'            :        { TW: '顯示', CN: '显示', EN: 'Show', DE: 'Zeigen', FR: 'Montrer', RU: 'Показывать', UA: 'Показати' },
+        'vis_label_off'           :        { TW: '隱藏', CN: '隐藏', EN: 'Hide', DE: 'Verstecken', FR: 'Cacher', RU: 'Скрывать', UA: 'Сховати' },
+        'run_title'               :        { TW: '對目前目標執行', CN: '对当前目标执行', EN: 'Execute on current target', DE: 'Auf aktuellem Ziel ausführen', FR: 'Exécuter sur la cible actuelle', RU: 'Выполнить по текущей цели', UA: 'Виконати на поточній цілі' },
+        'edit_title'              :        { TW: '編輯', CN: '编辑', EN: 'Edit', DE: 'Bearbeiten', FR: 'Modifier', RU: 'Редактировать', UA: 'Редагувати' },
+        'delete_title'            :        { TW: '刪除', CN: '删除', EN: 'Delete', DE: 'Löschen', FR: 'Supprimer', RU: 'Удалить', UA: 'Видалити' },
+        'echo_clean_confirm_title':        { TW: '清理原 echo 數據', CN: '清理原 echo 数据', EN: 'Clean original echo data', DE: 'Bereinigen Sie die ursprünglichen Echodaten', FR: 'Nettoyer les données d\'écho d\'origine', RU: 'Очистить исходные эхо-данные', UA: 'Очистити оригінальні ехо-дані' },
+        'echo_clean_confirm_body' :        { TW: '確定清理原 echo/迴聲 中的自訂動作資料嗎？', CN: '确定清理原 echo/回声 中的自定义动作数据吗？\n仅删除其「动作数据」，不影响本插件与其他配置（清理后系统更稳定）。', EN: 'Clean custom action data from original echo?\nOnly its "action data" is removed; this plugin and other settings are unaffected (cleaner after).', DE: 'Benutzerdefinierte Aktionsdaten vom ursprünglichen Echo bereinigen?', FR: 'Nettoyer les données d\'action personnalisées de l\'écho d\'origine ?', RU: 'Очистить данные специальных действий из исходного эха?', UA: 'Очистити дані користувацьких дій із оригінального відлуння?' },
+        'echo_clean_confirm_btn'  :        { TW: '清理', CN: '清理', EN: 'Clean', DE: 'Sauber', FR: 'Faire le ménage', RU: 'Чистый', UA: 'чистий' },
+        'delete_confirm_title'    :        { TW: '刪除動作', CN: '删除动作', EN: 'Delete action', DE: 'Aktion löschen', FR: 'Supprimer l\'action', RU: 'Удалить действие', UA: 'Видалити дію' },
+        'delete_confirm_body'     :        { TW: '確定刪除自訂動作“{name}”嗎？', CN: '确定删除自定义动作「{name}」吗？', EN: 'Delete custom action "{name}"?', DE: 'Benutzerdefinierte Aktion „{name}“ löschen?', FR: 'Supprimer l\'action personnalisée "{name}" ?', RU: 'Удалить специальное действие "{name}"?', UA: 'Видалити спеціальну дію "{name}"?' },
+        'delete_confirm_btn'      :        { TW: '刪除', CN: '删除', EN: 'Delete', DE: 'Löschen', FR: 'Supprimer', RU: 'Удалить', UA: 'Видалити' },
+        'toggle_all_on_toast'     :        { TW: '已開啟全部 {n} 個動作', CN: '已开启全部 {n} 个动作', EN: 'Enabled all {n} actions', DE: 'Alle {n} Aktionen aktiviert', FR: 'Activé toutes les {n} actions', RU: 'Включены все действия: {n}.', UA: 'Увімкнено всі дії ({n}).' },
+        'toggle_all_off_toast'    :        { TW: '已關閉全部 {n} 個動作', CN: '已关闭全部 {n} 个动作', EN: 'Disabled all {n} actions', DE: 'Alle {n} Aktionen deaktiviert', FR: 'Désactivé toutes les {n} actions', RU: 'Отключены все действия: {n}.', UA: 'Вимкнено всі дії ({n}).' },
+        'show_toast'              :        { TW: '已顯示“{name}”', CN: '已显示「{name}」', EN: 'Shown "{name}"', DE: 'Angezeigt „{name}“', FR: 'Affiché "{name}"', RU: 'Показано "{name}"', UA: 'Показано "{name}"' },
+        'hide_toast'              :        { TW: '已隱藏「{name}」', CN: '已隐藏「{name}」', EN: 'Hidden "{name}"', DE: 'Versteckt „{name}“', FR: '"{name}" masqué', RU: 'Скрытый "{name}"', UA: 'Прихований "{name}"' },
+        'batch_close_toast'       :        { TW: '已批次關閉 {n} 個動作', CN: '已批量关闭 {n} 个动作', EN: 'Batch-disabled {n} actions', DE: 'Batch-deaktivierte {n} Aktionen', FR: '{n} actions désactivées par lots', RU: 'Пакетное отключение {n} действий', UA: 'Пакетно вимкнено {n} дій' },
+        'batch_delete_title'      :        { TW: '批次刪除 {n} 個動作', CN: '批量删除 {n} 个动作', EN: 'Batch delete {n} actions', DE: 'Batch-Löschung von {n} Aktionen', FR: 'Suppression par lots de {n} actions', RU: 'Пакетное удаление {n} действий', UA: 'Групове видалення {n} дій' },
+        'batch_delete_body'       :        { TW: '確定大量刪除以下動作嗎？\n{names}', CN: '确定批量删除以下动作吗？\n{names}', EN: 'Delete the following actions in batch?\n{names}', DE: 'Folgende Aktionen im Batch löschen?\n{names}', FR: 'Supprimer les actions suivantes par lots ?\n{names}', RU: 'Удалить следующие действия в пакетном режиме?\n{names}', UA: 'Видалити наступні дії в пакеті?\n{names}' },
+        'batch_delete_btn'        :        { TW: '全部刪除', CN: '全部删除', EN: 'Delete all', DE: 'Alles löschen', FR: 'Supprimer tout', RU: 'Удалить все', UA: 'Видалити все' },
+        'batch_deleted_toast'     :        { TW: '已大量刪除 {n} 個動作', CN: '已批量删除 {n} 个动作', EN: 'Batch-deleted {n} actions', DE: 'Batch-gelöschte {n} Aktionen', FR: '{n} actions supprimées par lot', RU: 'Пакетно удалено {n} действий', UA: 'Пакетно видалено {n} дій' }
+    });
+
+    // editor 命名空间
+    QiActI18n.register('editor', {
+        'pick_part_hint'    :        { TW: '點選框選身體部位', CN: '点击框选身体部位', EN: 'Click to select a body part', DE: 'Klicken Sie, um ein Körperteil auszuwählen', FR: 'Cliquez pour sélectionner une partie du corps', RU: 'Нажмите, чтобы выбрать часть тела', UA: 'Натисніть, щоб вибрати частину тіла' },
+        'new_title'         :        { TW: '新建：自訂動作', CN: '新建：自定义动作', EN: 'New: Custom Action', DE: 'Neu: Benutzerdefinierte Aktion', FR: 'Nouveau : action personnalisée', RU: 'Новое: пользовательское действие', UA: 'Нове: спеціальна дія' },
+        'edit_title'        :        { TW: '編輯：自訂動作', CN: '编辑：自定义动作', EN: 'Edit: Custom Action', DE: 'Bearbeiten: Benutzerdefinierte Aktion', FR: 'Modifier : Action personnalisée', RU: 'Изменить: пользовательское действие', UA: 'Редагувати: спеціальна дія' },
+        'name_label'        :        { TW: '動作名稱', CN: '动作名称', EN: 'Action name', DE: 'Aktionsname', FR: 'Nom de l\'action', RU: 'Название действия', UA: 'Назва дії' },
+        'name_placeholder'  :        { TW: '如：輕輕咬住', CN: '如：轻轻咬住', EN: 'e.g. gently bite', DE: 'z.B.', FR: 'par ex.', RU: 'например', UA: 'напр.' },
+        'scope_label'       :        { TW: '誰能使用這個動作', CN: '谁能使用这个动作', EN: 'Who can use this action', DE: 'Wer kann diese Aktion nutzen?', FR: 'Qui peut utiliser cette action', RU: 'Кто может использовать это действие', UA: 'Хто може скористатися цією дією' },
+        'part_label'        :        { TW: '身體部位', CN: '身体部位', EN: 'Body part', DE: 'Körperteil', FR: 'Partie du corps', RU: 'Часть тела', UA: 'Частина тіла' },
+        'part_change'       :        { TW: '點擊下圖重新選擇', CN: '点击下图重新选择', EN: 'Click the diagram below to reselect', DE: 'Klicken Sie auf das Diagramm unten, um es erneut auszuwählen', FR: 'Cliquez sur le diagramme ci-dessous pour resélectionner', RU: 'Нажмите на диаграмму ниже, чтобы повторно выбрать', UA: 'Натисніть діаграму нижче, щоб повторно вибрати' },
+        'dialog_other_label':        { TW: '對他人時顯示', CN: '对他人时显示', EN: 'Shown to others', DE: 'Anderen gezeigt', FR: 'Montré aux autres', RU: 'Показан другим', UA: 'Показано іншим' },
+        'dialog_other_ph'   :        { TW: '如：輕輕咬住了 對方 的耳朵', CN: '如：轻轻咬住了 对方 的耳朵', EN: 'e.g. gently bit {TargetCharacter}\'s ear', DE: 'z.B. {TargetCharacter}', FR: 'par ex. {TargetCharacter}', RU: 'например {TargetCharacter}', UA: 'напр. {TargetCharacter}' },
+        'dialog_self_label' :        { TW: '對自己時顯示', CN: '对自己时显示', EN: 'Shown to self', DE: 'Sich selbst gezeigt', FR: 'Montré à soi-même', RU: 'Показан самому себе', UA: 'Показано самому собі' },
+        'dialog_self_ph'    :        { TW: '如：被輕輕咬住了耳朵', CN: '如：被轻轻咬住了耳朵', EN: 'e.g. got gently bitten on the ear', DE: 'z.B.', FR: 'par ex.', RU: 'например', UA: 'напр.' },
+        'tokens_title'      :        { TW: '可用佔位符（點擊插入）', CN: '可用占位符（点击插入）', EN: 'Available placeholders (click to insert)', DE: 'Verfügbare Platzhalter (zum Einfügen klicken)', FR: 'Espaces réservés disponibles (cliquez pour insérer)', RU: 'Доступные заполнители (нажмите, чтобы вставить)', UA: 'Доступні заповнювачі (клацніть, щоб вставити)' },
+        'token_self'        :        { TW: '自己', CN: '自己', EN: 'Self', DE: 'Selbst', FR: 'Soi', RU: 'Себя', UA: 'себе' },
+        'token_other'       :        { TW: '對方', CN: '对方', EN: 'Target', DE: 'Ziel', FR: 'Cible', RU: 'Цель', UA: 'Цільова' },
+        'save'              :        { TW: '儲存', CN: '保存', EN: 'Save', DE: 'Speichern', FR: 'Sauvegarder', RU: 'Сохранять', UA: 'зберегти' },
+        'delete'            :        { TW: '刪除', CN: '删除', EN: 'Delete', DE: 'Löschen', FR: 'Supprimer', RU: 'Удалить', UA: 'Видалити' },
+        'cancel'            :        { TW: '返回', CN: '返回', EN: 'Back', DE: 'Zurück', FR: 'Dos', RU: 'Назад', UA: 'Назад' },
+        'token_self_pill'   :        { TW: '自己', CN: '自己', EN: 'Self', DE: 'Selbst', FR: 'Soi', RU: 'Себя', UA: 'себе' },
+        'token_other_pill'  :        { TW: '對方', CN: '对方', EN: 'Target', DE: 'Ziel', FR: 'Cible', RU: 'Цель', UA: 'Цільова' },
+        'default_name'      :        { TW: '動作', CN: '动作', EN: 'Action', DE: 'Aktion', FR: 'Action', RU: 'Действие', UA: 'Дія' },
+        'preview'           :        { TW: '對他人：{a}\n{b}', CN: '对他人：{a}\n对自己：{b}', EN: 'To others: {a}\nTo self: {b}', DE: 'An andere: {a}\n{b}', FR: 'Aux autres : {a}\n{b}', RU: 'Другим: {a}\n{b}', UA: 'Іншим: {a}\n{b}' }
+    });
+
+    // combo 命名空间
+    QiActI18n.register('combo', {
+        'new_name'            :        { TW: '新組合', CN: '新组合', EN: 'New combo', DE: 'Neue Kombination', FR: 'Nouvelle combinaison', RU: 'Новое комбо', UA: 'Нове комбо' },
+        'up'                  :        { TW: '上移', CN: '上移', EN: 'Move up', DE: 'Bewegen Sie sich nach oben', FR: 'Monter', RU: 'Вверх', UA: 'Рухатися вгору' },
+        'down'                :        { TW: '下移', CN: '下移', EN: 'Move down', DE: 'Bewegen Sie sich nach unten', FR: 'Descendre', RU: 'Двигаться вниз', UA: 'Рухатися вниз' },
+        'item_del'            :        { TW: '刪除', CN: '删除', EN: 'Delete', DE: 'Löschen', FR: 'Supprimer', RU: 'Удалить', UA: 'Видалити' },
+        'exec'                :        { TW: '執行', CN: '执行', EN: 'Execute', DE: 'Ausführen', FR: 'Exécuter', RU: 'Выполнять', UA: 'Виконати' },
+        'edit'                :        { TW: '編輯', CN: '编辑', EN: 'Edit', DE: 'Bearbeiten', FR: 'Modifier', RU: 'Редактировать', UA: 'Редагувати' },
+        'delete'              :        { TW: '刪除', CN: '删除', EN: 'Delete', DE: 'Löschen', FR: 'Supprimer', RU: 'Удалить', UA: 'Видалити' },
+        'new_btn'             :        { TW: '新組合', CN: '新建组合', EN: 'New combo', DE: 'Neue Kombination', FR: 'Nouvelle combinaison', RU: 'Новое комбо', UA: 'Нове комбо' },
+        'add_title'           :        { TW: '加入目前組合', CN: '加入当前组合', EN: 'Add to current combo', DE: 'Zur aktuellen Kombination hinzufügen', FR: 'Ajouter au combo actuel', RU: 'Добавить в текущую комбинацию', UA: 'Додати до поточного комбо' },
+        'count'               :        { TW: '{n} 步', CN: '{n} 步', EN: '{n} steps', DE: '{n} Schritte', FR: '{n} étapes', RU: '{n} шагов', UA: '{n} кроків' },
+        'name_ph'             :        { TW: '組合名稱', CN: '组合名称', EN: 'Combo name', DE: 'Kombiname', FR: 'Nom de la combinaison', RU: 'Имя комбинации', UA: 'Комбінована назва' },
+        'delay_label'         :        { TW: '動作間隔 {n}ms', CN: '动作间隔 {n}ms', EN: 'Action interval {n}ms', DE: 'Aktionsintervall {n}ms', FR: 'Intervalle d\'action {n} ms', RU: 'Интервал действия {n}мс', UA: 'Інтервал дії {n} мс' },
+        'add_hint'            :        { TW: '請到「動作」模式，點選動作旁的「加入」按鈕加入', CN: '请到「动作」模式，点击动作旁的「加入」按钮添加', EN: 'Go to Action mode and click "Add" next to an action', DE: 'Gehen Sie in den Aktionsmodus und klicken Sie neben einer Aktion auf „Hinzufügen“.', FR: 'Allez en mode Action et cliquez sur "Ajouter" à côté d\'une action', RU: 'Перейдите в режим действий и нажмите «Добавить» рядом с действием.', UA: 'Перейдіть у режим дії та натисніть «Додати» біля дії' },
+        'edit_title'          :        { TW: '編輯：{name}', CN: '编辑：{name}', EN: 'Edit: {name}', DE: 'Bearbeiten: {name}', FR: 'Editer : {name}', RU: 'Изменить: {name}', UA: 'Редагувати: {name}' },
+        'delete_confirm_title':        { TW: '刪除組合', CN: '删除组合', EN: 'Delete combo', DE: 'Kombination löschen', FR: 'Supprimer la combinaison', RU: 'Удалить комбо', UA: 'Видалити комбо' },
+        'delete_confirm_body' :        { TW: '確定刪除這個組合嗎？', CN: '确定删除这个组合吗？', EN: 'Delete this combo?', DE: 'Diese Combo löschen?', FR: 'Supprimer cette combinaison ?', RU: 'Удалить это комбо?', UA: 'Видалити цю комбінацію?' },
+        'delete_confirm_btn'  :        { TW: '刪除', CN: '删除', EN: 'Delete', DE: 'Löschen', FR: 'Supprimer', RU: 'Удалить', UA: 'Видалити' },
+        'empty'               :        { TW: '暫無組合。', CN: '暂无组合。点击下方「新建组合」，然后到「动作」模式点击动作旁的「加入」按钮添加动作。', EN: 'No combos yet. Click "New combo" below, then in Action mode click "Add" next to an action.', DE: 'Noch keine Combos.', FR: 'Pas encore de combo.', RU: 'Комбинаций пока нет.', UA: 'Комбо ще немає.' }
+    });
+
+    // update 命名空间
+    QiActI18n.register('update', {
+        'available_tag' :        { TW: '更新可用', CN: '更新可用', EN: 'Update available', DE: 'Update verfügbar', FR: 'Mise à jour disponible', RU: 'Доступно обновление', UA: 'Доступне оновлення' },
+        'details'       :        { TW: '看詳情', CN: '查看详情', EN: 'View details', DE: 'Details anzeigen', FR: 'Afficher les détails', RU: 'Посмотреть детали', UA: 'Переглянути деталі' },
+        'later'         :        { TW: '稍後', CN: '稍后', EN: 'Later', DE: 'Später', FR: 'Plus tard', RU: 'Позже', UA: 'Пізніше' },
+        'later_title'   :        { TW: '稍後提醒', CN: '稍后提醒', EN: 'Remind me later', DE: 'Erinnere mich später daran', FR: 'Rappelle-moi plus tard', RU: 'Напомни мне позже', UA: 'Нагадай мені пізніше' },
+        'ignore'        :        { TW: '不再提示此版本', CN: '不再提示此版本', EN: 'Don\'t show this version again', DE: 'Diese Version nicht mehr anzeigen', FR: 'Ne plus afficher cette version', RU: 'Больше не показывать эту версию', UA: 'Більше не показувати цю версію' },
+        'know'          :        { TW: '知道了', CN: '知道了', EN: 'Got it', DE: 'Habe es', FR: 'J\'ai compris', RU: 'Понятно', UA: 'зрозумів' },
+        'announce_tag'  :        { TW: '公告', CN: '公告', EN: 'Announcement', DE: 'Bekanntmachung', FR: 'Annonce', RU: 'Объявление', UA: 'Оголошення' },
+        'important_tag' :        { TW: '重要', CN: '重要', EN: 'Important', DE: 'Wichtig', FR: 'Important', RU: 'Важный', UA: 'важливо' },
+        'available_tag2':        { TW: '可用', CN: '可用', EN: 'Available', DE: 'Verfügbar', FR: 'Disponible', RU: 'Доступный', UA: 'в наявності' },
+        'title'         :        { TW: '已更新到 v{VERSION}', CN: '已更新到 v{VERSION}', EN: 'Updated to v{VERSION}', DE: 'Aktualisiert auf v{VERSION}', FR: 'Mis à jour vers v{VERSION}', RU: 'Обновлено до версии {VERSION}.', UA: 'Оновлено до версії {VERSION}' },
+        'parse_err'     :        { TW: '回應解析失敗', CN: '响应解析失败', EN: 'Response parse failed', DE: 'Das Parsen der Antwort ist fehlgeschlagen', FR: 'Échec de l\'analyse de la réponse', RU: 'Не удалось разобрать ответ.', UA: 'Помилка аналізу відповіді' },
+        'net_err'       :        { TW: '網路錯誤', CN: '网络错误', EN: 'Network error', DE: 'Netzwerkfehler', FR: 'Erreur réseau', RU: 'Ошибка сети', UA: 'Помилка мережі' },
+        'json_parse_err':        { TW: 'JSON 解析失敗: {msg}', CN: 'JSON 解析失败: {msg}', EN: 'JSON parse failed: {msg}', DE: 'JSON-Analyse fehlgeschlagen: {msg}', FR: 'Échec de l\'analyse JSON : {msg}', RU: 'Ошибка анализа JSON: {msg}', UA: 'Помилка аналізу JSON: {msg}' }
+    });
+
+    // part 命名空间
+    QiActI18n.register('part', {
+        'ItemHead'            :        { TW: '頭', CN: '头', EN: 'Head', DE: 'Kopf', FR: 'Tête', RU: 'Голова', UA: 'Голова' },
+        'ItemNose'            :        { TW: '鼻', CN: '鼻', EN: 'Nose', DE: 'Nase', FR: 'Nez', RU: 'Нос', UA: 'ніс' },
+        'ItemEars'            :        { TW: '耳', CN: '耳', EN: 'Ears', DE: 'Ohren', FR: 'Oreilles', RU: 'Уши', UA: 'вуха' },
+        'ItemHood'            :        { TW: '頭套', CN: '头套', EN: 'Hood', DE: 'Haube', FR: 'Capot', RU: 'Капюшон', UA: 'Капюшон' },
+        'ItemMouth'           :        { TW: '口', CN: '口', EN: 'Mouth', DE: 'Mund', FR: 'Bouche', RU: 'Рот', UA: 'Рот' },
+        'ItemMouth2'          :        { TW: '口2', CN: '口2', EN: 'Mouth2', DE: 'Mund2', FR: 'Bouche2', RU: 'Рот2', UA: 'Рот2' },
+        'ItemMouth3'          :        { TW: '口3', CN: '口3', EN: 'Mouth3', DE: 'Mund3', FR: 'Bouche3', RU: 'Рот3', UA: 'Рот3' },
+        'ItemNeck'            :        { TW: '頸', CN: '颈', EN: 'Neck', DE: 'Nacken', FR: 'Cou', RU: 'Шея', UA: 'Шия' },
+        'ItemNeckAccessories' :        { TW: '頸飾', CN: '颈饰', EN: 'Neck accessory', DE: 'Halsaccessoire', FR: 'Accessoire de cou', RU: 'Шейный аксессуар', UA: 'Шийний аксесуар' },
+        'ItemNeckRestraints'  :        { TW: '頸束', CN: '颈束', EN: 'Neck restraint', DE: 'Nackenstütze', FR: 'Retenue du cou', RU: 'Ограничение шеи', UA: 'Обмежувач для шиї' },
+        'ItemNipples'         :        { TW: '乳', CN: '乳', EN: 'Nipples', DE: 'Brustwarzen', FR: 'Mamelons', RU: 'Соски', UA: 'Соски' },
+        'ItemNipplesPiercings':        { TW: '乳穿', CN: '乳穿', EN: 'Nipple piercing', DE: 'Brustwarzenpiercing', FR: 'Perçage du mamelon', RU: 'Пирсинг сосков', UA: 'Пірсинг сосків' },
+        'ItemBreast'          :        { TW: '胸', CN: '胸', EN: 'Breast', DE: 'Brust', FR: 'Sein', RU: 'Грудь', UA: 'Груди' },
+        'ItemTorso'           :        { TW: '軀幹', CN: '躯干', EN: 'Torso', DE: 'Torso', FR: 'Torse', RU: 'Торс', UA: 'тулуб' },
+        'ItemTorso2'          :        { TW: '腹', CN: '腹', EN: 'Belly', DE: 'Bauch', FR: 'Ventre', RU: 'Живот', UA: 'живіт' },
+        'ItemArms'            :        { TW: '手臂', CN: '手臂', EN: 'Arms', DE: 'Waffen', FR: 'Bras', RU: 'Оружие', UA: 'Зброя' },
+        'ItemHands'           :        { TW: '手', CN: '手', EN: 'Hands', DE: 'Hände', FR: 'Mains', RU: 'Руки', UA: 'руки' },
+        'ItemPelvis'          :        { TW: '腰臀', CN: '腰臀', EN: 'Hips', DE: 'Hüften', FR: 'Les hanches', RU: 'Бедра', UA: 'Стегна' },
+        'ItemVulva'           :        { TW: '私處', CN: '私处', EN: 'Privates', DE: 'Privatpersonen', FR: 'Privés', RU: 'Рядовые', UA: 'Рядовий' },
+        'ItemVulvaPiercings'  :        { TW: '陰穿', CN: '阴穿', EN: 'Vulva piercing', DE: 'Vulva-Piercing', FR: 'Perçage de la vulve', RU: 'Пирсинг вульвы', UA: 'Пірсинг вульви' },
+        'ItemButt'            :        { TW: '臀部後', CN: '臀后', EN: 'Butt', DE: 'Hintern', FR: 'Bout', RU: 'Задница', UA: 'прикладом' },
+        'ItemLegs'            :        { TW: '腿', CN: '腿', EN: 'Legs', DE: 'Beine', FR: 'Jambes', RU: 'Ноги', UA: 'ноги' },
+        'ItemFeet'            :        { TW: '腳', CN: '脚', EN: 'Feet', DE: 'Füße', FR: 'Pieds', RU: 'Ноги', UA: 'Ноги' },
+        'ItemBoots'           :        { TW: '靴', CN: '靴', EN: 'Boots', DE: 'Stiefel', FR: 'Bottes', RU: 'Сапоги', UA: 'Чоботи' }
+    });
+
+    // render 命名空间
+    QiActI18n.register('render', {
+        'pick_char_part' :        { TW: '請先在左側選擇人物和部位', CN: '请先在左侧选择人物和部位', EN: 'Select a character and part on the left first', DE: 'Wählen Sie zunächst links einen Charakter und einen Teil aus', FR: 'Sélectionnez d\'abord un personnage et une partie à gauche', RU: 'Сначала выберите символ и часть слева', UA: 'Спочатку виберіть персонажа та частину зліва' },
+        'no_actions'     :        { TW: '該部位暫無可用動作', CN: '该部位暂无可用动作', EN: 'No available actions for this part', DE: 'Für diesen Teil sind keine Aktionen verfügbar', FR: 'Aucune action disponible pour cette partie', RU: 'Для этой части нет доступных действий', UA: 'Немає доступних дій для цієї частини' },
+        'load_err'       :        { TW: '動作清單載入出錯，請刷新或回饋。<br><small>{msg}</small>', CN: '动作列表加载出错，请刷新或反馈。<br><small>{msg}</small>', EN: 'Action list failed to load. Refresh or report.<br><small>{msg}</small>', DE: 'Die Aktionsliste konnte nicht geladen werden.<br><small>{msg}</small>', FR: 'La liste d\'actions n\'a pas pu être chargée.<br><small>{msg}</small>', RU: 'Не удалось загрузить список действий.<br><small>{msg}</small>', UA: 'Не вдалося завантажити список дій.<br><small>{msg}</small>' },
+        'select_action'  :        { TW: '選擇動作...', CN: '选择动作...', EN: 'Select action...', DE: 'Aktion auswählen...', FR: 'Sélectionnez une action...', RU: 'Выберите действие...', UA: 'Виберіть дію...' },
+        'pick_char_part2':        { TW: '點選左側 ◀ 按鈕選擇人物和部位', CN: '点击左侧 ◀ 按钮选择人物和部位', EN: 'Click the ◀ button on the left to select a character and part', DE: 'Klicken Sie links auf die Schaltfläche ◀, um einen Charakter und einen Teil auszuwählen', FR: 'Cliquez sur le bouton ◀ à gauche pour sélectionner un personnage et une partie', RU: 'Нажмите кнопку ◀ слева, чтобы выбрать символ и часть.', UA: 'Натисніть кнопку ◀ ліворуч, щоб вибрати персонажа та частину' },
+        'pick_part_hint' :        { TW: '請在左側人物浮層選擇身體部位', CN: '请在左侧人物浮层选择身体部位', EN: 'Select a body part in the left character popover', DE: 'Wählen Sie im linken Zeichen-Popover einen Körperteil aus', FR: 'Sélectionnez une partie du corps dans le popover du personnage de gauche', RU: 'Выберите часть тела во всплывающем окне левого персонажа.', UA: 'Виберіть частину тіла в лівому вікні символів' },
+        'combo_title'    :        { TW: '組合動作', CN: '组合动作', EN: 'Combo actions', DE: 'Kombiaktionen', FR: 'Actions combinées', RU: 'Комбинированные действия', UA: 'Комбіновані дії' }
+    });
+
+})();
+
+
 // ==UserScript==
 // @name         快捷互动 (QiAct)
 // @name:zh      快捷互动
 // @namespace    https://github.com/bondage-studio/QuickInteraction
-// @version      1.3.2
+// @version      1.4.0
 // @description  Bondage Club - 统一动作操作台。一键进入动作模式，在聊天室场景内直接点人物部位选动作，绕过原生5步嵌套菜单。
 // @author       Tao MUSE
 // @homepageURL  https://github.com/bondage-studio/QuickInteraction
@@ -58,7 +472,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     let _serverSyncWarned = false;
     function warnServerSync(e) {
         console.warn('[QiAct] 服务器设置同步失败，已回退本地存储:', e);
-        if (!_serverSyncWarned) { _serverSyncWarned = true; toast('设置同步到服务器失败，已保留在本地', '#FF5C5C'); }
+        if (!_serverSyncWarned) { _serverSyncWarned = true; toast(QiActT('toast.sync_failed'), '#FF5C5C'); }
     }
 
     // 通用空 catch 收口：debug 态才节流打日志，生产静默但不丢上下文。
@@ -75,7 +489,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
     }
 
-    const VERSION = '1.3.2';
+    const VERSION = '1.4.0';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -147,30 +561,30 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     // 部位定义（BC Target_Group 映射）
     // ════════════════════════════════════════════════════════════════════════
     const BODY_PARTS = [
-        { group: 'ItemHead', label: '头', icon: '🗣' },
-        { group: 'ItemNose', label: '鼻', icon: '👃' },
-        { group: 'ItemEars', label: '耳', icon: '👂' },
-        { group: 'ItemHood', label: '头套', icon: '🎭' },
-        { group: 'ItemMouth', label: '口', icon: '👄' },
-        { group: 'ItemMouth2', label: '口2', icon: '👄' },
-        { group: 'ItemMouth3', label: '口3', icon: '👄' },
-        { group: 'ItemNeck', label: '颈', icon: '🔗' },
-        { group: 'ItemNeckAccessories', label: '颈饰', icon: '🔗' },
-        { group: 'ItemNeckRestraints', label: '颈束', icon: '🔗' },
-        { group: 'ItemNipples', label: '乳', icon: '☁' },
-        { group: 'ItemNipplesPiercings', label: '乳穿', icon: '💎' },
-        { group: 'ItemBreast', label: '胸', icon: '🫂' },
-        { group: 'ItemTorso', label: '躯干', icon: '👕' },
-        { group: 'ItemTorso2', label: '腹', icon: '👕' },
-        { group: 'ItemArms', label: '手臂', icon: '💪' },
-        { group: 'ItemHands', label: '手', icon: '✋' },
-        { group: 'ItemPelvis', label: '腰臀', icon: '〰' },
-        { group: 'ItemVulva', label: '私处', icon: '🌸' },
-        { group: 'ItemVulvaPiercings', label: '阴穿', icon: '💎' },
-        { group: 'ItemButt', label: '臀后', icon: '🍑' },
-        { group: 'ItemLegs', label: '腿', icon: '🦵' },
-        { group: 'ItemFeet', label: '脚', icon: '👢' },
-        { group: 'ItemBoots', label: '靴', icon: '🥾' },
+        { group: 'ItemHead', label: QiActT('part.ItemHead'), icon: '🗣' },
+        { group: 'ItemNose', label: QiActT('part.ItemNose'), icon: '👃' },
+        { group: 'ItemEars', label: QiActT('part.ItemEars'), icon: '👂' },
+        { group: 'ItemHood', label: QiActT('part.ItemHood'), icon: '🎭' },
+        { group: 'ItemMouth', label: QiActT('part.ItemMouth'), icon: '👄' },
+        { group: 'ItemMouth2', label: QiActT('part.ItemMouth2'), icon: '👄' },
+        { group: 'ItemMouth3', label: QiActT('part.ItemMouth3'), icon: '👄' },
+        { group: 'ItemNeck', label: QiActT('part.ItemNeck'), icon: '🔗' },
+        { group: 'ItemNeckAccessories', label: QiActT('part.ItemNeckAccessories'), icon: '🔗' },
+        { group: 'ItemNeckRestraints', label: QiActT('part.ItemNeckRestraints'), icon: '🔗' },
+        { group: 'ItemNipples', label: QiActT('part.ItemNipples'), icon: '☁' },
+        { group: 'ItemNipplesPiercings', label: QiActT('part.ItemNipplesPiercings'), icon: '💎' },
+        { group: 'ItemBreast', label: QiActT('part.ItemBreast'), icon: '🫂' },
+        { group: 'ItemTorso', label: QiActT('part.ItemTorso'), icon: '👕' },
+        { group: 'ItemTorso2', label: QiActT('part.ItemTorso2'), icon: '👕' },
+        { group: 'ItemArms', label: QiActT('part.ItemArms'), icon: '💪' },
+        { group: 'ItemHands', label: QiActT('part.ItemHands'), icon: '✋' },
+        { group: 'ItemPelvis', label: QiActT('part.ItemPelvis'), icon: '〰' },
+        { group: 'ItemVulva', label: QiActT('part.ItemVulva'), icon: '🌸' },
+        { group: 'ItemVulvaPiercings', label: QiActT('part.ItemVulvaPiercings'), icon: '💎' },
+        { group: 'ItemButt', label: QiActT('part.ItemButt'), icon: '🍑' },
+        { group: 'ItemLegs', label: QiActT('part.ItemLegs'), icon: '🦵' },
+        { group: 'ItemFeet', label: QiActT('part.ItemFeet'), icon: '👢' },
+        { group: 'ItemBoots', label: QiActT('part.ItemBoots'), icon: '🥾' },
     ];
 
     // 合成子部位 → 字典翻译主部位映射（BC 字典键只以主部位命名，如 ItemMouth2 查 Label-ChatOther-ItemMouth-*）
@@ -285,8 +699,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     // 主题定义：仅保留深色 / 浅色两套，强调色固定玫红
     const THEMES = [
-        { id:'dark',  name:'深色', base:'dark' },
-        { id:'light', name:'浅色', base:'light' }
+        { id:'dark',  name: QiActT('ui.theme_dark'), base:'dark' },
+        { id:'light', name: QiActT('ui.theme_light'), base:'light' }
     ];
     function getTheme(id) {
         for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
@@ -379,7 +793,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var next = (state.theme === 'dark') ? 'light' : 'dark';
         applyTheme(next);
         persist(S_THEME, next);
-        toast('已切换为' + (next === 'dark' ? '深色' : '浅色') + '主题', accentColor());
+        toast(QiActT('ui.theme_switched', { theme: next === 'dark' ? QiActT('ui.theme_dark') : QiActT('ui.theme_light') }), accentColor());
     }
 
     /** 获取动作列表（按部位过滤 + 前置条件实时校验） */
@@ -933,10 +1347,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
         try {
             var packet = makeActivityPacket(charObj, group, name, activityItem);
-            if (!packet) { toast('该动作需要特定道具', '#FF5C5C'); return false; }
+            if (!packet) { toast(QiActT('toast.need_item'), '#FF5C5C'); return false; }
             // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）
             if (!findAllowedActivity(charObj, group, name)) {
-                toast('该动作当前不可用', '#FF5C5C'); return false;
+                toast(QiActT('toast.unavailable'), '#FF5C5C'); return false;
             }
 
             // 先执行 BC 原生 ActivityRun(..., false) 触发本地副作用：
@@ -983,20 +1397,20 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             }
 
             // 最终兜底：如果 ActivityRun 也拿不到，提示不可用
-            toast('该动作暂不可用', '#FF5C5C');
+            toast(QiActT('toast.temporarily_unavailable'), '#FF5C5C');
             return false;
         } catch (e) {
             console.error('[QiAct] 执行动作异常:', e);
-            toast('执行失败: ' + e.message, '#FF5C5C');
+            toast(QiActT('toast.exec_failed', { msg: e.message }), '#FF5C5C');
             return false;
         }
     }
 
     /** 对房间内所有其他成员执行同一动作（PAT ALL 同款广播） */
     function executeActionAll() {
-        if (!state.selectedAction || !state.selectedPart) { toast('请先选择一个动作', '#FF5C5C'); return; }
+        if (!state.selectedAction || !state.selectedPart) { toast(QiActT('toast.pick_action'), '#FF5C5C'); return; }
         var chars = getRoomCharacters();
-        if (!Array.isArray(chars) || chars.length === 0) { toast('房间内没有其他人', '#888'); return; }
+        if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         // 如果当前选中了目标，则把目标排到第一个执行，其余随后
         var ordered = orderBySelectedTarget(chars);
@@ -1019,7 +1433,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             setTimeout(next, delay);
         }
         next();
-        toast('开始对所有成员执行：' + getActivityLabel(name, group), '#FF5C7A');
+        toast(QiActT('toast.exec_all', { name: getActivityLabel(name, group) }), '#FF5C7A');
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -1035,7 +1449,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     function getCombo(id) { return state.combos.find(function(c) { return c.id === id; }); }
 
     function addCombo(name) {
-        var combo = { id: generateId(), name: String(name || '新组合'), items: [], delay: 160 };
+        var combo = { id: generateId(), name: String(name || QiActT('combo.new_name')), items: [], delay: 160 };
         state.combos.push(combo);
         saveCombos();
         return combo;
@@ -1099,9 +1513,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     /** 对房间内所有其他成员执行同一组合 */
     function runComboAll(combo) {
-        if (!combo || !combo.items.length) { toast('组合为空', '#FF5C5C'); return; }
+        if (!combo || !combo.items.length) { toast(QiActT('toast.combo_empty'), '#FF5C5C'); return; }
         var chars = getRoomCharacters();
-        if (!Array.isArray(chars) || chars.length === 0) { toast('房间内没有其他人', '#888'); return; }
+        if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
         var ordered = orderBySelectedTarget(chars);
         var ci = 0;
         function nextChar() {
@@ -1112,7 +1526,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             setTimeout(nextChar, combo.items.length * d + 300);
         }
         nextChar();
-        toast('开始对所有人执行组合「' + combo.name + '」', '#FF5C7A');
+        toast(QiActT('toast.exec_combo_all', { name: combo.name }), '#FF5C7A');
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -1592,7 +2006,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         try {
             var ext = Player && Player.ExtensionSettings;
             var echoKey = ext && Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
-            if (!echoKey || !ext[echoKey]) { toast('未找到 echo 数据', '#FF5C5C'); return; }
+            if (!echoKey || !ext[echoKey]) { toast(QiActT('toast.echo_notfound'), '#FF5C5C'); return; }
             var echoObj = ext[echoKey];
             var data = echoObj['动作数据'];
             var before = (data && typeof data === 'object') ? Object.keys(data).length : 0;
@@ -1657,9 +2071,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 catch (e) { console.warn('[QiAct] 延迟清理 echo 残留失败（已忽略）:', e && e.message); }
             }, 1200);
 
-            toast('已清理原 echo 数据（' + before + ' 项）', '#46E0A0');
+            toast(QiActT('toast.echo_cleaned', { n: before }), '#46E0A0');
             updateCustomActionPanel(state.selectedTarget);
-        } catch (e) { toast('清理失败：' + e.message, '#FF5C5C'); }
+        } catch (e) { toast(QiActT('toast.echo_clean_failed', { msg: e.message }), '#FF5C5C'); }
     }
     function caNewId() { return 'ca_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
 
@@ -1682,7 +2096,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
 
         // ── 列表视图 ──
-        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + '我的动作（测试版）';
+        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('custom.title');
         var html = '';
         var acts = state.customActions;
         var editMode = state.caEditMode;
@@ -1693,20 +2107,20 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         html += '<div class="xsact-ca-view">';
         // 工具栏
         html += '<div class="xsact-ca-toolbar">' +
-            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="搜索动作...">' +
+            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
             '<div class="xsact-ca-toolbar-btns">' +
-            '<button class="xsact-ca-new" id="xsact-ca-new" title="新建">' + svgIcon('plus', 14) + '<span>新建</span></button>' +
+            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
             '<div class="xsact-ca-import-wrap">' +
-            '<button class="xsact-ca-import" id="xsact-ca-import" title="导入" data-tooltip="导入@@从 echo/回声 或本地 JSON 导入自定义动作">' + svgIcon('download', 14) + '</button>' +
+            '<button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '" data-tooltip="' + QiActT('custom.import_tooltip') + '">' + svgIcon('download', 14) + '</button>' +
             '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu">' +
-            '<button data-import="echo">从 echo/回声 导入</button>' +
-            '<button data-import="file">从本地 JSON 导入</button>' +
+            '<button data-import="echo">' + QiActT('custom.import_echo') + '</button>' +
+            '<button data-import="file">' + QiActT('custom.import_file') + '</button>' +
             '</div>' +
             '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json">' +
             '</div>' +
-            '<button class="xsact-ca-export" id="xsact-ca-export" title="导出为 JSON">' + svgIcon('upload', 14) + '</button>' +
-            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? '完成编辑' : '编辑模式：拖动排序与批量管理') + '">' + svgIcon('bulkEdit', 16) + '</button>' +
-            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? '当前全部开启，点击全部关闭' : '当前全部关闭，点击全部开启') + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
+            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
+            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
+            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
             '</div></div>';
 
         // 分类 chip 过滤栏：按来源（all/xiaosu/native/echo）单选；空分类置灰
@@ -1717,9 +2131,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             else _counts.native++;
         });
         var _chips = [
-            { key: 'all', label: '全部', count: _counts.all, color: 'all' },
-            { key: 'xiaosu', label: '小酥', count: _counts.xiaosu, color: 'xiaosu' },
-            { key: 'native', label: '我的', count: _counts.native, color: 'native' },
+            { key: 'all', label: QiActT('custom.chip_all'), count: _counts.all, color: 'all' },
+            { key: 'xiaosu', label: QiActT('custom.chip_xiaosu'), count: _counts.xiaosu, color: 'xiaosu' },
+            { key: 'native', label: QiActT('custom.chip_native'), count: _counts.native, color: 'native' },
             { key: 'echo', label: 'echo', count: _counts.echo, color: 'echo' }
         ];
         html += '<div class="xsact-ca-chips" id="xsact-ca-chips">';
@@ -1738,15 +2152,15 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         // 编辑模式批量栏
         if (editMode) {
             html += '<div class="xsact-ca-batchbar" id="xsact-ca-batchbar">' +
-                '<button class="xsact-ca-select-all" id="xsact-ca-select-all">全选</button>' +
-                '<span class="xsact-ca-selected-count" id="xsact-ca-selected-count">已选 0 个</span>' +
+                '<button class="xsact-ca-select-all" id="xsact-ca-select-all">' + QiActT('custom.select_all') + '</button>' +
+                '<span class="xsact-ca-selected-count" id="xsact-ca-selected-count">' + QiActT('custom.selected_count', { n: 0 }) + '</span>' +
                 '<div class="xsact-ca-batch-actions">' +
-                '<button id="xsact-ca-batch-close" disabled>批量关闭</button>' +
-                '<button id="xsact-ca-batch-delete" class="xsact-ca-batch-del" disabled>批量删除</button>' +
+                '<button id="xsact-ca-batch-close" disabled>' + QiActT('custom.batch_close') + '</button>' +
+                '<button id="xsact-ca-batch-delete" class="xsact-ca-batch-del" disabled>' + QiActT('custom.batch_delete') + '</button>' +
                 '</div></div>';
         }
 
-        html += '<div class="xsact-ca-beta">自定义动作功能当前为【测试版(Beta)】，仍在开发中，可能存在不稳定或未完善之处，建议谨慎使用并及时反馈问题。</div>';
+        html += '<div class="xsact-ca-beta">' + QiActT('custom.beta_banner') + '</div>';
 
         // 迁移提示：原 echo/回声 中仍有动作数据 → 提供一键清理入口
         try {
@@ -1754,8 +2168,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             var _hasEchoSrc = state.customActions.some(function(a) { return a.source === 'echo'; });
             if (_echoData && Object.keys(_echoData).length && _hasEchoSrc) {
                 html += '<div class="xsact-ca-echo-clean" id="xsact-ca-echo-clean">' +
-                    '<div class="xsact-ca-echo-clean-text">检测到原 echo/回声 中仍有 <b>' + Object.keys(_echoData).length + '</b> 个自定义动作数据。迁移完成后建议清理，避免动作重复显示与使用后乱码。</div>' +
-                    '<button class="xsact-ca-echo-clean-btn" id="xsact-ca-echo-clean-btn" type="button">清理原 echo 数据</button>' +
+                    '<div class="xsact-ca-echo-clean-text">' + QiActT('custom.echo_clean_text', { n: Object.keys(_echoData).length }) + '</div>' +
+                    '<button class="xsact-ca-echo-clean-btn" id="xsact-ca-echo-clean-btn" type="button">' + QiActT('custom.echo_clean_btn') + '</button>' +
                 '</div>';
             }
         } catch (e) { silent(e, 'renderEchoCleanHint'); }
@@ -1765,8 +2179,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         // 其他分类下隐藏避免视觉干扰 + 杜绝「我的」tab 下开关位置漂移。
         if (state.caFilter === 'xiaosu') {
             html += '<div class="xsact-ca-xiaosu" id="xsact-ca-xiaosu">' +
-                '<span class="xsact-ca-xiaosu-label" title="内置小酥动作包（XiaoSuActivity 全部 51 个动作，预编译进插件，离线可用，无需原版插件）">内置小酥动作包</span>' +
-                '<label class="xsact-ca-toggle xsact-ca-xiaosu-switch" title="开启后，「我的动作」与 BC 原生动作列表显示小酥动作拓展的全部动作">' +
+                '<span class="xsact-ca-xiaosu-label" title="' + QiActT('custom.xiaosu_pack_title') + '">' + QiActT('custom.xiaosu_pack_label') + '</span>' +
+                '<label class="xsact-ca-toggle xsact-ca-xiaosu-switch" title="' + QiActT('custom.xiaosu_pack_toggle_title') + '">' +
                     '<input type="checkbox" class="xsact-ca-xiaosu-pack"' + (state.xiaosuPack ? ' checked' : '') + '>' +
                     '<span class="xsact-ca-toggle-track"></span>' +
                 '</label>' +
@@ -1774,7 +2188,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
 
         if (!acts.length) {
-            html += '<div class="xsact-qa-empty xsact-ca-empty">还没有自定义动作。点「新建」创建，或点「导入」从 echo/回声 迁移。</div>';
+            html += '<div class="xsact-qa-empty xsact-ca-empty">' + QiActT('custom.empty') + '</div>';
         } else {
             // 按当前 chip 过滤（不改 customActions 顺序，仅隐藏不匹配卡片）
             var _flt = state.caFilter || 'all';
@@ -1786,20 +2200,20 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 return true;
             });
             if (!_visibleActs.length) {
-                html += '<div class="xsact-qa-empty xsact-ca-empty xsact-ca-filter-empty">当前分类下没有动作。</div>';
+                html += '<div class="xsact-qa-empty xsact-ca-empty xsact-ca-filter-empty">' + QiActT('custom.filter_empty') + '</div>';
             } else {
                 html += '<div class="xsact-ca-list' + (editMode ? ' is-editing' : '') + '">';
                 _visibleActs.forEach(function(a) {
-                var scopeBadge = a.scope === 'self' ? '<span class="xsact-ca-badge self">仅自己</span>'
-                    : a.scope === 'other' ? '<span class="xsact-ca-badge other">仅他人</span>'
-                    : '<span class="xsact-ca-badge any">皆可</span>';
-                var sourceBadge = a.source === 'xiaosu' ? '<span class="xsact-ca-src xiaosu" title="内置小酥动作包（预编译，无需原版插件）">小酥</span>' : a.source === 'echo' ? '<span class="xsact-ca-src echo" title="来自 echo/回声 导入">echo</span>' : '<span class="xsact-ca-src native" title="本插件创建">QiAct</span>';
+                var scopeBadge = a.scope === 'self' ? '<span class="xsact-ca-badge self">' + QiActT('custom.scope_self') + '</span>'
+                    : a.scope === 'other' ? '<span class="xsact-ca-badge other">' + QiActT('custom.scope_other') + '</span>'
+                    : '<span class="xsact-ca-badge any">' + QiActT('custom.scope_any') + '</span>';
+                var sourceBadge = a.source === 'xiaosu' ? '<span class="xsact-ca-src xiaosu" title="' + QiActT('custom.xiaosu_pack_src_title') + '">' + QiActT('custom.src_xiaosu') + '</span>' : a.source === 'echo' ? '<span class="xsact-ca-src echo" title="' + QiActT('custom.src_echo_title') + '">' + QiActT('custom.src_echo') + '</span>' : '<span class="xsact-ca-src native" title="' + QiActT('custom.src_qiact_title') + '">' + QiActT('custom.src_qiact') + '</span>';
                 var partLbl = (BODY_PARTS.find(function(p) { return p.group === a.group; }) || {}).label || a.group;
                 var isVisible = a.visible !== false;
                 var isSel = !!selSet[a.id];
                 if (editMode) {
                     html += '<div class="xsact-ca-card is-edit' + (isSel ? ' is-selected' : '') + (isVisible ? '' : ' is-hidden') + '" data-id="' + a.id + '" draggable="true">' +
-                        '<span class="xsact-ca-handle" title="拖动排序">' + svgIcon('grip', 14) + '</span>' +
+                        '<span class="xsact-ca-handle" title="' + QiActT('custom.drag_handle') + '">' + svgIcon('grip', 14) + '</span>' +
                         '<div class="xsact-ca-info">' +
                             '<div class="xsact-ca-title">' +
                                 '<span class="xsact-ca-name">' + escapeHtml(a.name) + '</span>' +
@@ -1807,7 +2221,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                             '</div>' +
                             '<div class="xsact-ca-meta">' +
                                 '<span class="xsact-ca-part">' + escapeHtml(partLbl) + '</span>' +
-                                '<span class="xsact-ca-vis-dot ' + (isVisible ? 'on' : 'off') + '">' + (isVisible ? '显示中' : '已隐藏') + '</span>' +
+                                '<span class="xsact-ca-vis-dot ' + (isVisible ? 'on' : 'off') + '">' + (isVisible ? QiActT('custom.vis_on') : QiActT('custom.vis_off')) + '</span>' +
                             '</div>' +
                         '</div>' +
                         '<span class="xsact-ca-check" aria-hidden="true">' + svgIcon('check', 14) + '</span>' +
@@ -1820,18 +2234,18 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                                 scopeBadge + sourceBadge +
                             '</div>' +
                             '<div class="xsact-ca-meta">' +
-                                '<label class="xsact-ca-toggle" title="在「动作」面板和 BC 原生动作列表中显示">' +
+                                '<label class="xsact-ca-toggle" title="' + QiActT('custom.vis_toggle_title') + '">' +
                                     '<input type="checkbox" class="xsact-ca-visible" data-id="' + a.id + '"' + (isVisible ? ' checked' : '') + '>' +
                                     '<span class="xsact-ca-toggle-track"></span>' +
-                                    '<span class="xsact-ca-toggle-label">' + (isVisible ? '显示' : '隐藏') + '</span>' +
+                                    '<span class="xsact-ca-toggle-label">' + (isVisible ? QiActT('custom.vis_label_on') : QiActT('custom.vis_label_off')) + '</span>' +
                                 '</label>' +
                                 '<span class="xsact-ca-part">' + escapeHtml(partLbl) + '</span>' +
                             '</div>' +
                         '</div>' +
                         '<div class="xsact-ca-btns">' +
-                            '<button class="xsact-ca-run" title="对当前目标执行" data-id="' + a.id + '">' + svgIcon('play', 14) + '</button>' +
-                            '<button class="xsact-ca-edit" title="编辑" data-id="' + a.id + '">' + svgIcon('pencil', 14) + '</button>' +
-                            '<button class="xsact-ca-delete" title="删除" data-tooltip-type="danger" data-id="' + a.id + '">' + svgIcon('trash', 14) + '</button>' +
+                            '<button class="xsact-ca-run" title="' + QiActT('custom.run_title') + '" data-id="' + a.id + '">' + svgIcon('play', 14) + '</button>' +
+                            '<button class="xsact-ca-edit" title="' + QiActT('custom.edit_title') + '" data-id="' + a.id + '">' + svgIcon('pencil', 14) + '</button>' +
+                            '<button class="xsact-ca-delete" title="' + QiActT('custom.delete_title') + '" data-tooltip-type="danger" data-id="' + a.id + '">' + svgIcon('trash', 14) + '</button>' +
                         '</div>' +
                     '</div>';
                 }
@@ -1879,9 +2293,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         if (echoCleanBtn) echoCleanBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             qiactConfirm({
-                title: '清理原 echo 数据',
-                body: '确定清理原 echo/回声 中的自定义动作数据吗？\n仅删除其「动作数据」，不影响本插件与其他配置（清理后系统更稳定）。',
-                confirmText: '清理',
+                title: QiActT('custom.echo_clean_confirm_title'),
+                body: QiActT('custom.echo_clean_confirm_body'),
+                confirmText: QiActT('custom.echo_clean_confirm_btn'),
                 danger: true
             }).then(function(ok) {
                 if (ok) caCleanupEchoData();
@@ -1930,7 +2344,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             });
             saveCustomActions();
             updateCustomActionPanel(charObj);
-            toast(turnOn ? '已开启全部 ' + acts.length + ' 个动作' : '已关闭全部 ' + acts.length + ' 个动作', turnOn ? '#46E0A0' : '#888');
+            toast(turnOn ? QiActT('custom.toggle_all_on_toast', { n: acts.length }) : QiActT('custom.toggle_all_off_toast', { n: acts.length }), turnOn ? '#46E0A0' : '#888');
         });
 
         // 非编辑模式：执行 / 编辑 / 删除 / 开关
@@ -1945,7 +2359,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 e.stopPropagation();
                 var id = btn.dataset.id;
                 var a = getCustom(id);
-                if (a) qiactConfirm({ title: '删除动作', body: '确定删除自定义动作「' + a.name + '」吗？', confirmText: '删除', danger: true }).then(function(ok) { if (!ok) return; deleteCustom(id); updateCustomActionPanel(charObj); toast('已删除', '#888'); });
+                if (a) qiactConfirm({ title: QiActT('custom.delete_confirm_title'), body: QiActT('custom.delete_confirm_body', { name: a.name }), confirmText: QiActT('custom.delete_confirm_btn'), danger: true }).then(function(ok) { if (!ok) return; deleteCustom(id); updateCustomActionPanel(charObj); toast(QiActT('toast.deleted'), '#888'); });
             });
         });
         listEl.querySelectorAll('.xsact-ca-visible').forEach(function(chk) {
@@ -1957,7 +2371,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 saveCustomActions();
                 caRegister(a);
                 updateCustomActionPanel(charObj);
-                toast(a.visible ? '已显示「' + a.name + '」' : '已隐藏「' + a.name + '」', a.visible ? '#46E0A0' : '#888');
+                toast(a.visible ? QiActT('custom.show_toast', { name: a.name }) : QiActT('custom.hide_toast', { name: a.name }), a.visible ? '#46E0A0' : '#888');
             });
         });
 
@@ -1974,10 +2388,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                     if (state.caSelected.indexOf(id) !== -1) card.classList.add('is-selected');
                     else card.classList.remove('is-selected');
                 });
-                if (selectedCountEl) selectedCountEl.textContent = '已选 ' + state.caSelected.length + ' 个';
+                if (selectedCountEl) selectedCountEl.textContent = QiActT('custom.selected_count', { n: state.caSelected.length });
                 if (batchCloseBtn) batchCloseBtn.disabled = state.caSelected.length === 0;
                 if (batchDeleteBtn) batchDeleteBtn.disabled = state.caSelected.length === 0;
-                if (selectAllBtn) selectAllBtn.textContent = (state.caSelected.length > 0 && state.caSelected.length === cards.length) ? '取消全选' : '全选';
+                if (selectAllBtn) selectAllBtn.textContent = (state.caSelected.length > 0 && state.caSelected.length === cards.length) ? QiActT('custom.cancel_select_all') : QiActT('custom.select_all');
             }
             if (selectAllBtn) selectAllBtn.addEventListener('click', function() {
                 var cards = Array.from(listEl.querySelectorAll('.xsact-ca-card.is-edit'));
@@ -2005,23 +2419,23 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 });
                 saveCustomActions();
                 updateCustomActionPanel(charObj);
-                toast('已批量关闭 ' + state.caSelected.length + ' 个动作', '#888');
+                toast(QiActT('custom.batch_close_toast', { n: state.caSelected.length }), '#888');
             });
             if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', function() {
                 if (!state.caSelected.length) return;
                 var names = state.caSelected.map(function(id) { var a = getCustom(id); return a ? a.name : ''; }).filter(Boolean).join('、');
                 var n = state.caSelected.length;
                 qiactConfirm({
-                    title: '批量删除 ' + n + ' 个动作',
-                    body: '确定批量删除以下动作吗？\n' + names,
-                    confirmText: '全部删除',
+                    title: QiActT('custom.batch_delete_title', { n: n }),
+                    body: QiActT('custom.batch_delete_body', { names: names }),
+                    confirmText: QiActT('custom.batch_delete_btn'),
                     danger: true
                 }).then(function(ok) {
                     if (!ok) return;
                     state.caSelected.slice().forEach(function(id) { deleteCustom(id); });
                     state.caSelected = [];
                     updateCustomActionPanel(charObj);
-                    toast('已批量删除 ' + n + ' 个动作', '#FF5C5C');
+                    toast(QiActT('custom.batch_deleted_toast', { n: n }), '#FF5C5C');
                 });
             });
 
@@ -2093,7 +2507,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             });
         });
         var svg = '<svg class="xsact-body-mini-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg>';
-        container.innerHTML = '<div class="xsact-body-mini-hint">点击框选身体部位</div>' + svg;
+        container.innerHTML = '<div class="xsact-body-mini-hint">' + QiActT('editor.pick_part_hint') + '</div>' + svg;
         var hint = container.querySelector('.xsact-body-mini-hint');
         container.querySelectorAll('.xsact-body-part-zone').forEach(function(zone) {
             zone.addEventListener('mouseenter', function() {
@@ -2101,7 +2515,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 zone.classList.add('hover');
             });
             zone.addEventListener('mouseleave', function() {
-                if (hint) hint.textContent = '点击框选身体部位';
+                if (hint) hint.textContent = QiActT('editor.pick_part_hint');
                 zone.classList.remove('hover');
             });
             zone.addEventListener('click', function(e) {
@@ -2117,36 +2531,36 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     function renderCustomEditor(act, charObj, listEl, titleEl) {
         var isNew = !getCustom(act.id);
-        titleEl.textContent = (isNew ? '新建' : '编辑') + '：自定义动作';
+        titleEl.textContent = (isNew ? QiActT('editor.new_title') : QiActT('editor.edit_title'));
         var scope = act.scope || 'other';
         var group = act.group || 'ItemMouth';
         var partLbl = (BODY_PARTS.find(function(p) { return p.group === group; }) || {}).label || group;
         var html = '<div class="xsact-ca-editor">';
-        html += '<div class="xsact-combo-field"><label>动作名称</label><input type="text" id="xsact-ca-name" value="' + escapeHtml(act.name) + '" placeholder="如：轻轻咬住"></div>';
-        html += '<div class="xsact-combo-field"><label>谁能使用这个动作</label><div class="xsact-ca-scope" id="xsact-ca-scope">' +
-            '<button data-scope="other" class="' + (scope === 'other' ? 'active' : '') + '">仅他人</button>' +
-            '<button data-scope="self" class="' + (scope === 'self' ? 'active' : '') + '">仅自己</button>' +
-            '<button data-scope="any" class="' + (scope === 'any' ? 'active' : '') + '">皆可</button>' +
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.name_label') + '</label>' + '<input type="text" id="xsact-ca-name" value="' + escapeHtml(act.name) + '" placeholder="' + QiActT('editor.name_placeholder') + '"></div>';
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.scope_label') + '</label>' + '<div class="xsact-ca-scope" id="xsact-ca-scope">' +
+            '<button data-scope="other" class="' + (scope === 'other' ? 'active' : '') + '">' + QiActT('custom.scope_other') + '</button>' +
+            '<button data-scope="self" class="' + (scope === 'self' ? 'active' : '') + '">' + QiActT('custom.scope_self') + '</button>' +
+            '<button data-scope="any" class="' + (scope === 'any' ? 'active' : '') + '">' + QiActT('custom.scope_any') + '</button>' +
             '</div></div>';
-        html += '<div class="xsact-combo-field"><label>身体部位</label>' +
-            '<div class="xsact-ca-part-display" id="xsact-ca-part-display"><span class="xsact-ca-part-label">' + escapeHtml(partLbl) + '（' + group + '）</span><span class="xsact-ca-part-change">点击下图重新选择</span></div>' +
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.part_label') + '</label>' +
+            '<div class="xsact-ca-part-display" id="xsact-ca-part-display"><span class="xsact-ca-part-label">' + escapeHtml(partLbl) + '（' + group + '）</span><span class="xsact-ca-part-change">' + QiActT('editor.part_change') + '</span>' + '</div>' +
             '<div class="xsact-ca-part-map" id="xsact-ca-part-map"></div>' +
             '<input type="hidden" id="xsact-ca-group" value="' + group + '">' +
             '</div>';
-        html += '<div class="xsact-combo-field"><label>对他人时显示</label><textarea id="xsact-ca-dialog-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialog) + '</textarea><div id="xsact-ca-dialog" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="如：轻轻咬住了 对方 的耳朵"></div></div>';
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_other_label') + '</label>' + '<textarea id="xsact-ca-dialog-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialog) + '</textarea><div id="xsact-ca-dialog" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_other_ph') + '"></div></div>';
         html += '<div class="xsact-ca-hint">' +
-            '<div class="xsact-ca-hint-title">可用占位符（点击插入）</div>' +
+            '<div class="xsact-ca-hint-title">' + QiActT('editor.tokens_title') + '</div>' +
             '<div class="xsact-ca-hint-btns">' +
-            '<button class="xsact-ca-token" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>自己</button>' +
-            '<button class="xsact-ca-token" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>对方</button>' +
+            '<button class="xsact-ca-token" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>' + QiActT('editor.token_self') + '</button>' +
+            '<button class="xsact-ca-token" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>' + QiActT('editor.token_other') + '</button>' +
             '</div>' +
             '</div>';
-        html += '<div class="xsact-combo-field"><label>对自己时显示</label><textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="如：被轻轻咬住了耳朵"></div></div>';
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_self_label') + '</label>' + '<textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_self_ph') + '"></div></div>';
         html += '<div class="xsact-ca-preview" id="xsact-ca-preview"></div>';
         html += '<div class="xsact-combo-actions">' +
-            '<button class="xsact-combo-save-btn" id="xsact-ca-save">保存</button>' +
-            (isNew ? '' : '<button class="xsact-ca-del-btn" id="xsact-ca-del">删除</button>') +
-            '<button class="xsact-combo-cancel-btn" id="xsact-ca-cancel">返回</button>' +
+            '<button class="xsact-combo-save-btn" id="xsact-ca-save">' + QiActT('editor.save') + '</button>' +
+            (isNew ? '' : '<button class="xsact-ca-del-btn" id="xsact-ca-del">' + QiActT('editor.delete') + '</button>') +
+            '<button class="xsact-combo-cancel-btn" id="xsact-ca-cancel">' + QiActT('editor.cancel') + '</button>' +
             '</div>';
         html += '</div>';
         listEl.innerHTML = html;
@@ -2173,8 +2587,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
         function renderRichText(raw) {
             return escapeHtml(raw)
-                .replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">自己</span><span class="xsact-zwsp">&#8203;</span>')
-                .replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">对方</span><span class="xsact-zwsp">&#8203;</span>');
+                .replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">' + QiActT('editor.token_self_pill') + '<span class="xsact-zwsp">&#8203;</span>')
+                .replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">' + QiActT('editor.token_other_pill') + '<span class="xsact-zwsp">&#8203;</span>');
         }
         function extractRawFromRich(el) {
             var raw = '';
@@ -2207,7 +2621,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             richEl.innerHTML = renderRichText(rawEl.value);
         }
         function insertTokenPill(token, richEl) {
-            var label = token === '{SourceCharacter}' ? '自己' : '对方';
+            var label = token === '{SourceCharacter}' ? QiActT('editor.token_self_pill') : QiActT('editor.token_other_pill');
             if (!richEl || richEl.contentEditable !== 'true') return;
             richEl.focus();
             var sel = window.getSelection();
@@ -2297,7 +2711,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
 
         function refreshPreview() {
-            var nm = (listEl.querySelector('#xsact-ca-name') || {}).value || '动作';
+            var nm = (listEl.querySelector('#xsact-ca-name') || {}).value || QiActT('editor.default_name');
             var dlg = (listEl.querySelector('#xsact-ca-dialog-raw') || {}).value || nm;
             var dlgSelf = (listEl.querySelector('#xsact-ca-dialogself-raw') || {}).value || '';
             var sc = (listEl.querySelector('#xsact-ca-scope') || {}).querySelector('.active');
@@ -2317,7 +2731,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 var textOther = resolveText(dlg, src, tgt);
                 // 对自己时显示：保留源视角，因此“对方”仍指向实际目标（而非玩家自己）
                 var textSelf = (dlgSelf.trim() ? dlgSelf : dlg).replace(/\{SourceCharacter\}/g, src).replace(/\{TargetCharacter\}/g, tgt);
-                preview = '对他人：' + textOther + '\n对自己：' + textSelf;
+                preview = QiActT('editor.preview', { a: textOther, b: textSelf });
             } else {
                 preview = resolveText(dlg, src, tgt);
             }
@@ -2352,15 +2766,15 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             var dlgSelf = (listEl.querySelector('#xsact-ca-dialogself-raw') || {}).value || '';
             var sc = (listEl.querySelector('#xsact-ca-scope') || {}).querySelector('.active');
             var gp = (listEl.querySelector('#xsact-ca-group') || {}).value || 'ItemMouth';
-            if (!nm.trim()) { toast('请填写动作名称', '#FF5C5C'); return; }
-            if (!dlg.trim()) { toast('请填写对话文本', '#FF5C5C'); return; }
+            if (!nm.trim()) { toast(QiActT('toast.fill_name'), '#FF5C5C'); return; }
+            if (!dlg.trim()) { toast(QiActT('toast.fill_dialog'), '#FF5C5C'); return; }
             var existing = getCustom(act.id);
             if (existing) caUnregister(existing);
             var updated = { id: act.id, name: nm.trim(), scope: (sc ? sc.dataset.scope : 'other'), group: gp, dialog: dlg, dialogSelf: dlgSelf, createdAt: act.createdAt || Date.now(), source: act.source || 'native', visible: typeof act.visible === 'boolean' ? act.visible : true, echoName: act.echoName || null, echoNames: Array.isArray(act.echoNames) ? act.echoNames.slice() : [] };
             upsertCustom(updated);
             state.editingCustomId = null;
             updateCustomActionPanel(charObj);
-            toast('自定义动作已保存', '#46E0A0');
+            toast(QiActT('toast.custom_saved'), '#46E0A0');
         });
         var cancelBtn = listEl.querySelector('#xsact-ca-cancel');
         if (cancelBtn) cancelBtn.addEventListener('click', function() {
@@ -2369,9 +2783,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         });
         var delBtn = listEl.querySelector('#xsact-ca-del');
         if (delBtn) delBtn.addEventListener('click', function() {
-            qiactConfirm({ title: '删除动作', body: '确定删除该自定义动作吗？', confirmText: '删除', danger: true }).then(function(ok) {
+            qiactConfirm({ title: QiActT('custom.delete_confirm_title'), body: QiActT('custom.delete_confirm_body', { name: act.name }), confirmText: QiActT('custom.delete_confirm_btn'), danger: true }).then(function(ok) {
                 if (!ok) return;
-                deleteCustom(act.id); state.editingCustomId = null; updateCustomActionPanel(charObj); toast('已删除', '#888');
+                deleteCustom(act.id); state.editingCustomId = null; updateCustomActionPanel(charObj); toast(QiActT('toast.deleted'), '#888');
             });
         });
     }
@@ -2381,20 +2795,20 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     function runCustomAction(id, charObj) {
         var act = getCustom(id);
         if (!act) return;
-        if (!charObj) { toast('请先在左侧选择人物', '#FF5C5C'); return; }
+        if (!charObj) { toast(QiActT('toast.pick_char'), '#FF5C5C'); return; }
         var name = caActivityName(act);
         var ok = executeAction(charObj, name, null, act.group);
-        if (ok) toast('执行：' + act.name, '#FF5C7A');
+        if (ok) toast(QiActT('toast.exec_custom', { name: act.name }), '#FF5C7A');
     }
 
     /** 从 echo/回声(echo-activity-ext) 导入动作数据 */
     function importCustomFromEcho() {
         try {
             var ext = Player && Player.ExtensionSettings;
-            if (!ext) { toast('读取扩展设置失败', '#FF5C5C'); return; }
+            if (!ext) { toast(QiActT('toast.read_ext_failed'), '#FF5C5C'); return; }
             var echoKey = Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
             if (!echoKey || !ext[echoKey] || !ext[echoKey]['动作数据']) {
-                toast('未找到 echo/回声 的动作数据', '#FF5C5C'); return;
+                toast(QiActT('toast.import_echo_notfound'), '#FF5C5C'); return;
             }
             var data = ext[echoKey]['动作数据'];
             var keys = Object.keys(data);
@@ -2462,10 +2876,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             // 导入完成后，立即屏蔽 echo 端已存在的同名原始动作，并刷新当前面板（custom 面板）
             caRemoveSuppressedEchoActivities();
             updateCustomActionPanel(state.selectedTarget);
-            toast('已从 echo/回声 导入 ' + imported + ' 个动作', '#46E0A0');
+            toast(QiActT('toast.imported_echo', { n: imported }), '#46E0A0');
         } catch (e) {
             console.warn('[QiAct] 导入 echo/回声 动作失败:', e.message);
-            toast('导入失败：' + e.message, '#FF5C5C');
+            toast(QiActT('toast.import_failed', { msg: e.message }), '#FF5C5C');
         }
     }
 
@@ -2515,10 +2929,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             a.download = 'qiact_custom_actions.json';
             a.click();
             URL.revokeObjectURL(url);
-            toast('已导出 ' + state.customActions.length + ' 个动作', '#46E0A0');
+            toast(QiActT('toast.exported', { n: state.customActions.length }), '#46E0A0');
         } catch (e) {
             console.warn('[QiAct] 导出自定义动作失败:', e.message);
-            toast('导出失败：' + e.message, '#FF5C5C');
+            toast(QiActT('toast.export_failed', { msg: e.message }), '#FF5C5C');
         }
     }
 
@@ -2530,7 +2944,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 try {
                     var json = ev.target.result;
                     var arr = JSON.parse(json);
-                    if (!Array.isArray(arr)) { toast('文件格式错误：应为动作对象数组', '#FF5C5C'); return; }
+                    if (!Array.isArray(arr)) { toast(QiActT('toast.file_format_err'), '#FF5C5C'); return; }
                     var imported = 0, updated = 0;
                     arr.forEach(function(item) {
                         if (!item || !item.name || !item.group) return;
@@ -2571,17 +2985,17 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                     });
                     registerAllCustomActions();
                     updateCustomActionPanel(state.selectedTarget);
-                    toast('导入完成：新增 ' + imported + ' 个，更新 ' + updated + ' 个', '#46E0A0');
+                    toast(QiActT('toast.import_done', { n: imported, m: updated }), '#46E0A0');
                 } catch (inner) {
                     console.warn('[QiAct] 解析 JSON 失败:', inner.message);
-                    toast('JSON 解析失败：' + inner.message, '#FF5C5C');
+                    toast(QiActT('toast.json_parse_failed', { msg: inner.message }), '#FF5C5C');
                 }
             };
-            reader.onerror = function() { toast('读取文件失败', '#FF5C5C'); };
+            reader.onerror = function() { toast(QiActT('toast.read_file_failed'), '#FF5C5C'); };
             reader.readAsText(file);
         } catch (e) {
             console.warn('[QiAct] 导入本地文件失败:', e.message);
-            toast('导入失败：' + e.message, '#FF5C5C');
+            toast(QiActT('toast.import_failed', { msg: e.message }), '#FF5C5C');
         }
     }
 
@@ -2631,7 +3045,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     function toggleAllMode() {
         state.allModeActive = !state.allModeActive;
         updateAllButtonVisual();
-        toast(state.allModeActive ? '全员范围：开启' : '全员范围：关闭',
+        toast(state.allModeActive ? QiActT('common.all_on') : QiActT('common.all_off'),
               state.allModeActive ? '#E8B339' : '#888');
     }
     function updateAllButtonVisual() {
@@ -2648,7 +3062,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             var body = state.actionPanelEl.querySelector('#xsact-action-list');
             if (body) body.classList.toggle('fav-active', state.favModeActive);
         }
-        toast(state.favModeActive ? '收藏模式：开启 · 点击动作加入收藏' : '收藏模式：关闭',
+        toast(state.favModeActive ? QiActT('common.fav_on') : QiActT('common.fav_off'),
               state.favModeActive ? '#E8B339' : '#888');
     }
     function updateFavButtonVisual() {
@@ -2664,10 +3078,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var idx = state.favorites.indexOf(key);
         if (idx === -1) {
             state.favorites.push(key);
-            toast('已收藏：' + getActivityLabel(name, partGroup), '#E8B339');
+            toast(QiActT('common.fav_add', { name: getActivityLabel(name, partGroup) }), '#E8B339');
         } else {
             state.favorites.splice(idx, 1);
-            toast('取消收藏', '#888');
+            toast(QiActT('common.fav_remove'), '#888');
         }
         persist(S_FAVS, state.favorites);
         if (btn) {
@@ -2695,7 +3109,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         persist(S_SELF, state.selfModeActive);
         updateSelfButtonVisual();
         if (state.isActive) refreshBodyGrids();
-        toast(state.selfModeActive ? '自己模式：开启' : '自己模式：关闭',
+        toast(state.selfModeActive ? QiActT('common.self_on') : QiActT('common.self_off'),
               state.selfModeActive ? '#46E0A0' : '#888');
     }
     function updateSelfButtonVisual() {
@@ -2706,18 +3120,18 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     /** 清空全部收藏动作 */
     function clearAllFavorites() {
-        if (!Array.isArray(state.favorites) || state.favorites.length === 0) { toast('当前没有收藏动作', '#888'); return; }
+        if (!Array.isArray(state.favorites) || state.favorites.length === 0) { toast(QiActT('common.no_fav'), '#888'); return; }
         qiactConfirm({
-            title: '清空全部收藏',
-            body: '确定清空全部收藏动作吗？此操作无法撤销。',
-            confirmText: '全部清空',
+            title: QiActT('common.clear_fav_title'),
+            body: QiActT('common.clear_fav_body'),
+            confirmText: QiActT('common.clear_fav_confirm'),
             danger: true
         }).then(function(ok) {
             if (!ok) return;
             state.favorites = [];
             persist(S_FAVS, state.favorites);
             renderPanel();
-            toast('已清空全部收藏', '#888');
+            toast(QiActT('common.cleared_fav'), '#888');
         });
     }
 
@@ -2759,10 +3173,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             var existing = document.getElementById('xsact-confirm');
             if (existing) existing.remove();
 
-            var title = String(opts.title || '确认操作');
+            var title = String(opts.title || QiActT('common.confirm_title'));
             var body = opts.body ? String(opts.body) : '';
-            var confirmText = String(opts.confirmText || '确定');
-            var cancelText = String(opts.cancelText || '取消');
+            var confirmText = String(opts.confirmText || QiActT('common.confirm_ok'));
+            var cancelText = String(opts.cancelText || QiActT('common.confirm_cancel'));
             var danger = opts.danger !== false; // 默认危险操作（玫红强调）
 
             var box = document.createElement('div');
@@ -2833,7 +3247,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         state.toggleBtnEl.id = 'xsact-toggle-btn';
         state.toggleBtnEl.innerHTML =
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
-        state.toggleBtnEl.title = state.isActive ? '退出快速动作模式' : '开启快速动作模式';
+        state.toggleBtnEl.title = state.isActive ? QiActT('ui.toggle_off') : QiActT('ui.toggle_on');
         state.toggleBtnEl.addEventListener('click', function(e) {
             if (state.toggleDragged) {
                 e.stopPropagation();
@@ -2930,10 +3344,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         if (!state.toggleBtnEl) return;
         if (state.isActive) {
             state.toggleBtnEl.classList.add('active');
-            state.toggleBtnEl.title = '退出快速动作模式 · 已激活';
+            state.toggleBtnEl.title = QiActT('ui.toggle_on_active');
         } else {
             state.toggleBtnEl.classList.remove('active');
-            state.toggleBtnEl.title = '开启快速动作模式';
+            state.toggleBtnEl.title = QiActT('ui.toggle_on');
         }
     }
 
@@ -3030,7 +3444,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         updateAllButtonVisual();
         updateFavButtonVisual();
 
-        toast('动作模式已开启', '#FF5C7A');
+        toast(QiActT('common.enter_mode'), '#FF5C7A');
     }
 
     function exitActionMode() {
@@ -3050,58 +3464,110 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         state.editingComboId = null;
         state.allModeActive = false;
 
-        toast('已退出动作模式', '#888');
+        toast(QiActT('common.exit_mode'), '#888');
+    }
+
+    /** 语言切换后重建面板（重渲染所有 QiActT 文案），不重置选择/模式/位置 */
+    function rebuildPanel() {
+        if (!state.actionPanelEl) { if (typeof enterActionMode === 'function') enterActionMode(); return; }
+        // 移除旧面板再重建，避免重复绑定事件（与 enterActionMode 防御一致）
+        if (state.actionPanelEl.parentNode) state.actionPanelEl.parentNode.removeChild(state.actionPanelEl);
+        state.actionPanelEl = document.createElement('div');
+        state.actionPanelEl.id = 'xsact-qa-panel';
+        state.actionPanelEl.innerHTML = buildPanelHTML();
+        document.body.appendChild(state.actionPanelEl);
+        bindPanelEvents(state.actionPanelEl);
+        makeDraggable(state.actionPanelEl);
+        makeResizable(state.actionPanelEl);
+        // 恢复当前模式高亮
+        var savedMode = state.panelMode || 'part';
+        state.actionPanelEl.querySelectorAll('.xsact-mode-tab').forEach(function(tab) {
+            tab.classList.toggle('active', tab.dataset.mode === savedMode);
+        });
+        state.actionPanelEl.style.display = '';
+        applyPanelSize();
+        applyPanelPosition();
+        renderPanel();
+        // 同步刷新人物列表（含 QiActT 文案）
+        try { if (typeof renderCharList === 'function') renderCharList(); } catch (_) { /* 忽略 */ }
     }
 
     /** 构建右侧面板 HTML */
 
 
     /* ===== 11. 主面板 UI（HTML 结构） ===== */
+    // 语言切换下拉（自定义菜单）：自动(auto) + 7 语；标记当前语言为选中
+    function langMenuHTML() {
+        var cur = (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : 'auto';
+        var meta = (typeof QiActI18n !== 'undefined' && QiActI18n.LANG_META) ? QiActI18n.LANG_META : {};
+        var list = (typeof QiActI18n !== 'undefined' && QiActI18n.LANGS) ? QiActI18n.LANGS : ['TW', 'CN', 'EN', 'DE', 'FR', 'RU', 'UA'];
+        var order = ['auto'].concat(list);
+        var curCode = (meta[cur] && meta[cur].code) ? meta[cur].code : (cur === 'auto' ? 'A' : cur);
+        var items = '';
+        for (var i = 0; i < order.length; i++) {
+            var L = order[i];
+            var m = meta[L] || { code: L, native: L };
+            var active = (L === cur) ? ' active' : '';
+            items += '<button type="button" class="xsact-lang-item' + active + '" data-lang="' + L + '" role="option" aria-selected="' + (L === cur) + '">' +
+                '<span class="xsact-lang-item-code">' + m.code + '</span>' +
+                '<span class="xsact-lang-item-native">' + m.native + '</span>' +
+                '<span class="xsact-lang-check">✓</span>' +
+                '</button>';
+        }
+        return '<div class="xsact-lang' + (cur !== 'auto' ? ' has-lang' : '') + '" id="xsact-lang">' +
+            '<button type="button" class="xsact-lang-trigger" id="xsact-lang-trigger" aria-haspopup="listbox" aria-expanded="false" title="' + (typeof QiActT === 'function' ? QiActT('ui.lang_title') : 'Language') + '">' +
+            '<span class="xsact-lang-code" id="xsact-lang-code">' + curCode + '</span>' +
+            '<span class="xsact-lang-caret">▾</span>' +
+            '</button>' +
+            '<div class="xsact-lang-menu" id="xsact-lang-menu" role="listbox" aria-label="Language">' + items + '</div>' +
+            '</div>';
+    }
     function buildPanelHTML() {
         return '\
 <div class="xsact-qa-panel-inner">\
   <div class="xsact-qa-panel-header" id="xsact-panel-header">\
-    <span class="xsact-panel-grip" id="xsact-drag-grip" title="拖动面板">' + svgIcon('grip', 16) + '</span>\
-    <span id="xsact-panel-title">选择动作...</span>\
+    <span class="xsact-panel-grip" id="xsact-drag-grip" title="' + QiActT('ui.drag_panel') + '">' + svgIcon('grip', 16) + '</span>\
+    <span id="xsact-panel-title">' + QiActT('render.select_action') + '</span>\
     <span class="xsact-panel-head-actions">\
-      <button class="xsact-qa-mini-btn" id="xsact-theme-btn" title="切换深色/浅色主题"><span class="xsact-theme-icon sun">' + svgIcon('sun', 15) + '</span><span class="xsact-theme-icon moon">' + svgIcon('moon', 15) + '</span></button>\
-      <button class="xsact-qa-mini-btn" id="xsact-refresh-btn" title="刷新当前部位/人物的动作列表状态">' + svgIcon('refresh', 15) + '</button>\
-      <button class="xsact-qa-mini-btn" id="xsact-exit-panel-btn" title="退出快速动作模式 (Esc)">' + svgIcon('close', 15) + '</button>\
+      ' + langMenuHTML() + '\
+      <button class="xsact-qa-mini-btn" id="xsact-theme-btn" title="' + QiActT('ui.theme_toggle') + '"><span class="xsact-theme-icon sun">' + svgIcon('sun', 15) + '</span><span class="xsact-theme-icon moon">' + svgIcon('moon', 15) + '</span></button>\
+      <button class="xsact-qa-mini-btn" id="xsact-refresh-btn" title="' + QiActT('ui.refresh') + '">' + svgIcon('refresh', 15) + '</button>\
+      <button class="xsact-qa-mini-btn" id="xsact-exit-panel-btn" title="' + QiActT('ui.exit_mode') + '">' + svgIcon('close', 15) + '</button>\
     </span>\
   </div>\
   <div class="xsact-update-banner" id="xsact-update-banner" style="display:none;"></div>\
   <div class="xsact-qa-panel-content">\
     <div class="xsact-qa-panel-main">\
       <div class="xsact-qa-mode-tabs">\
-        <button class="xsact-mode-tab active" data-mode="part" title="单部位动作：点人物部位后直接触发">' + svgIcon('target', 14) + '<span>动作</span></button>\
-        <button class="xsact-mode-tab" data-mode="combo" title="组合动作：手动拼装多部位动作并一键执行">' + svgIcon('layers', 14) + '<span>组合动作</span></button>\
-        <button class="xsact-mode-tab" data-mode="custom" title="我的动作：创建/管理自定义动作（替代 echo/回声）。当前为测试版(Beta)">' + svgIcon('custom', 14) + '<span>我的动作</span><span class="xsact-beta-badge">测试版</span></button>\
+        <button class="xsact-mode-tab active" data-mode="part" title="' + QiActT('ui.mode_part_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.mode_part') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '">' + svgIcon('custom', 14) + '<span>' + QiActT('ui.mode_custom') + '</span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
       </div>\
       <div class="xsact-qa-panel-body" id="xsact-action-list">\
-        <div class="xsact-qa-empty">点击左侧 ◀ 按钮选择人物和部位</div>\
+        <div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>\
       </div>\
     </div>\
   </div>\
   <div class="xsact-qa-panel-footer">\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="切换自己模式">' + svgIcon('user', 14) + '<span>自己</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="切换全员范围：开启后，动作将对房间内所有人执行">' + svgIcon('users', 14) + '<span>全员</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="收藏模式：开启后点击动作会加入/取消收藏">' + svgIcon('star', 14) + '<span>收藏</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn" id="xsact-fav-clear-btn" title="清空全部收藏动作" data-tooltip-type="danger">' + svgIcon('favRemove', 14) + '</button>\
-    <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="连续3次">' + svgIcon('bolt', 14) + '<span>×3</span></button>\
-    <span class="xsact-version-tag" title="当前插件版本">v' + VERSION + '</span>\
+    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="' + QiActT('ui.self_title') + '">' + svgIcon('user', 14) + '<span>' + QiActT('ui.self') + '</span><span class="xsact-pill-dot"></span></button>\
+    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="' + QiActT('ui.all_title') + '">' + svgIcon('users', 14) + '<span>' + QiActT('ui.all') + '</span><span class="xsact-pill-dot"></span></button>\
+    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="' + QiActT('ui.fav_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.fav') + '</span><span class="xsact-pill-dot"></span></button>\
+    <button class="xsact-qa-mini-btn" id="xsact-fav-clear-btn" title="' + QiActT('ui.fav_clear') + '" data-tooltip-type="danger">' + svgIcon('favRemove', 14) + '</button>\
+    <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="' + QiActT('ui.x3_title') + '">' + svgIcon('bolt', 14) + '<span>' + QiActT('ui.x3') + '</span></button>\
+    <span class="xsact-version-tag" title="' + QiActT('ui.version') + '">v' + VERSION + '</span>\
   </div>\
   <div class="xsact-qa-state.presets-bar" id="xsact-state.presets-bar"></div>\
-  <div class="xsact-resize-handle" id="xsact-resize-handle" title="拖动缩放面板">' + svgIcon('resize', 14) + '</div>\
+  <div class="xsact-resize-handle" id="xsact-resize-handle" title="' + QiActT('ui.resize') + '">' + svgIcon('resize', 14) + '</div>\
 </div>\
 <div class="xsact-char-popover" id="xsact-char-popover" style="display:none;">\
   <div class="xsact-char-popover-header">\
-    <button class="xsact-char-popover-back" id="xsact-char-popover-back" title="返回人物列表">&#8249;</button>\
-    <span class="xsact-char-popover-title" id="xsact-char-popover-title">人物列表</span>\
-    <button class="xsact-char-popover-close" id="xsact-char-popover-close" title="关闭" data-tooltip-type="danger">×</button>\
+    <button class="xsact-char-popover-back" id="xsact-char-popover-back" title="' + QiActT('ui.popover_back') + '">&#8249;</button>\
+    <span class="xsact-char-popover-title" id="xsact-char-popover-title">' + QiActT('ui.chars') + '</span>\
+    <button class="xsact-char-popover-close" id="xsact-char-popover-close" title="' + QiActT('ui.popover_close') + '" data-tooltip-type="danger">×</button>\
   </div>\
   <div class="xsact-char-popover-body" id="xsact-char-popover-body"></div>\
 </div>\
-<div id="xsact-char-popover-tab" title="人物列表">' + svgIcon('triangle-left', 12) + '</div>\
+<div id="xsact-char-popover-tab" title="' + QiActT('ui.chars') + '">' + svgIcon('triangle-left', 12) + '</div>\
 <div id="xsact-popover-connector"></div>';
     }
 
@@ -3462,7 +3928,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var chars = getRoomCharacters();
         var html = '';
         if (chars.length === 0) {
-            html = '<div class="xsact-char-popover-empty">房间无人</div>';
+            html = '<div class="xsact-char-popover-empty">' + QiActT('target.empty') + '</div>';
         } else {
             html = '<div class="xsact-char-popover-items">';
             chars.forEach(function(c) {
@@ -3470,7 +3936,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 var selected = state.selectedTarget && state.selectedTarget.MemberNumber === c.MemberNumber;
                 html += '<div class="xsact-char-popover-item' + (selected ? ' selected' : '') + (isSelf ? ' self' : '') + '" data-mn="' + c.MemberNumber + '">' +
                     '<span class="xsact-char-popover-name">' + escapeHtml(characterDisplayName(c)) + '</span>' +
-                    (isSelf ? '<span class="xsact-char-popover-self">自己</span>' : '') +
+                    (isSelf ? '<span class="xsact-char-popover-self">' + QiActT('common.self') + '</span>' : '') +
                     '</div>';
             });
             html += '</div>';
@@ -3511,7 +3977,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var svg = '<svg class="xsact-body-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' +
             rects +
             '</svg>' +
-            '<div class="xsact-body-part-hint">点击身体部位选择动作</div>';
+            '<div class="xsact-body-part-hint">' + QiActT('target.pick_part') + '</div>';
         bodyEl.innerHTML = '<div class="xsact-body-select">' + svg + '</div>';
 
         var hint = bodyEl.querySelector('.xsact-body-part-hint');
@@ -3522,7 +3988,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 zone.classList.add('hover');
             });
             zone.addEventListener('mouseleave', function() {
-                if (hint) hint.textContent = '点击身体部位选择动作';
+                if (hint) hint.textContent = QiActT('target.pick_part');
                 zone.classList.remove('hover');
             });
             zone.addEventListener('click', function(e) {
@@ -3546,10 +4012,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var view = (state.popoverView === 'parts' && state.selectedTarget) ? 'parts' : 'chars';
         popover.classList.toggle('show-back', view === 'parts');
         if (view === 'chars') {
-            if (titleEl) titleEl.textContent = '人物列表';
+            if (titleEl) titleEl.textContent = QiActT('ui.chars');
             renderCharList();
         } else {
-            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → 选择部位';
+            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → ' + QiActT('target.select_part');
             renderPopoverParts(state.selectedTarget);
         }
     }
@@ -3628,13 +4094,13 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
         // 「动作」模式：必须先选中人物与身体部位
         if (!state.selectedTarget) {
-            if (titleEl) titleEl.textContent = '选择动作...';
-            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">点击左侧 ◀ 按钮选择人物和部位</div>';
+            if (titleEl) titleEl.textContent = QiActT('render.select_action');
+            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>';
             return;
         }
         if (!state.selectedPart) {
-            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → 选择部位';
-            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">请在左侧人物浮层选择身体部位</div>';
+            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → ' + QiActT('target.select_part');
+            if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.pick_part_hint') + '</div>';
             return;
         }
         updateActionPanel(state.selectedTarget, state.selectedPart);
@@ -3655,21 +4121,21 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     /** 刷新面板状态（用于刷新按钮）：重新读取当前部位/人物的可执行动作或组合列表 */
     function refreshPanelState() {
-        if (!state.actionPanelEl) { toast('请先开启动作模式', '#888'); return; }
+        if (!state.actionPanelEl) { toast(QiActT('toast.mode_on_first'), '#888'); return; }
         if (state.panelMode === 'custom') {
             updateCustomActionPanel(state.selectedTarget);
-            toast('我的动作列表已刷新', '#FF5C7A');
+            toast(QiActT('toast.refreshed_custom'), '#FF5C7A');
         } else if (state.panelMode === 'combo') {
             // 重新从存储加载组合，并刷新视图
             state.combos = loadSetting(S_COMBOS, []);
             updateComboPanel(state.selectedTarget);
-            toast('组合列表已刷新', '#FF5C7A');
+            toast(QiActT('toast.refreshed_combo'), '#FF5C7A');
         } else {
             // 「动作」模式才需要选中人物 + 部位
-            if (!state.selectedTarget || !state.selectedPart) { toast('请先选择一个人物部位', '#888'); return; }
+            if (!state.selectedTarget || !state.selectedPart) { toast(QiActT('toast.pick_part'), '#888'); return; }
             // 重新渲染当前部位动作列表（ActivityAllowedForGroup 会实时重新计算）
             updateActionPanel(state.selectedTarget, state.selectedPart);
-            toast('动作列表已刷新', '#FF5C7A');
+            toast(QiActT('toast.refreshed_actions'), '#FF5C7A');
         }
     }
 
@@ -3685,22 +4151,22 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             // ── 编辑视图 ──
             var combo = getCombo(state.editingComboId);
             if (!combo) { state.editingComboId = null; updateComboPanel(charObj); return; }
-            titleEl.textContent = '编辑：' + combo.name;
+            titleEl.textContent = QiActT('combo.edit_title', { name: combo.name });
             if (allBtn) allBtn.disabled = false;
 
             var html = '<div class="xsact-combo-editor">';
             // 名称输入
             html += '<div class="xsact-combo-field"><input type="text" id="xsact-combo-name" value="' +
-                escapeHtml(combo.name) + '" placeholder="组合名称"></div>';
+                escapeHtml(combo.name) + '" placeholder="' + QiActT('combo.name_ph') + '"></div>';
             // 动作间隔（延迟）滑块
             var curDelay = comboDelay(combo);
             html += '<div class="xsact-combo-field xsact-combo-delay">' +
-                '<label>动作间隔 <span id="xsact-delay-val">' + curDelay + '</span>ms</label>' +
+                '<label>' + QiActT('combo.delay_label', { n: curDelay }) + '</label>' +
                 '<input type="range" id="xsact-combo-delay" min="50" max="2000" step="50" value="' + curDelay + '">' +
                 '</div>';
             // 条目列表
             if (!combo.items.length) {
-                html += '<div class="xsact-qa-empty">请到「动作」模式，点击动作旁的「加入」按钮添加</div>';
+                html += '<div class="xsact-qa-empty">' + QiActT('combo.add_hint') + '</div>';
             } else {
                 html += '<div class="xsact-combo-items">';
                 combo.items.forEach(function(it, idx) {
@@ -3709,24 +4175,24 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                         '<span class="xsact-combo-item-num">' + (idx + 1) + '</span>' +
                         '<span class="xsact-combo-item-part">' + escapeHtml(partLbl) + '</span>' +
                         '<span class="xsact-combo-item-action">' + escapeHtml(it.label || it.action) + '</span>' +
-                        '<button class="xsact-combo-item-up" title="上移">' + svgIcon('up', 13) + '</button>' +
-                        '<button class="xsact-combo-item-down" title="下移">' + svgIcon('down', 13) + '</button>' +
-                        '<button class="xsact-combo-item-del" title="删除" data-tooltip-type="danger">' + svgIcon('close', 13) + '</button>' +
+                        '<button class="xsact-combo-item-up" title="' + QiActT('combo.up') + '">' + svgIcon('up', 13) + '</button>' +
+                        '<button class="xsact-combo-item-down" title="' + QiActT('combo.down') + '">' + svgIcon('down', 13) + '</button>' +
+                        '<button class="xsact-combo-item-del" title="' + QiActT('combo.item_del') + '" data-tooltip-type="danger">' + svgIcon('close', 13) + '</button>' +
                         '</div>';
                 });
                 html += '</div>';
             }
             // 操作按钮
             html += '<div class="xsact-combo-actions">' +
-                '<button class="xsact-combo-save-btn">保存</button>' +
-                '<button class="xsact-combo-cancel-btn">返回</button>' +
+                '<button class="xsact-combo-save-btn">' + QiActT('combo.save') + '</button>' +
+                '<button class="xsact-combo-cancel-btn">' + QiActT('combo.cancel') + '</button>' +
                 '</div>';
             html += '</div>';
             listEl.innerHTML = html;
 
             // 绑定
             var nameInput = listEl.querySelector('#xsact-combo-name');
-            if (nameInput) nameInput.addEventListener('change', function() { renameCombo(combo.id, nameInput.value); titleEl.textContent = '编辑：' + combo.name; });
+            if (nameInput) nameInput.addEventListener('change', function() { renameCombo(combo.id, nameInput.value); titleEl.textContent = QiActT('combo.edit_title', { name: combo.name }); });
             // 延迟滑块
             var delayInput = listEl.querySelector('#xsact-combo-delay');
             var delayVal = listEl.querySelector('#xsact-delay-val');
@@ -3756,35 +4222,35 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 });
             });
             var saveBtn = listEl.querySelector('.xsact-combo-save-btn');
-            if (saveBtn) saveBtn.addEventListener('click', function() { stopEditCombo(); toast('组合已保存', '#46E0A0'); });
+            if (saveBtn) saveBtn.addEventListener('click', function() { stopEditCombo(); toast(QiActT('toast.combo_saved'), '#46E0A0'); });
             var cancelBtn = listEl.querySelector('.xsact-combo-cancel-btn');
             if (cancelBtn) cancelBtn.addEventListener('click', stopEditCombo);
             return;
         }
 
         // ── 列表视图 ──
-        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + '组合动作';
+        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('render.combo_title');
         if (allBtn) allBtn.disabled = false;
 
         var html = '';
         if (!state.combos.length) {
-            html = '<div class="xsact-qa-empty">暂无组合。点击下方「新建组合」，然后到「动作」模式点击动作旁的「加入」按钮添加动作。</div>';
+            html = '<div class="xsact-qa-empty">' + QiActT('combo.empty') + '</div>';
         } else {
             state.combos.forEach(function(c) {
                 html += '<div class="xsact-combo-card" data-id="' + c.id + '">' +
                     '<div class="xsact-combo-info">' +
                     '<span class="xsact-combo-name">' + escapeHtml(c.name) + '</span>' +
-                    '<span class="xsact-combo-count">' + c.items.length + ' 步</span>' +
+                    '<span class="xsact-combo-count">' + c.items.length + QiActT('combo.count', { n: c.items.length }) + '</span>' +
                     '</div>' +
                     '<div class="xsact-combo-btns">' +
-                    '<button class="xsact-combo-run" title="执行">' + svgIcon('play', 14) + '</button>' +
-                    '<button class="xsact-combo-edit" title="编辑">' + svgIcon('pencil', 14) + '</button>' +
-                    '<button class="xsact-combo-delete" title="删除" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button>' +
+                    '<button class="xsact-combo-run" title="' + QiActT('combo.exec') + '">' + svgIcon('play', 14) + '</button>' +
+                    '<button class="xsact-combo-edit" title="' + QiActT('combo.edit') + '">' + svgIcon('pencil', 14) + '</button>' +
+                    '<button class="xsact-combo-delete" title="' + QiActT('combo.item_del') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button>' +
                     '</div>' +
                     '</div>';
             });
         }
-        html += '<button class="xsact-combo-new-btn" id="xsact-new-combo-btn">' + svgIcon('plus', 15) + '新建组合</button>';
+        html += '<button class="xsact-combo-new-btn" id="xsact-new-combo-btn">' + svgIcon('plus', 15) + ' ' + QiActT('combo.new_btn') + '</button>';
         listEl.innerHTML = html;
 
         listEl.querySelectorAll('.xsact-combo-run').forEach(function(btn) {
@@ -3794,7 +4260,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 var c = getCombo(id);
                 if (!c || !c.items.length) return;
                 if (state.allModeActive) { runComboAll(c); return; }
-                if (!charObj) { toast('请先在左侧选择人物', '#FF5C5C'); return; }
+                if (!charObj) { toast(QiActT('toast.pick_char'), '#FF5C5C'); return; }
                 runComboOnTarget(charObj, c);
             });
         });
@@ -3808,7 +4274,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 var id = btn.closest('.xsact-combo-card').dataset.id;
-                qiactConfirm({ title: '删除组合', body: '确定删除这个组合吗？', confirmText: '删除', danger: true }).then(function(ok) {
+                qiactConfirm({ title: QiActT('combo.delete_confirm_title'), body: QiActT('combo.delete_confirm_body'), confirmText: QiActT('combo.delete_confirm_btn'), danger: true }).then(function(ok) {
                     if (!ok) return;
                     deleteCombo(id); updateComboPanel(charObj);
                 });
@@ -3816,7 +4282,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         });
         var newBtn = listEl.querySelector('#xsact-new-combo-btn');
         if (newBtn) newBtn.addEventListener('click', function() {
-            var c = addCombo('新组合');
+            var c = addCombo(QiActT('combo.new_name'));
             startEditCombo(c.id);
         });
     }
@@ -3904,7 +4370,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
             if (!titleEl || !listEl) return;
             if (!charObj || !partGroup) {
-                listEl.innerHTML = '<div class="xsact-qa-empty">请先在左侧选择人物和部位</div>';
+                listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.pick_char_part') + '</div>';
                 return;
             }
 
@@ -3913,7 +4379,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
             var actions = getActionsForPart(partGroup, charObj);
             if (!Array.isArray(actions) || actions.length === 0) {
-                listEl.innerHTML = '<div class="xsact-qa-empty">该部位暂无可用动作</div>';
+                listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.no_actions') + '</div>';
                 if (allBtn) allBtn.disabled = true;
                 return;
             }
@@ -3933,11 +4399,11 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                     (isFav ? '<span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span>' : '') +
                     '</button>';
                 if (isEditing) {
-                    html += '<button class="xsact-add-to-combo" title="加入当前组合">' + svgIcon('plus', 16) + '</button>';
+                    html += '<button class="xsact-add-to-combo" title="' + QiActT('combo.add_title') + '">' + svgIcon('plus', 16) + '</button>';
                 }
                 html += '</div>';
             });
-            listEl.innerHTML = html || '<div class="xsact-qa-empty">该部位暂无可用动作</div>';
+            listEl.innerHTML = html || '<div class="xsact-qa-empty">' + QiActT('render.no_actions') + '</div>';
 
             // 绑定动作按钮点击：收藏模式下加入/取消收藏，否则执行
             listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
@@ -3964,7 +4430,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                         if (srcKey === 'LSCG' || srcKey === 'LIKO') {
                             setTimeout(function() { try { updateActionPanel(charObj, partGroup); } catch (_) { console.warn('[QiAct] 延迟刷新动作面板失败（已忽略）:', _ && _.message); } }, 50);
                         } else if (execOk !== false) {
-                            toast('已执行：' + getActivityLabel(actName, partGroup), '#46E0A0');
+                            toast(QiActT('toast.executed', { name: getActivityLabel(actName, partGroup) }), '#46E0A0');
                         }
                     }
                 });
@@ -3979,7 +4445,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                         var act = actions.find(function(a) { return a && a.Name === actName; }) || { Name: actName, Item: null, translatedName: actName };
                         var lbl = act.translatedName || getActivityLabel(act.Name, partGroup);
                         addComboItem(state.editingComboId, partGroup, act.Name, lbl, act.Item || null);
-                        toast('已加入「' + getCombo(state.editingComboId).name + '」', '#46E0A0');
+                        toast(QiActT('toast.added_to_combo', { name: getCombo(state.editingComboId).name }), '#46E0A0');
                     });
                 });
             }
@@ -3987,7 +4453,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             console.error('[QiAct] updateActionPanel 渲染失败:', panelErr);
             if (state.actionPanelEl) {
                 var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
-                if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty" style="color:#FF8FA6">动作列表加载出错，请刷新或反馈。<br><small>' + escapeHtml(panelErr.message) + '</small></div>';
+                if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty" style="color:#FF8FA6">' + QiActT('render.load_err', { msg: escapeHtml(panelErr.message) }) + '</div>';
             }
         }
     }
@@ -4096,8 +4562,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             savePanelPosition();
         }
         header.addEventListener('mousedown', function(e) {
-            // 标题栏上的按钮不触发拖拽
-            if (e.target.closest('button')) return;
+            // 标题栏上的按钮/下拉不触发拖拽
+            if (e.target.closest('button, select, input')) return;
             dragging = true;
             sx = e.clientX; sy = e.clientY;
             var r = panel.getBoundingClientRect();
@@ -4111,6 +4577,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         });
     }
 
+    // 语言下拉的全局关闭监听只需绑定一次（rebuildPanel 会频繁重建面板）
+    var __langGlobalBound = false;
+
     function bindPanelEvents(panel) {
         // 退出按钮（面板上的 ✕）
         var exitBtn = panel.querySelector('#xsact-exit-panel-btn');
@@ -4119,6 +4588,52 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         // 刷新按钮：重新渲染当前面板状态（单部位刷新动作列表，组合模式刷新组合列表）
         var refreshBtn = panel.querySelector('#xsact-refresh-btn');
         if (refreshBtn) refreshBtn.addEventListener('click', refreshPanelState);
+
+        // 语言切换下拉（自定义菜单）：setLang 后重建面板以应用新语言（auto 跟随 BC 游戏语言）
+        var langWrap = panel.querySelector('#xsact-lang');
+        var langTrigger = panel.querySelector('#xsact-lang-trigger');
+        var langMenu = panel.querySelector('#xsact-lang-menu');
+        if (langWrap && langTrigger && langMenu) {
+            var closeLang = function() { langWrap.classList.remove('open'); langTrigger.setAttribute('aria-expanded', 'false'); };
+            var openLang = function() {
+                langWrap.classList.add('open'); langTrigger.setAttribute('aria-expanded', 'true');
+                var act = langMenu.querySelector('.xsact-lang-item.active') || langMenu.querySelector('.xsact-lang-item');
+                if (act) act.focus();
+            };
+            langTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (langWrap.classList.contains('open')) closeLang(); else openLang();
+            });
+            langMenu.querySelectorAll('.xsact-lang-item').forEach(function(it) {
+                it.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var code = it.getAttribute('data-lang');
+                    if (typeof QiActI18n !== 'undefined' && QiActI18n.setLang) QiActI18n.setLang(code);
+                    closeLang();
+                    if (typeof rebuildPanel === 'function') rebuildPanel();
+                    else if (window.__QiAct && window.__QiAct.rebuild) window.__QiAct.rebuild();
+                });
+            });
+            // 键盘导航：菜单内 ↑/↓ 移动高亮，Enter 选中（按钮原生触发 click），Esc 关闭
+            langMenu.addEventListener('keydown', function(e) {
+                var items = Array.prototype.slice.call(langMenu.querySelectorAll('.xsact-lang-item'));
+                var idx = items.indexOf(document.activeElement);
+                if (e.key === 'ArrowDown') { e.preventDefault(); (items[(idx + 1) % items.length] || items[0]).focus(); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); (items[(idx - 1 + items.length) % items.length] || items[0]).focus(); }
+                else if (e.key === 'Escape') { e.preventDefault(); closeLang(); langTrigger.focus(); }
+            });
+            // 仅绑定一次：点击面板外 / Esc 关闭（Esc 用捕获阶段，绕过 BC 自身对 Escape 的 stopPropagation）
+            if (!__langGlobalBound) {
+                __langGlobalBound = true;
+                document.addEventListener('click', function(e) {
+                    var w = document.getElementById('xsact-lang');
+                    if (w && !w.contains(e.target)) { w.classList.remove('open'); var t = document.getElementById('xsact-lang-trigger'); if (t) t.setAttribute('aria-expanded', 'false'); }
+                });
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { var w = document.getElementById('xsact-lang'); if (w && w.classList.contains('open')) { w.classList.remove('open'); var t = document.getElementById('xsact-lang-trigger'); if (t) { t.setAttribute('aria-expanded', 'false'); t.focus(); } } }
+                }, true);
+            }
+        }
 
         // 模式切换标签（动作 / 组合动作）
         panel.querySelectorAll('.xsact-mode-tab').forEach(function(tab) {
@@ -4220,16 +4735,16 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     /** 重复上次动作 */
     function repeatLastAction() {
-        if (!state.lastAction) { toast('没有上次的动作记录', '#888'); return; }
+        if (!state.lastAction) { toast(QiActT('toast.no_last'), '#888'); return; }
         var target = (ChatRoomCharacter || []).find(function(c) {
             return c && c.MemberNumber === state.lastAction.targetMN;
         });
-        if (!target) { toast('目标不在房间内', '#FF5C5C'); return; }
+        if (!target) { toast(QiActT('toast.target_not_in_room'), '#FF5C5C'); return; }
         state.selectedTarget = target;
         state.selectedPart = state.lastAction.part || '';
         state.selectedAction = state.lastAction.name;
         executeAction(target, state.lastAction.name);
-        toast('重复：' + state.lastAction.name, '#FF5C7A');
+        toast(QiActT('toast.repeat', { name: state.lastAction.name }), '#FF5C7A');
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -4703,6 +5218,55 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-qa-mini-btn:hover{background:var(--xs-hover);border-color:var(--xs-border-strong);color:var(--xs-text);}',
             '#xsact-refresh-btn,#xsact-exit-panel-btn{padding:0;width:28px;height:28px;}',
             '#xsact-x3-btn{padding:8px 10px;min-width:34px;}',
+            /* 语言切换下拉（自定义菜单，暗色战术台风格） */
+            '.xsact-lang{position:relative;flex-shrink:0;}',
+            '.xsact-lang-trigger{',
+            '  display:flex;align-items:center;gap:5px;',
+            '  background:var(--xs-btn-bg);border:1px solid var(--xs-border);',
+            '  border-radius:8px;height:28px;padding:0 8px;cursor:pointer;',
+            '  color:var(--xs-text-dim);font-size:11px;font-weight:600;letter-spacing:.03em;',
+            '  transition:background .15s,border-color .15s,color .15s,box-shadow .15s;',
+            '}',
+            '.xsact-lang-trigger:hover{background:var(--xs-hover);border-color:var(--xs-border-strong);color:var(--xs-text);}',
+            '.xsact-lang.open .xsact-lang-trigger,.xsact-lang-trigger:focus{outline:none;border-color:var(--xs-accent);color:var(--xs-text);box-shadow:0 0 0 2px rgba(var(--xs-accent-rgb),.18);}',
+            '.xsact-lang-code{',
+            '  display:inline-flex;align-items:center;justify-content:center;',
+            '  min-width:22px;height:18px;padding:0 5px;border-radius:5px;',
+            '  background:rgba(var(--xs-accent-rgb),.14);color:var(--xs-accent);',
+            '  font-size:10px;font-weight:700;letter-spacing:.04em;',
+            '}',
+            '.xsact-lang-caret{font-size:9px;line-height:1;opacity:.7;transition:transform .18s ease;}',
+            '.xsact-lang.open .xsact-lang-caret{transform:rotate(180deg);}',
+            '.xsact-lang-menu{',
+            '  position:absolute;top:calc(100% + 6px);right:0;z-index:120;',
+            '  min-width:172px;padding:6px;display:none;flex-direction:column;gap:2px;',
+            '  background:var(--xs-panel-bg);border:1px solid var(--xs-border-strong);',
+            '  border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.42);',
+            '  animation:xsact-lang-in .16s ease-out;',
+            '}',
+            '.xsact-lang.open .xsact-lang-menu{display:flex;}',
+            '@keyframes xsact-lang-in{from{opacity:0;transform:translateY(-6px) scale(.98);}to{opacity:1;transform:none;}}',
+            '.xsact-lang-item{',
+            '  display:flex;align-items:center;gap:9px;',
+            '  padding:7px 9px;border-radius:7px;cursor:pointer;',
+            '  background:transparent;border:1px solid transparent;',
+            '  color:var(--xs-text-dim);font-size:12px;text-align:left;',
+            '  transition:background .12s,color .12s,border-color .12s;',
+            '}',
+            '.xsact-lang-item:hover{background:var(--xs-hover);color:var(--xs-text);}',
+            '.xsact-lang-item .xsact-lang-item-code{',
+            '  display:inline-flex;align-items:center;justify-content:center;',
+            '  min-width:26px;height:20px;padding:0 5px;border-radius:5px;',
+            '  background:var(--xs-btn-bg);border:1px solid var(--xs-border);',
+            '  font-size:10px;font-weight:700;color:var(--xs-text-faint);letter-spacing:.03em;flex-shrink:0;',
+            '}',
+            '.xsact-lang-item .xsact-lang-item-native{flex:1;white-space:nowrap;}',
+            '.xsact-lang-item .xsact-lang-check{font-size:11px;color:var(--xs-accent);opacity:0;flex-shrink:0;}',
+            '.xsact-lang-item.active{background:rgba(var(--xs-accent-rgb),.10);border-color:rgba(var(--xs-accent-rgb),.3);color:var(--xs-text);}',
+            '.xsact-lang-item.active .xsact-lang-item-code{background:rgba(var(--xs-accent-rgb),.18);color:var(--xs-accent);border-color:rgba(var(--xs-accent-rgb),.35);}',
+            '.xsact-lang-item.active .xsact-lang-check{opacity:1;}',
+            '.xsact-lang-item:focus{outline:none;background:var(--xs-hover);}',
+            '.xsact-lang-item.active:focus{background:rgba(var(--xs-accent-rgb),.16);}',
             /* 版本号隐约显示（footer 右下，hover 才清晰） */
             '.xsact-version-tag{',
             '  margin-left:auto;font-size:10px;line-height:1;letter-spacing:.04em;user-select:none;',
@@ -4972,7 +5536,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
               '.xsact-mode-tab .xsact-ico{width:16px;height:16px;}',
             '}',
             '@container xsact-panel (max-width: 240px){',
-              '.xsact-panel-head-actions button:not(#xsact-exit-panel-btn){display:none;}',
+              '.xsact-panel-head-actions button:not(#xsact-exit-panel-btn):not(#xsact-lang-trigger){display:none;}',
             '}',
 
             /* ===== 主题色切换过渡 ===== */
@@ -5500,7 +6064,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     function logUpdateError(entry) {
         var where = entry.kind === 'http'
             ? ('HTTP ' + entry.status)
-            : (entry.kind === 'parse' ? '响应解析失败' : '网络错误');
+            : (entry.kind === 'parse' ? QiActT('update.parse_err') : QiActT('update.net_err'));
         console.error('[QiAct] 更新检查失败（第 ' + entry.attempt + ' 次）[' + where + '] ' + (entry.message || '') + (entry.url ? ' @ ' + entry.url : ''));
         try {
             var log = [];
@@ -5541,7 +6105,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             try {
                 return JSON.parse(text);
             } catch (pe) {
-                var pe2 = new Error('JSON 解析失败: ' + pe.message);
+                var pe2 = new Error(QiActT('update.json_parse_err', { msg: pe.message }));
                 pe2.kind = 'parse'; pe2.status = res.status; pe2.url = url; pe2.attempt = attempt;
                 throw pe2;
             }
@@ -5614,11 +6178,11 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         if (!last) { persist(S_LAST_SEEN_VERSION, VERSION); return; } // 首次运行不提示
         if (compareVersion(VERSION, last) !== 0) {
             if (compareVersion(VERSION, last) > 0) {
-                try { toast('QiAct 已更新到 v' + VERSION, '#46E0A0'); } catch (_) {}
+                try { toast('QiAct ' + QiActT('update.title', { VERSION: VERSION }), '#46E0A0'); } catch (_) {}
                 // 轻量拉取本次更新摘要，用公告横幅补充展示（失败不影响已显示的 toast）
                 fetchVersionJson(VERSION_INFO_URL, 0).then(function (info) {
                     if (info && Array.isArray(info.summary) && info.summary.length) {
-                        showAnnounceBanner({ id: 'updated-' + VERSION, title: '已更新到 v' + VERSION, severity: 'available', message: info.summary.join('\n'), detailsUrl: info.detailsUrl });
+                        showAnnounceBanner({ id: 'updated-' + VERSION, title: QiActT('update.title', { VERSION: VERSION }), severity: 'available', message: info.summary.join('\n'), detailsUrl: info.detailsUrl });
                     }
                 }).catch(function () {});
             }
@@ -5660,14 +6224,14 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var items = summary.slice(0, 4).map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('');
         el.className = 'xsact-update-banner' + (info.severity === 'important' ? ' is-important' : '');
         el.innerHTML = '' +
-            '<div class="xsact-ub-head"><span class="xsact-ub-tag">更新可用</span>' +
+            '<div class="xsact-ub-head"><span class="xsact-ub-tag">' + QiActT('update.available_tag') + '</span>' +
             '<span class="xsact-ub-ver">v' + escapeHtml(info.version) + '</span>' +
-            '<button class="xsact-ub-close" id="xsact-ub-close" title="稍后提醒" data-tooltip-type="danger">×</button></div>' +
+            '<button class="xsact-ub-close" id="xsact-ub-close" title="' + QiActT('update.later_title') + '" data-tooltip-type="danger">×</button></div>' +
             (items ? '<ul class="xsact-ub-sum">' + items + '</ul>' : '') +
             '<div class="xsact-ub-actions">' +
-            (info.detailsUrl ? '<button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">查看详情</button>' : '') +
-            '<button class="xsact-ub-btn" id="xsact-ub-later">稍后</button>' +
-            '<button class="xsact-ub-btn" id="xsact-ub-ignore">不再提示此版本</button>' +
+            (info.detailsUrl ? '<button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">' + QiActT('update.details') + '</button>' : '') +
+            '<button class="xsact-ub-btn" id="xsact-ub-later">' + QiActT('update.later') + '</button>' +
+            '<button class="xsact-ub-btn" id="xsact-ub-ignore">' + QiActT('update.ignore') + '</button>' +
             '</div>';
         el.style.display = '';
         var close = el.querySelector('#xsact-ub-close');
@@ -5684,18 +6248,18 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var el = getUpdateBannerEl();
         if (!el) { state.pendingBanner = { type: 'announce', data: ann }; return; }
         var sev = ann.severity || 'info';
-        var tagText = '公告';
+        var tagText = QiActT('update.announce_tag');
         var cls = 'xsact-update-banner';
-        if (sev === 'important') { cls += ' is-important'; tagText = '重要'; }
-        else if (sev === 'available') { cls += ' is-available'; tagText = '可用'; }
-        else { cls += ' is-announce'; tagText = '公告'; }
+        if (sev === 'important') { cls += ' is-important'; tagText = QiActT('update.important_tag'); }
+        else if (sev === 'available') { cls += ' is-available'; tagText = QiActT('update.available_tag'); }
+        else { cls += ' is-announce'; tagText = QiActT('update.announce_tag'); }
         el.className = cls;
         el.innerHTML = '' +
             '<div class="xsact-ub-head"><span class="xsact-ub-tag">' + escapeHtml(tagText) + '</span>' +
             (ann.title ? '<span class="xsact-ub-title">' + escapeHtml(ann.title) + '</span>' : '') +
-            '<button class="xsact-ub-close" id="xsact-ub-close" title="知道了" data-tooltip-type="danger">×</button></div>' +
+            '<button class="xsact-ub-close" id="xsact-ub-close" title="' + QiActT('update.know') + '" data-tooltip-type="danger">×</button></div>' +
             (ann.message ? '<div class="xsact-ub-msg">' + escapeHtml(ann.message) + '</div>' : '') +
-            (ann.detailsUrl ? '<div class="xsact-ub-actions"><button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">查看详情</button></div>' : '');
+            (ann.detailsUrl ? '<div class="xsact-ub-actions"><button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">' + QiActT('update.details') + '</button>' + '</div>' : '');
         el.style.display = '';
         var close = el.querySelector('#xsact-ub-close');
         var details = el.querySelector('#xsact-ub-details');
@@ -5883,6 +6447,14 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             get selectedPart() { return state.selectedPart; },
             makeActivityPacket: makeActivityPacket,
             findBestItemForActivityAsset: findBestItemForActivityAsset,
+            // ── 语言切换 ──
+            setLanguage: function(code) {
+                if (typeof QiActI18n !== 'undefined' && QiActI18n.setLang) QiActI18n.setLang(code);
+                if (typeof rebuildPanel === 'function') rebuildPanel();
+                return (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : null;
+            },
+            getCurrentLang: function() { return (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : null; },
+            rebuildPanel: rebuildPanel,
             version: VERSION,
             // ── 更新 / 公告 ──
             checkUpdate: checkUpdate,

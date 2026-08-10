@@ -56,7 +56,7 @@
         var chars = getRoomCharacters();
         var html = '';
         if (chars.length === 0) {
-            html = '<div class="xsact-char-popover-empty">房间无人</div>';
+            html = '<div class="xsact-char-popover-empty">' + QiActT('target.empty') + '</div>';
         } else {
             html = '<div class="xsact-char-popover-items">';
             chars.forEach(function(c) {
@@ -64,7 +64,7 @@
                 var selected = state.selectedTarget && state.selectedTarget.MemberNumber === c.MemberNumber;
                 html += '<div class="xsact-char-popover-item' + (selected ? ' selected' : '') + (isSelf ? ' self' : '') + '" data-mn="' + c.MemberNumber + '">' +
                     '<span class="xsact-char-popover-name">' + escapeHtml(characterDisplayName(c)) + '</span>' +
-                    (isSelf ? '<span class="xsact-char-popover-self">自己</span>' : '') +
+                    (isSelf ? '<span class="xsact-char-popover-self">' + QiActT('common.self') + '</span>' : '') +
                     '</div>';
             });
             html += '</div>';
@@ -105,7 +105,7 @@
         var svg = '<svg class="xsact-body-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' +
             rects +
             '</svg>' +
-            '<div class="xsact-body-part-hint">点击身体部位选择动作</div>';
+            '<div class="xsact-body-part-hint">' + QiActT('target.pick_part') + '</div>';
         bodyEl.innerHTML = '<div class="xsact-body-select">' + svg + '</div>';
 
         var hint = bodyEl.querySelector('.xsact-body-part-hint');
@@ -116,7 +116,7 @@
                 zone.classList.add('hover');
             });
             zone.addEventListener('mouseleave', function() {
-                if (hint) hint.textContent = '点击身体部位选择动作';
+                if (hint) hint.textContent = QiActT('target.pick_part');
                 zone.classList.remove('hover');
             });
             zone.addEventListener('click', function(e) {
@@ -140,10 +140,10 @@
         var view = (state.popoverView === 'parts' && state.selectedTarget) ? 'parts' : 'chars';
         popover.classList.toggle('show-back', view === 'parts');
         if (view === 'chars') {
-            if (titleEl) titleEl.textContent = '人物列表';
+            if (titleEl) titleEl.textContent = QiActT('ui.chars');
             renderCharList();
         } else {
-            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → 选择部位';
+            if (titleEl) titleEl.textContent = (characterDisplayName(state.selectedTarget) || '?') + ' → ' + QiActT('target.select_part');
             renderPopoverParts(state.selectedTarget);
         }
     }

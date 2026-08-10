@@ -55,7 +55,7 @@
         updateAllButtonVisual();
         updateFavButtonVisual();
 
-        toast('动作模式已开启', '#FF5C7A');
+        toast(QiActT('common.enter_mode'), '#FF5C7A');
     }
 
     function exitActionMode() {
@@ -75,7 +75,32 @@
         state.editingComboId = null;
         state.allModeActive = false;
 
-        toast('已退出动作模式', '#888');
+        toast(QiActT('common.exit_mode'), '#888');
+    }
+
+    /** 语言切换后重建面板（重渲染所有 QiActT 文案），不重置选择/模式/位置 */
+    function rebuildPanel() {
+        if (!state.actionPanelEl) { if (typeof enterActionMode === 'function') enterActionMode(); return; }
+        // 移除旧面板再重建，避免重复绑定事件（与 enterActionMode 防御一致）
+        if (state.actionPanelEl.parentNode) state.actionPanelEl.parentNode.removeChild(state.actionPanelEl);
+        state.actionPanelEl = document.createElement('div');
+        state.actionPanelEl.id = 'xsact-qa-panel';
+        state.actionPanelEl.innerHTML = buildPanelHTML();
+        document.body.appendChild(state.actionPanelEl);
+        bindPanelEvents(state.actionPanelEl);
+        makeDraggable(state.actionPanelEl);
+        makeResizable(state.actionPanelEl);
+        // 恢复当前模式高亮
+        var savedMode = state.panelMode || 'part';
+        state.actionPanelEl.querySelectorAll('.xsact-mode-tab').forEach(function(tab) {
+            tab.classList.toggle('active', tab.dataset.mode === savedMode);
+        });
+        state.actionPanelEl.style.display = '';
+        applyPanelSize();
+        applyPanelPosition();
+        renderPanel();
+        // 同步刷新人物列表（含 QiActT 文案）
+        try { if (typeof renderCharList === 'function') renderCharList(); } catch (_) { /* 忽略 */ }
     }
 
     /** 构建右侧面板 HTML */

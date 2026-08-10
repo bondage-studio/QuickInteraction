@@ -26,7 +26,7 @@
             });
         });
         var svg = '<svg class="xsact-body-mini-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg>';
-        container.innerHTML = '<div class="xsact-body-mini-hint">点击框选身体部位</div>' + svg;
+        container.innerHTML = '<div class="xsact-body-mini-hint">' + QiActT('editor.pick_part_hint') + '</div>' + svg;
         var hint = container.querySelector('.xsact-body-mini-hint');
         container.querySelectorAll('.xsact-body-part-zone').forEach(function(zone) {
             zone.addEventListener('mouseenter', function() {
@@ -34,7 +34,7 @@
                 zone.classList.add('hover');
             });
             zone.addEventListener('mouseleave', function() {
-                if (hint) hint.textContent = '点击框选身体部位';
+                if (hint) hint.textContent = QiActT('editor.pick_part_hint');
                 zone.classList.remove('hover');
             });
             zone.addEventListener('click', function(e) {
@@ -50,36 +50,36 @@
 
     function renderCustomEditor(act, charObj, listEl, titleEl) {
         var isNew = !getCustom(act.id);
-        titleEl.textContent = (isNew ? '新建' : '编辑') + '：自定义动作';
+        titleEl.textContent = (isNew ? QiActT('editor.new_title') : QiActT('editor.edit_title'));
         var scope = act.scope || 'other';
         var group = act.group || 'ItemMouth';
         var partLbl = (BODY_PARTS.find(function(p) { return p.group === group; }) || {}).label || group;
         var html = '<div class="xsact-ca-editor">';
-        html += '<div class="xsact-combo-field"><label>动作名称</label><input type="text" id="xsact-ca-name" value="' + escapeHtml(act.name) + '" placeholder="如：轻轻咬住"></div>';
-        html += '<div class="xsact-combo-field"><label>谁能使用这个动作</label><div class="xsact-ca-scope" id="xsact-ca-scope">' +
-            '<button data-scope="other" class="' + (scope === 'other' ? 'active' : '') + '">仅他人</button>' +
-            '<button data-scope="self" class="' + (scope === 'self' ? 'active' : '') + '">仅自己</button>' +
-            '<button data-scope="any" class="' + (scope === 'any' ? 'active' : '') + '">皆可</button>' +
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.name_label') + '</label>' + '<input type="text" id="xsact-ca-name" value="' + escapeHtml(act.name) + '" placeholder="' + QiActT('editor.name_placeholder') + '"></div>';
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.scope_label') + '</label>' + '<div class="xsact-ca-scope" id="xsact-ca-scope">' +
+            '<button data-scope="other" class="' + (scope === 'other' ? 'active' : '') + '">' + QiActT('custom.scope_other') + '</button>' +
+            '<button data-scope="self" class="' + (scope === 'self' ? 'active' : '') + '">' + QiActT('custom.scope_self') + '</button>' +
+            '<button data-scope="any" class="' + (scope === 'any' ? 'active' : '') + '">' + QiActT('custom.scope_any') + '</button>' +
             '</div></div>';
-        html += '<div class="xsact-combo-field"><label>身体部位</label>' +
-            '<div class="xsact-ca-part-display" id="xsact-ca-part-display"><span class="xsact-ca-part-label">' + escapeHtml(partLbl) + '（' + group + '）</span><span class="xsact-ca-part-change">点击下图重新选择</span></div>' +
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.part_label') + '</label>' +
+            '<div class="xsact-ca-part-display" id="xsact-ca-part-display"><span class="xsact-ca-part-label">' + escapeHtml(partLbl) + '（' + group + '）</span><span class="xsact-ca-part-change">' + QiActT('editor.part_change') + '</span>' + '</div>' +
             '<div class="xsact-ca-part-map" id="xsact-ca-part-map"></div>' +
             '<input type="hidden" id="xsact-ca-group" value="' + group + '">' +
             '</div>';
-        html += '<div class="xsact-combo-field"><label>对他人时显示</label><textarea id="xsact-ca-dialog-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialog) + '</textarea><div id="xsact-ca-dialog" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="如：轻轻咬住了 对方 的耳朵"></div></div>';
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_other_label') + '</label>' + '<textarea id="xsact-ca-dialog-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialog) + '</textarea><div id="xsact-ca-dialog" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_other_ph') + '"></div></div>';
         html += '<div class="xsact-ca-hint">' +
-            '<div class="xsact-ca-hint-title">可用占位符（点击插入）</div>' +
+            '<div class="xsact-ca-hint-title">' + QiActT('editor.tokens_title') + '</div>' +
             '<div class="xsact-ca-hint-btns">' +
-            '<button class="xsact-ca-token" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>自己</button>' +
-            '<button class="xsact-ca-token" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>对方</button>' +
+            '<button class="xsact-ca-token" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>' + QiActT('editor.token_self') + '</button>' +
+            '<button class="xsact-ca-token" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>' + QiActT('editor.token_other') + '</button>' +
             '</div>' +
             '</div>';
-        html += '<div class="xsact-combo-field"><label>对自己时显示</label><textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="如：被轻轻咬住了耳朵"></div></div>';
+        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_self_label') + '</label>' + '<textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_self_ph') + '"></div></div>';
         html += '<div class="xsact-ca-preview" id="xsact-ca-preview"></div>';
         html += '<div class="xsact-combo-actions">' +
-            '<button class="xsact-combo-save-btn" id="xsact-ca-save">保存</button>' +
-            (isNew ? '' : '<button class="xsact-ca-del-btn" id="xsact-ca-del">删除</button>') +
-            '<button class="xsact-combo-cancel-btn" id="xsact-ca-cancel">返回</button>' +
+            '<button class="xsact-combo-save-btn" id="xsact-ca-save">' + QiActT('editor.save') + '</button>' +
+            (isNew ? '' : '<button class="xsact-ca-del-btn" id="xsact-ca-del">' + QiActT('editor.delete') + '</button>') +
+            '<button class="xsact-combo-cancel-btn" id="xsact-ca-cancel">' + QiActT('editor.cancel') + '</button>' +
             '</div>';
         html += '</div>';
         listEl.innerHTML = html;
@@ -106,8 +106,8 @@
 
         function renderRichText(raw) {
             return escapeHtml(raw)
-                .replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">自己</span><span class="xsact-zwsp">&#8203;</span>')
-                .replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">对方</span><span class="xsact-zwsp">&#8203;</span>');
+                .replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">' + QiActT('editor.token_self_pill') + '<span class="xsact-zwsp">&#8203;</span>')
+                .replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">' + QiActT('editor.token_other_pill') + '<span class="xsact-zwsp">&#8203;</span>');
         }
         function extractRawFromRich(el) {
             var raw = '';
@@ -140,7 +140,7 @@
             richEl.innerHTML = renderRichText(rawEl.value);
         }
         function insertTokenPill(token, richEl) {
-            var label = token === '{SourceCharacter}' ? '自己' : '对方';
+            var label = token === '{SourceCharacter}' ? QiActT('editor.token_self_pill') : QiActT('editor.token_other_pill');
             if (!richEl || richEl.contentEditable !== 'true') return;
             richEl.focus();
             var sel = window.getSelection();
@@ -230,7 +230,7 @@
         }
 
         function refreshPreview() {
-            var nm = (listEl.querySelector('#xsact-ca-name') || {}).value || '动作';
+            var nm = (listEl.querySelector('#xsact-ca-name') || {}).value || QiActT('editor.default_name');
             var dlg = (listEl.querySelector('#xsact-ca-dialog-raw') || {}).value || nm;
             var dlgSelf = (listEl.querySelector('#xsact-ca-dialogself-raw') || {}).value || '';
             var sc = (listEl.querySelector('#xsact-ca-scope') || {}).querySelector('.active');
@@ -250,7 +250,7 @@
                 var textOther = resolveText(dlg, src, tgt);
                 // 对自己时显示：保留源视角，因此“对方”仍指向实际目标（而非玩家自己）
                 var textSelf = (dlgSelf.trim() ? dlgSelf : dlg).replace(/\{SourceCharacter\}/g, src).replace(/\{TargetCharacter\}/g, tgt);
-                preview = '对他人：' + textOther + '\n对自己：' + textSelf;
+                preview = QiActT('editor.preview', { a: textOther, b: textSelf });
             } else {
                 preview = resolveText(dlg, src, tgt);
             }
@@ -285,15 +285,15 @@
             var dlgSelf = (listEl.querySelector('#xsact-ca-dialogself-raw') || {}).value || '';
             var sc = (listEl.querySelector('#xsact-ca-scope') || {}).querySelector('.active');
             var gp = (listEl.querySelector('#xsact-ca-group') || {}).value || 'ItemMouth';
-            if (!nm.trim()) { toast('请填写动作名称', '#FF5C5C'); return; }
-            if (!dlg.trim()) { toast('请填写对话文本', '#FF5C5C'); return; }
+            if (!nm.trim()) { toast(QiActT('toast.fill_name'), '#FF5C5C'); return; }
+            if (!dlg.trim()) { toast(QiActT('toast.fill_dialog'), '#FF5C5C'); return; }
             var existing = getCustom(act.id);
             if (existing) caUnregister(existing);
             var updated = { id: act.id, name: nm.trim(), scope: (sc ? sc.dataset.scope : 'other'), group: gp, dialog: dlg, dialogSelf: dlgSelf, createdAt: act.createdAt || Date.now(), source: act.source || 'native', visible: typeof act.visible === 'boolean' ? act.visible : true, echoName: act.echoName || null, echoNames: Array.isArray(act.echoNames) ? act.echoNames.slice() : [] };
             upsertCustom(updated);
             state.editingCustomId = null;
             updateCustomActionPanel(charObj);
-            toast('自定义动作已保存', '#46E0A0');
+            toast(QiActT('toast.custom_saved'), '#46E0A0');
         });
         var cancelBtn = listEl.querySelector('#xsact-ca-cancel');
         if (cancelBtn) cancelBtn.addEventListener('click', function() {
@@ -302,9 +302,9 @@
         });
         var delBtn = listEl.querySelector('#xsact-ca-del');
         if (delBtn) delBtn.addEventListener('click', function() {
-            qiactConfirm({ title: '删除动作', body: '确定删除该自定义动作吗？', confirmText: '删除', danger: true }).then(function(ok) {
+            qiactConfirm({ title: QiActT('custom.delete_confirm_title'), body: QiActT('custom.delete_confirm_body', { name: act.name }), confirmText: QiActT('custom.delete_confirm_btn'), danger: true }).then(function(ok) {
                 if (!ok) return;
-                deleteCustom(act.id); state.editingCustomId = null; updateCustomActionPanel(charObj); toast('已删除', '#888');
+                deleteCustom(act.id); state.editingCustomId = null; updateCustomActionPanel(charObj); toast(QiActT('toast.deleted'), '#888');
             });
         });
     }

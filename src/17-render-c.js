@@ -95,8 +95,8 @@
             savePanelPosition();
         }
         header.addEventListener('mousedown', function(e) {
-            // 标题栏上的按钮不触发拖拽
-            if (e.target.closest('button')) return;
+            // 标题栏上的按钮/下拉不触发拖拽
+            if (e.target.closest('button, select, input')) return;
             dragging = true;
             sx = e.clientX; sy = e.clientY;
             var r = panel.getBoundingClientRect();
@@ -110,6 +110,9 @@
         });
     }
 
+    // 语言下拉的全局关闭监听只需绑定一次（rebuildPanel 会频繁重建面板）
+    var __langGlobalBound = false;
+
     function bindPanelEvents(panel) {
         // 退出按钮（面板上的 ✕）
         var exitBtn = panel.querySelector('#xsact-exit-panel-btn');
@@ -118,6 +121,52 @@
         // 刷新按钮：重新渲染当前面板状态（单部位刷新动作列表，组合模式刷新组合列表）
         var refreshBtn = panel.querySelector('#xsact-refresh-btn');
         if (refreshBtn) refreshBtn.addEventListener('click', refreshPanelState);
+
+        // 语言切换下拉（自定义菜单）：setLang 后重建面板以应用新语言（auto 跟随 BC 游戏语言）
+        var langWrap = panel.querySelector('#xsact-lang');
+        var langTrigger = panel.querySelector('#xsact-lang-trigger');
+        var langMenu = panel.querySelector('#xsact-lang-menu');
+        if (langWrap && langTrigger && langMenu) {
+            var closeLang = function() { langWrap.classList.remove('open'); langTrigger.setAttribute('aria-expanded', 'false'); };
+            var openLang = function() {
+                langWrap.classList.add('open'); langTrigger.setAttribute('aria-expanded', 'true');
+                var act = langMenu.querySelector('.xsact-lang-item.active') || langMenu.querySelector('.xsact-lang-item');
+                if (act) act.focus();
+            };
+            langTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (langWrap.classList.contains('open')) closeLang(); else openLang();
+            });
+            langMenu.querySelectorAll('.xsact-lang-item').forEach(function(it) {
+                it.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var code = it.getAttribute('data-lang');
+                    if (typeof QiActI18n !== 'undefined' && QiActI18n.setLang) QiActI18n.setLang(code);
+                    closeLang();
+                    if (typeof rebuildPanel === 'function') rebuildPanel();
+                    else if (window.__QiAct && window.__QiAct.rebuild) window.__QiAct.rebuild();
+                });
+            });
+            // 键盘导航：菜单内 ↑/↓ 移动高亮，Enter 选中（按钮原生触发 click），Esc 关闭
+            langMenu.addEventListener('keydown', function(e) {
+                var items = Array.prototype.slice.call(langMenu.querySelectorAll('.xsact-lang-item'));
+                var idx = items.indexOf(document.activeElement);
+                if (e.key === 'ArrowDown') { e.preventDefault(); (items[(idx + 1) % items.length] || items[0]).focus(); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); (items[(idx - 1 + items.length) % items.length] || items[0]).focus(); }
+                else if (e.key === 'Escape') { e.preventDefault(); closeLang(); langTrigger.focus(); }
+            });
+            // 仅绑定一次：点击面板外 / Esc 关闭（Esc 用捕获阶段，绕过 BC 自身对 Escape 的 stopPropagation）
+            if (!__langGlobalBound) {
+                __langGlobalBound = true;
+                document.addEventListener('click', function(e) {
+                    var w = document.getElementById('xsact-lang');
+                    if (w && !w.contains(e.target)) { w.classList.remove('open'); var t = document.getElementById('xsact-lang-trigger'); if (t) t.setAttribute('aria-expanded', 'false'); }
+                });
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { var w = document.getElementById('xsact-lang'); if (w && w.classList.contains('open')) { w.classList.remove('open'); var t = document.getElementById('xsact-lang-trigger'); if (t) { t.setAttribute('aria-expanded', 'false'); t.focus(); } } }
+                }, true);
+            }
+        }
 
         // 模式切换标签（动作 / 组合动作）
         panel.querySelectorAll('.xsact-mode-tab').forEach(function(tab) {
@@ -219,16 +268,16 @@
 
     /** 重复上次动作 */
     function repeatLastAction() {
-        if (!state.lastAction) { toast('没有上次的动作记录', '#888'); return; }
+        if (!state.lastAction) { toast(QiActT('toast.no_last'), '#888'); return; }
         var target = (ChatRoomCharacter || []).find(function(c) {
             return c && c.MemberNumber === state.lastAction.targetMN;
         });
-        if (!target) { toast('目标不在房间内', '#FF5C5C'); return; }
+        if (!target) { toast(QiActT('toast.target_not_in_room'), '#FF5C5C'); return; }
         state.selectedTarget = target;
         state.selectedPart = state.lastAction.part || '';
         state.selectedAction = state.lastAction.name;
         executeAction(target, state.lastAction.name);
-        toast('重复：' + state.lastAction.name, '#FF5C7A');
+        toast(QiActT('toast.repeat', { name: state.lastAction.name }), '#FF5C7A');
     }
 
     // ════════════════════════════════════════════════════════════════════════

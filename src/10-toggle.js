@@ -5,7 +5,7 @@
         state.toggleBtnEl.id = 'xsact-toggle-btn';
         state.toggleBtnEl.innerHTML =
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
-        state.toggleBtnEl.title = state.isActive ? '退出快速动作模式' : '开启快速动作模式';
+        state.toggleBtnEl.title = state.isActive ? QiActT('ui.toggle_off') : QiActT('ui.toggle_on');
         state.toggleBtnEl.addEventListener('click', function(e) {
             if (state.toggleDragged) {
                 e.stopPropagation();
@@ -102,10 +102,10 @@
         if (!state.toggleBtnEl) return;
         if (state.isActive) {
             state.toggleBtnEl.classList.add('active');
-            state.toggleBtnEl.title = '退出快速动作模式 · 已激活';
+            state.toggleBtnEl.title = QiActT('ui.toggle_on_active');
         } else {
             state.toggleBtnEl.classList.remove('active');
-            state.toggleBtnEl.title = '开启快速动作模式';
+            state.toggleBtnEl.title = QiActT('ui.toggle_on');
         }
     }
 

@@ -36,7 +36,7 @@
     let _serverSyncWarned = false;
     function warnServerSync(e) {
         console.warn('[QiAct] 服务器设置同步失败，已回退本地存储:', e);
-        if (!_serverSyncWarned) { _serverSyncWarned = true; toast('设置同步到服务器失败，已保留在本地', '#FF5C5C'); }
+        if (!_serverSyncWarned) { _serverSyncWarned = true; toast(QiActT('toast.sync_failed'), '#FF5C5C'); }
     }
 
     // 通用空 catch 收口：debug 态才节流打日志，生产静默但不丢上下文。
@@ -53,7 +53,7 @@
         }
     }
 
-    const VERSION = '1.3.2';
+    const VERSION = '1.4.0';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -125,30 +125,30 @@
     // 部位定义（BC Target_Group 映射）
     // ════════════════════════════════════════════════════════════════════════
     const BODY_PARTS = [
-        { group: 'ItemHead', label: '头', icon: '🗣' },
-        { group: 'ItemNose', label: '鼻', icon: '👃' },
-        { group: 'ItemEars', label: '耳', icon: '👂' },
-        { group: 'ItemHood', label: '头套', icon: '🎭' },
-        { group: 'ItemMouth', label: '口', icon: '👄' },
-        { group: 'ItemMouth2', label: '口2', icon: '👄' },
-        { group: 'ItemMouth3', label: '口3', icon: '👄' },
-        { group: 'ItemNeck', label: '颈', icon: '🔗' },
-        { group: 'ItemNeckAccessories', label: '颈饰', icon: '🔗' },
-        { group: 'ItemNeckRestraints', label: '颈束', icon: '🔗' },
-        { group: 'ItemNipples', label: '乳', icon: '☁' },
-        { group: 'ItemNipplesPiercings', label: '乳穿', icon: '💎' },
-        { group: 'ItemBreast', label: '胸', icon: '🫂' },
-        { group: 'ItemTorso', label: '躯干', icon: '👕' },
-        { group: 'ItemTorso2', label: '腹', icon: '👕' },
-        { group: 'ItemArms', label: '手臂', icon: '💪' },
-        { group: 'ItemHands', label: '手', icon: '✋' },
-        { group: 'ItemPelvis', label: '腰臀', icon: '〰' },
-        { group: 'ItemVulva', label: '私处', icon: '🌸' },
-        { group: 'ItemVulvaPiercings', label: '阴穿', icon: '💎' },
-        { group: 'ItemButt', label: '臀后', icon: '🍑' },
-        { group: 'ItemLegs', label: '腿', icon: '🦵' },
-        { group: 'ItemFeet', label: '脚', icon: '👢' },
-        { group: 'ItemBoots', label: '靴', icon: '🥾' },
+        { group: 'ItemHead', label: QiActT('part.ItemHead'), icon: '🗣' },
+        { group: 'ItemNose', label: QiActT('part.ItemNose'), icon: '👃' },
+        { group: 'ItemEars', label: QiActT('part.ItemEars'), icon: '👂' },
+        { group: 'ItemHood', label: QiActT('part.ItemHood'), icon: '🎭' },
+        { group: 'ItemMouth', label: QiActT('part.ItemMouth'), icon: '👄' },
+        { group: 'ItemMouth2', label: QiActT('part.ItemMouth2'), icon: '👄' },
+        { group: 'ItemMouth3', label: QiActT('part.ItemMouth3'), icon: '👄' },
+        { group: 'ItemNeck', label: QiActT('part.ItemNeck'), icon: '🔗' },
+        { group: 'ItemNeckAccessories', label: QiActT('part.ItemNeckAccessories'), icon: '🔗' },
+        { group: 'ItemNeckRestraints', label: QiActT('part.ItemNeckRestraints'), icon: '🔗' },
+        { group: 'ItemNipples', label: QiActT('part.ItemNipples'), icon: '☁' },
+        { group: 'ItemNipplesPiercings', label: QiActT('part.ItemNipplesPiercings'), icon: '💎' },
+        { group: 'ItemBreast', label: QiActT('part.ItemBreast'), icon: '🫂' },
+        { group: 'ItemTorso', label: QiActT('part.ItemTorso'), icon: '👕' },
+        { group: 'ItemTorso2', label: QiActT('part.ItemTorso2'), icon: '👕' },
+        { group: 'ItemArms', label: QiActT('part.ItemArms'), icon: '💪' },
+        { group: 'ItemHands', label: QiActT('part.ItemHands'), icon: '✋' },
+        { group: 'ItemPelvis', label: QiActT('part.ItemPelvis'), icon: '〰' },
+        { group: 'ItemVulva', label: QiActT('part.ItemVulva'), icon: '🌸' },
+        { group: 'ItemVulvaPiercings', label: QiActT('part.ItemVulvaPiercings'), icon: '💎' },
+        { group: 'ItemButt', label: QiActT('part.ItemButt'), icon: '🍑' },
+        { group: 'ItemLegs', label: QiActT('part.ItemLegs'), icon: '🦵' },
+        { group: 'ItemFeet', label: QiActT('part.ItemFeet'), icon: '👢' },
+        { group: 'ItemBoots', label: QiActT('part.ItemBoots'), icon: '🥾' },
     ];
 
     // 合成子部位 → 字典翻译主部位映射（BC 字典键只以主部位命名，如 ItemMouth2 查 Label-ChatOther-ItemMouth-*）
@@ -263,8 +263,8 @@
 
     // 主题定义：仅保留深色 / 浅色两套，强调色固定玫红
     const THEMES = [
-        { id:'dark',  name:'深色', base:'dark' },
-        { id:'light', name:'浅色', base:'light' }
+        { id:'dark',  name: QiActT('ui.theme_dark'), base:'dark' },
+        { id:'light', name: QiActT('ui.theme_light'), base:'light' }
     ];
     function getTheme(id) {
         for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
@@ -357,7 +357,7 @@
         var next = (state.theme === 'dark') ? 'light' : 'dark';
         applyTheme(next);
         persist(S_THEME, next);
-        toast('已切换为' + (next === 'dark' ? '深色' : '浅色') + '主题', accentColor());
+        toast(QiActT('ui.theme_switched', { theme: next === 'dark' ? QiActT('ui.theme_dark') : QiActT('ui.theme_light') }), accentColor());
     }
 
     /** 获取动作列表（按部位过滤 + 前置条件实时校验） */

@@ -1,20 +1,20 @@
     function runCustomAction(id, charObj) {
         var act = getCustom(id);
         if (!act) return;
-        if (!charObj) { toast('请先在左侧选择人物', '#FF5C5C'); return; }
+        if (!charObj) { toast(QiActT('toast.pick_char'), '#FF5C5C'); return; }
         var name = caActivityName(act);
         var ok = executeAction(charObj, name, null, act.group);
-        if (ok) toast('执行：' + act.name, '#FF5C7A');
+        if (ok) toast(QiActT('toast.exec_custom', { name: act.name }), '#FF5C7A');
     }
 
     /** 从 echo/回声(echo-activity-ext) 导入动作数据 */
     function importCustomFromEcho() {
         try {
             var ext = Player && Player.ExtensionSettings;
-            if (!ext) { toast('读取扩展设置失败', '#FF5C5C'); return; }
+            if (!ext) { toast(QiActT('toast.read_ext_failed'), '#FF5C5C'); return; }
             var echoKey = Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
             if (!echoKey || !ext[echoKey] || !ext[echoKey]['动作数据']) {
-                toast('未找到 echo/回声 的动作数据', '#FF5C5C'); return;
+                toast(QiActT('toast.import_echo_notfound'), '#FF5C5C'); return;
             }
             var data = ext[echoKey]['动作数据'];
             var keys = Object.keys(data);
@@ -82,10 +82,10 @@
             // 导入完成后，立即屏蔽 echo 端已存在的同名原始动作，并刷新当前面板（custom 面板）
             caRemoveSuppressedEchoActivities();
             updateCustomActionPanel(state.selectedTarget);
-            toast('已从 echo/回声 导入 ' + imported + ' 个动作', '#46E0A0');
+            toast(QiActT('toast.imported_echo', { n: imported }), '#46E0A0');
         } catch (e) {
             console.warn('[QiAct] 导入 echo/回声 动作失败:', e.message);
-            toast('导入失败：' + e.message, '#FF5C5C');
+            toast(QiActT('toast.import_failed', { msg: e.message }), '#FF5C5C');
         }
     }
 
@@ -135,10 +135,10 @@
             a.download = 'qiact_custom_actions.json';
             a.click();
             URL.revokeObjectURL(url);
-            toast('已导出 ' + state.customActions.length + ' 个动作', '#46E0A0');
+            toast(QiActT('toast.exported', { n: state.customActions.length }), '#46E0A0');
         } catch (e) {
             console.warn('[QiAct] 导出自定义动作失败:', e.message);
-            toast('导出失败：' + e.message, '#FF5C5C');
+            toast(QiActT('toast.export_failed', { msg: e.message }), '#FF5C5C');
         }
     }
 
@@ -150,7 +150,7 @@
                 try {
                     var json = ev.target.result;
                     var arr = JSON.parse(json);
-                    if (!Array.isArray(arr)) { toast('文件格式错误：应为动作对象数组', '#FF5C5C'); return; }
+                    if (!Array.isArray(arr)) { toast(QiActT('toast.file_format_err'), '#FF5C5C'); return; }
                     var imported = 0, updated = 0;
                     arr.forEach(function(item) {
                         if (!item || !item.name || !item.group) return;
@@ -191,17 +191,17 @@
                     });
                     registerAllCustomActions();
                     updateCustomActionPanel(state.selectedTarget);
-                    toast('导入完成：新增 ' + imported + ' 个，更新 ' + updated + ' 个', '#46E0A0');
+                    toast(QiActT('toast.import_done', { n: imported, m: updated }), '#46E0A0');
                 } catch (inner) {
                     console.warn('[QiAct] 解析 JSON 失败:', inner.message);
-                    toast('JSON 解析失败：' + inner.message, '#FF5C5C');
+                    toast(QiActT('toast.json_parse_failed', { msg: inner.message }), '#FF5C5C');
                 }
             };
-            reader.onerror = function() { toast('读取文件失败', '#FF5C5C'); };
+            reader.onerror = function() { toast(QiActT('toast.read_file_failed'), '#FF5C5C'); };
             reader.readAsText(file);
         } catch (e) {
             console.warn('[QiAct] 导入本地文件失败:', e.message);
-            toast('导入失败：' + e.message, '#FF5C5C');
+            toast(QiActT('toast.import_failed', { msg: e.message }), '#FF5C5C');
         }
     }
 

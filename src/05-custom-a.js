@@ -466,7 +466,7 @@
         try {
             var ext = Player && Player.ExtensionSettings;
             var echoKey = ext && Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
-            if (!echoKey || !ext[echoKey]) { toast('未找到 echo 数据', '#FF5C5C'); return; }
+            if (!echoKey || !ext[echoKey]) { toast(QiActT('toast.echo_notfound'), '#FF5C5C'); return; }
             var echoObj = ext[echoKey];
             var data = echoObj['动作数据'];
             var before = (data && typeof data === 'object') ? Object.keys(data).length : 0;
@@ -531,9 +531,9 @@
                 catch (e) { console.warn('[QiAct] 延迟清理 echo 残留失败（已忽略）:', e && e.message); }
             }, 1200);
 
-            toast('已清理原 echo 数据（' + before + ' 项）', '#46E0A0');
+            toast(QiActT('toast.echo_cleaned', { n: before }), '#46E0A0');
             updateCustomActionPanel(state.selectedTarget);
-        } catch (e) { toast('清理失败：' + e.message, '#FF5C5C'); }
+        } catch (e) { toast(QiActT('toast.echo_clean_failed', { msg: e.message }), '#FF5C5C'); }
     }
     function caNewId() { return 'ca_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
 

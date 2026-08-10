@@ -14,7 +14,7 @@
         }
 
         // ── 列表视图 ──
-        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + '我的动作（测试版）';
+        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('custom.title');
         var html = '';
         var acts = state.customActions;
         var editMode = state.caEditMode;
@@ -25,20 +25,20 @@
         html += '<div class="xsact-ca-view">';
         // 工具栏
         html += '<div class="xsact-ca-toolbar">' +
-            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="搜索动作...">' +
+            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
             '<div class="xsact-ca-toolbar-btns">' +
-            '<button class="xsact-ca-new" id="xsact-ca-new" title="新建">' + svgIcon('plus', 14) + '<span>新建</span></button>' +
+            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
             '<div class="xsact-ca-import-wrap">' +
-            '<button class="xsact-ca-import" id="xsact-ca-import" title="导入" data-tooltip="导入@@从 echo/回声 或本地 JSON 导入自定义动作">' + svgIcon('download', 14) + '</button>' +
+            '<button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '" data-tooltip="' + QiActT('custom.import_tooltip') + '">' + svgIcon('download', 14) + '</button>' +
             '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu">' +
-            '<button data-import="echo">从 echo/回声 导入</button>' +
-            '<button data-import="file">从本地 JSON 导入</button>' +
+            '<button data-import="echo">' + QiActT('custom.import_echo') + '</button>' +
+            '<button data-import="file">' + QiActT('custom.import_file') + '</button>' +
             '</div>' +
             '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json">' +
             '</div>' +
-            '<button class="xsact-ca-export" id="xsact-ca-export" title="导出为 JSON">' + svgIcon('upload', 14) + '</button>' +
-            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? '完成编辑' : '编辑模式：拖动排序与批量管理') + '">' + svgIcon('bulkEdit', 16) + '</button>' +
-            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? '当前全部开启，点击全部关闭' : '当前全部关闭，点击全部开启') + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
+            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
+            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
+            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
             '</div></div>';
 
         // 分类 chip 过滤栏：按来源（all/xiaosu/native/echo）单选；空分类置灰
@@ -49,9 +49,9 @@
             else _counts.native++;
         });
         var _chips = [
-            { key: 'all', label: '全部', count: _counts.all, color: 'all' },
-            { key: 'xiaosu', label: '小酥', count: _counts.xiaosu, color: 'xiaosu' },
-            { key: 'native', label: '我的', count: _counts.native, color: 'native' },
+            { key: 'all', label: QiActT('custom.chip_all'), count: _counts.all, color: 'all' },
+            { key: 'xiaosu', label: QiActT('custom.chip_xiaosu'), count: _counts.xiaosu, color: 'xiaosu' },
+            { key: 'native', label: QiActT('custom.chip_native'), count: _counts.native, color: 'native' },
             { key: 'echo', label: 'echo', count: _counts.echo, color: 'echo' }
         ];
         html += '<div class="xsact-ca-chips" id="xsact-ca-chips">';
@@ -70,15 +70,15 @@
         // 编辑模式批量栏
         if (editMode) {
             html += '<div class="xsact-ca-batchbar" id="xsact-ca-batchbar">' +
-                '<button class="xsact-ca-select-all" id="xsact-ca-select-all">全选</button>' +
-                '<span class="xsact-ca-selected-count" id="xsact-ca-selected-count">已选 0 个</span>' +
+                '<button class="xsact-ca-select-all" id="xsact-ca-select-all">' + QiActT('custom.select_all') + '</button>' +
+                '<span class="xsact-ca-selected-count" id="xsact-ca-selected-count">' + QiActT('custom.selected_count', { n: 0 }) + '</span>' +
                 '<div class="xsact-ca-batch-actions">' +
-                '<button id="xsact-ca-batch-close" disabled>批量关闭</button>' +
-                '<button id="xsact-ca-batch-delete" class="xsact-ca-batch-del" disabled>批量删除</button>' +
+                '<button id="xsact-ca-batch-close" disabled>' + QiActT('custom.batch_close') + '</button>' +
+                '<button id="xsact-ca-batch-delete" class="xsact-ca-batch-del" disabled>' + QiActT('custom.batch_delete') + '</button>' +
                 '</div></div>';
         }
 
-        html += '<div class="xsact-ca-beta">自定义动作功能当前为【测试版(Beta)】，仍在开发中，可能存在不稳定或未完善之处，建议谨慎使用并及时反馈问题。</div>';
+        html += '<div class="xsact-ca-beta">' + QiActT('custom.beta_banner') + '</div>';
 
         // 迁移提示：原 echo/回声 中仍有动作数据 → 提供一键清理入口
         try {
@@ -86,8 +86,8 @@
             var _hasEchoSrc = state.customActions.some(function(a) { return a.source === 'echo'; });
             if (_echoData && Object.keys(_echoData).length && _hasEchoSrc) {
                 html += '<div class="xsact-ca-echo-clean" id="xsact-ca-echo-clean">' +
-                    '<div class="xsact-ca-echo-clean-text">检测到原 echo/回声 中仍有 <b>' + Object.keys(_echoData).length + '</b> 个自定义动作数据。迁移完成后建议清理，避免动作重复显示与使用后乱码。</div>' +
-                    '<button class="xsact-ca-echo-clean-btn" id="xsact-ca-echo-clean-btn" type="button">清理原 echo 数据</button>' +
+                    '<div class="xsact-ca-echo-clean-text">' + QiActT('custom.echo_clean_text', { n: Object.keys(_echoData).length }) + '</div>' +
+                    '<button class="xsact-ca-echo-clean-btn" id="xsact-ca-echo-clean-btn" type="button">' + QiActT('custom.echo_clean_btn') + '</button>' +
                 '</div>';
             }
         } catch (e) { silent(e, 'renderEchoCleanHint'); }
@@ -97,8 +97,8 @@
         // 其他分类下隐藏避免视觉干扰 + 杜绝「我的」tab 下开关位置漂移。
         if (state.caFilter === 'xiaosu') {
             html += '<div class="xsact-ca-xiaosu" id="xsact-ca-xiaosu">' +
-                '<span class="xsact-ca-xiaosu-label" title="内置小酥动作包（XiaoSuActivity 全部 51 个动作，预编译进插件，离线可用，无需原版插件）">内置小酥动作包</span>' +
-                '<label class="xsact-ca-toggle xsact-ca-xiaosu-switch" title="开启后，「我的动作」与 BC 原生动作列表显示小酥动作拓展的全部动作">' +
+                '<span class="xsact-ca-xiaosu-label" title="' + QiActT('custom.xiaosu_pack_title') + '">' + QiActT('custom.xiaosu_pack_label') + '</span>' +
+                '<label class="xsact-ca-toggle xsact-ca-xiaosu-switch" title="' + QiActT('custom.xiaosu_pack_toggle_title') + '">' +
                     '<input type="checkbox" class="xsact-ca-xiaosu-pack"' + (state.xiaosuPack ? ' checked' : '') + '>' +
                     '<span class="xsact-ca-toggle-track"></span>' +
                 '</label>' +
@@ -106,7 +106,7 @@
         }
 
         if (!acts.length) {
-            html += '<div class="xsact-qa-empty xsact-ca-empty">还没有自定义动作。点「新建」创建，或点「导入」从 echo/回声 迁移。</div>';
+            html += '<div class="xsact-qa-empty xsact-ca-empty">' + QiActT('custom.empty') + '</div>';
         } else {
             // 按当前 chip 过滤（不改 customActions 顺序，仅隐藏不匹配卡片）
             var _flt = state.caFilter || 'all';
@@ -118,20 +118,20 @@
                 return true;
             });
             if (!_visibleActs.length) {
-                html += '<div class="xsact-qa-empty xsact-ca-empty xsact-ca-filter-empty">当前分类下没有动作。</div>';
+                html += '<div class="xsact-qa-empty xsact-ca-empty xsact-ca-filter-empty">' + QiActT('custom.filter_empty') + '</div>';
             } else {
                 html += '<div class="xsact-ca-list' + (editMode ? ' is-editing' : '') + '">';
                 _visibleActs.forEach(function(a) {
-                var scopeBadge = a.scope === 'self' ? '<span class="xsact-ca-badge self">仅自己</span>'
-                    : a.scope === 'other' ? '<span class="xsact-ca-badge other">仅他人</span>'
-                    : '<span class="xsact-ca-badge any">皆可</span>';
-                var sourceBadge = a.source === 'xiaosu' ? '<span class="xsact-ca-src xiaosu" title="内置小酥动作包（预编译，无需原版插件）">小酥</span>' : a.source === 'echo' ? '<span class="xsact-ca-src echo" title="来自 echo/回声 导入">echo</span>' : '<span class="xsact-ca-src native" title="本插件创建">QiAct</span>';
+                var scopeBadge = a.scope === 'self' ? '<span class="xsact-ca-badge self">' + QiActT('custom.scope_self') + '</span>'
+                    : a.scope === 'other' ? '<span class="xsact-ca-badge other">' + QiActT('custom.scope_other') + '</span>'
+                    : '<span class="xsact-ca-badge any">' + QiActT('custom.scope_any') + '</span>';
+                var sourceBadge = a.source === 'xiaosu' ? '<span class="xsact-ca-src xiaosu" title="' + QiActT('custom.xiaosu_pack_src_title') + '">' + QiActT('custom.src_xiaosu') + '</span>' : a.source === 'echo' ? '<span class="xsact-ca-src echo" title="' + QiActT('custom.src_echo_title') + '">' + QiActT('custom.src_echo') + '</span>' : '<span class="xsact-ca-src native" title="' + QiActT('custom.src_qiact_title') + '">' + QiActT('custom.src_qiact') + '</span>';
                 var partLbl = (BODY_PARTS.find(function(p) { return p.group === a.group; }) || {}).label || a.group;
                 var isVisible = a.visible !== false;
                 var isSel = !!selSet[a.id];
                 if (editMode) {
                     html += '<div class="xsact-ca-card is-edit' + (isSel ? ' is-selected' : '') + (isVisible ? '' : ' is-hidden') + '" data-id="' + a.id + '" draggable="true">' +
-                        '<span class="xsact-ca-handle" title="拖动排序">' + svgIcon('grip', 14) + '</span>' +
+                        '<span class="xsact-ca-handle" title="' + QiActT('custom.drag_handle') + '">' + svgIcon('grip', 14) + '</span>' +
                         '<div class="xsact-ca-info">' +
                             '<div class="xsact-ca-title">' +
                                 '<span class="xsact-ca-name">' + escapeHtml(a.name) + '</span>' +
@@ -139,7 +139,7 @@
                             '</div>' +
                             '<div class="xsact-ca-meta">' +
                                 '<span class="xsact-ca-part">' + escapeHtml(partLbl) + '</span>' +
-                                '<span class="xsact-ca-vis-dot ' + (isVisible ? 'on' : 'off') + '">' + (isVisible ? '显示中' : '已隐藏') + '</span>' +
+                                '<span class="xsact-ca-vis-dot ' + (isVisible ? 'on' : 'off') + '">' + (isVisible ? QiActT('custom.vis_on') : QiActT('custom.vis_off')) + '</span>' +
                             '</div>' +
                         '</div>' +
                         '<span class="xsact-ca-check" aria-hidden="true">' + svgIcon('check', 14) + '</span>' +
@@ -152,18 +152,18 @@
                                 scopeBadge + sourceBadge +
                             '</div>' +
                             '<div class="xsact-ca-meta">' +
-                                '<label class="xsact-ca-toggle" title="在「动作」面板和 BC 原生动作列表中显示">' +
+                                '<label class="xsact-ca-toggle" title="' + QiActT('custom.vis_toggle_title') + '">' +
                                     '<input type="checkbox" class="xsact-ca-visible" data-id="' + a.id + '"' + (isVisible ? ' checked' : '') + '>' +
                                     '<span class="xsact-ca-toggle-track"></span>' +
-                                    '<span class="xsact-ca-toggle-label">' + (isVisible ? '显示' : '隐藏') + '</span>' +
+                                    '<span class="xsact-ca-toggle-label">' + (isVisible ? QiActT('custom.vis_label_on') : QiActT('custom.vis_label_off')) + '</span>' +
                                 '</label>' +
                                 '<span class="xsact-ca-part">' + escapeHtml(partLbl) + '</span>' +
                             '</div>' +
                         '</div>' +
                         '<div class="xsact-ca-btns">' +
-                            '<button class="xsact-ca-run" title="对当前目标执行" data-id="' + a.id + '">' + svgIcon('play', 14) + '</button>' +
-                            '<button class="xsact-ca-edit" title="编辑" data-id="' + a.id + '">' + svgIcon('pencil', 14) + '</button>' +
-                            '<button class="xsact-ca-delete" title="删除" data-tooltip-type="danger" data-id="' + a.id + '">' + svgIcon('trash', 14) + '</button>' +
+                            '<button class="xsact-ca-run" title="' + QiActT('custom.run_title') + '" data-id="' + a.id + '">' + svgIcon('play', 14) + '</button>' +
+                            '<button class="xsact-ca-edit" title="' + QiActT('custom.edit_title') + '" data-id="' + a.id + '">' + svgIcon('pencil', 14) + '</button>' +
+                            '<button class="xsact-ca-delete" title="' + QiActT('custom.delete_title') + '" data-tooltip-type="danger" data-id="' + a.id + '">' + svgIcon('trash', 14) + '</button>' +
                         '</div>' +
                     '</div>';
                 }
@@ -211,9 +211,9 @@
         if (echoCleanBtn) echoCleanBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             qiactConfirm({
-                title: '清理原 echo 数据',
-                body: '确定清理原 echo/回声 中的自定义动作数据吗？\n仅删除其「动作数据」，不影响本插件与其他配置（清理后系统更稳定）。',
-                confirmText: '清理',
+                title: QiActT('custom.echo_clean_confirm_title'),
+                body: QiActT('custom.echo_clean_confirm_body'),
+                confirmText: QiActT('custom.echo_clean_confirm_btn'),
                 danger: true
             }).then(function(ok) {
                 if (ok) caCleanupEchoData();
@@ -262,7 +262,7 @@
             });
             saveCustomActions();
             updateCustomActionPanel(charObj);
-            toast(turnOn ? '已开启全部 ' + acts.length + ' 个动作' : '已关闭全部 ' + acts.length + ' 个动作', turnOn ? '#46E0A0' : '#888');
+            toast(turnOn ? QiActT('custom.toggle_all_on_toast', { n: acts.length }) : QiActT('custom.toggle_all_off_toast', { n: acts.length }), turnOn ? '#46E0A0' : '#888');
         });
 
         // 非编辑模式：执行 / 编辑 / 删除 / 开关
@@ -277,7 +277,7 @@
                 e.stopPropagation();
                 var id = btn.dataset.id;
                 var a = getCustom(id);
-                if (a) qiactConfirm({ title: '删除动作', body: '确定删除自定义动作「' + a.name + '」吗？', confirmText: '删除', danger: true }).then(function(ok) { if (!ok) return; deleteCustom(id); updateCustomActionPanel(charObj); toast('已删除', '#888'); });
+                if (a) qiactConfirm({ title: QiActT('custom.delete_confirm_title'), body: QiActT('custom.delete_confirm_body', { name: a.name }), confirmText: QiActT('custom.delete_confirm_btn'), danger: true }).then(function(ok) { if (!ok) return; deleteCustom(id); updateCustomActionPanel(charObj); toast(QiActT('toast.deleted'), '#888'); });
             });
         });
         listEl.querySelectorAll('.xsact-ca-visible').forEach(function(chk) {
@@ -289,7 +289,7 @@
                 saveCustomActions();
                 caRegister(a);
                 updateCustomActionPanel(charObj);
-                toast(a.visible ? '已显示「' + a.name + '」' : '已隐藏「' + a.name + '」', a.visible ? '#46E0A0' : '#888');
+                toast(a.visible ? QiActT('custom.show_toast', { name: a.name }) : QiActT('custom.hide_toast', { name: a.name }), a.visible ? '#46E0A0' : '#888');
             });
         });
 
@@ -306,10 +306,10 @@
                     if (state.caSelected.indexOf(id) !== -1) card.classList.add('is-selected');
                     else card.classList.remove('is-selected');
                 });
-                if (selectedCountEl) selectedCountEl.textContent = '已选 ' + state.caSelected.length + ' 个';
+                if (selectedCountEl) selectedCountEl.textContent = QiActT('custom.selected_count', { n: state.caSelected.length });
                 if (batchCloseBtn) batchCloseBtn.disabled = state.caSelected.length === 0;
                 if (batchDeleteBtn) batchDeleteBtn.disabled = state.caSelected.length === 0;
-                if (selectAllBtn) selectAllBtn.textContent = (state.caSelected.length > 0 && state.caSelected.length === cards.length) ? '取消全选' : '全选';
+                if (selectAllBtn) selectAllBtn.textContent = (state.caSelected.length > 0 && state.caSelected.length === cards.length) ? QiActT('custom.cancel_select_all') : QiActT('custom.select_all');
             }
             if (selectAllBtn) selectAllBtn.addEventListener('click', function() {
                 var cards = Array.from(listEl.querySelectorAll('.xsact-ca-card.is-edit'));
@@ -337,23 +337,23 @@
                 });
                 saveCustomActions();
                 updateCustomActionPanel(charObj);
-                toast('已批量关闭 ' + state.caSelected.length + ' 个动作', '#888');
+                toast(QiActT('custom.batch_close_toast', { n: state.caSelected.length }), '#888');
             });
             if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', function() {
                 if (!state.caSelected.length) return;
                 var names = state.caSelected.map(function(id) { var a = getCustom(id); return a ? a.name : ''; }).filter(Boolean).join('、');
                 var n = state.caSelected.length;
                 qiactConfirm({
-                    title: '批量删除 ' + n + ' 个动作',
-                    body: '确定批量删除以下动作吗？\n' + names,
-                    confirmText: '全部删除',
+                    title: QiActT('custom.batch_delete_title', { n: n }),
+                    body: QiActT('custom.batch_delete_body', { names: names }),
+                    confirmText: QiActT('custom.batch_delete_btn'),
                     danger: true
                 }).then(function(ok) {
                     if (!ok) return;
                     state.caSelected.slice().forEach(function(id) { deleteCustom(id); });
                     state.caSelected = [];
                     updateCustomActionPanel(charObj);
-                    toast('已批量删除 ' + n + ' 个动作', '#FF5C5C');
+                    toast(QiActT('custom.batch_deleted_toast', { n: n }), '#FF5C5C');
                 });
             });
 

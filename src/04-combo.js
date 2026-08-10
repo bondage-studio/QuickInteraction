@@ -4,7 +4,7 @@
     function getCombo(id) { return state.combos.find(function(c) { return c.id === id; }); }
 
     function addCombo(name) {
-        var combo = { id: generateId(), name: String(name || '新组合'), items: [], delay: 160 };
+        var combo = { id: generateId(), name: String(name || QiActT('combo.new_name')), items: [], delay: 160 };
         state.combos.push(combo);
         saveCombos();
         return combo;
@@ -68,9 +68,9 @@
 
     /** 对房间内所有其他成员执行同一组合 */
     function runComboAll(combo) {
-        if (!combo || !combo.items.length) { toast('组合为空', '#FF5C5C'); return; }
+        if (!combo || !combo.items.length) { toast(QiActT('toast.combo_empty'), '#FF5C5C'); return; }
         var chars = getRoomCharacters();
-        if (!Array.isArray(chars) || chars.length === 0) { toast('房间内没有其他人', '#888'); return; }
+        if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
         var ordered = orderBySelectedTarget(chars);
         var ci = 0;
         function nextChar() {
@@ -81,7 +81,7 @@
             setTimeout(nextChar, combo.items.length * d + 300);
         }
         nextChar();
-        toast('开始对所有人执行组合「' + combo.name + '」', '#FF5C7A');
+        toast(QiActT('toast.exec_combo_all', { name: combo.name }), '#FF5C7A');
     }
 
     /* ══════════════════════════════════════════════════════════════

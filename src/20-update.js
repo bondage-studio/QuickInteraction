@@ -25,7 +25,7 @@
     function logUpdateError(entry) {
         var where = entry.kind === 'http'
             ? ('HTTP ' + entry.status)
-            : (entry.kind === 'parse' ? '响应解析失败' : '网络错误');
+            : (entry.kind === 'parse' ? QiActT('update.parse_err') : QiActT('update.net_err'));
         console.error('[QiAct] 更新检查失败（第 ' + entry.attempt + ' 次）[' + where + '] ' + (entry.message || '') + (entry.url ? ' @ ' + entry.url : ''));
         try {
             var log = [];
@@ -66,7 +66,7 @@
             try {
                 return JSON.parse(text);
             } catch (pe) {
-                var pe2 = new Error('JSON 解析失败: ' + pe.message);
+                var pe2 = new Error(QiActT('update.json_parse_err', { msg: pe.message }));
                 pe2.kind = 'parse'; pe2.status = res.status; pe2.url = url; pe2.attempt = attempt;
                 throw pe2;
             }
@@ -139,11 +139,11 @@
         if (!last) { persist(S_LAST_SEEN_VERSION, VERSION); return; } // 首次运行不提示
         if (compareVersion(VERSION, last) !== 0) {
             if (compareVersion(VERSION, last) > 0) {
-                try { toast('QiAct 已更新到 v' + VERSION, '#46E0A0'); } catch (_) {}
+                try { toast('QiAct ' + QiActT('update.title', { VERSION: VERSION }), '#46E0A0'); } catch (_) {}
                 // 轻量拉取本次更新摘要，用公告横幅补充展示（失败不影响已显示的 toast）
                 fetchVersionJson(VERSION_INFO_URL, 0).then(function (info) {
                     if (info && Array.isArray(info.summary) && info.summary.length) {
-                        showAnnounceBanner({ id: 'updated-' + VERSION, title: '已更新到 v' + VERSION, severity: 'available', message: info.summary.join('\n'), detailsUrl: info.detailsUrl });
+                        showAnnounceBanner({ id: 'updated-' + VERSION, title: QiActT('update.title', { VERSION: VERSION }), severity: 'available', message: info.summary.join('\n'), detailsUrl: info.detailsUrl });
                     }
                 }).catch(function () {});
             }
@@ -185,14 +185,14 @@
         var items = summary.slice(0, 4).map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('');
         el.className = 'xsact-update-banner' + (info.severity === 'important' ? ' is-important' : '');
         el.innerHTML = '' +
-            '<div class="xsact-ub-head"><span class="xsact-ub-tag">更新可用</span>' +
+            '<div class="xsact-ub-head"><span class="xsact-ub-tag">' + QiActT('update.available_tag') + '</span>' +
             '<span class="xsact-ub-ver">v' + escapeHtml(info.version) + '</span>' +
-            '<button class="xsact-ub-close" id="xsact-ub-close" title="稍后提醒" data-tooltip-type="danger">×</button></div>' +
+            '<button class="xsact-ub-close" id="xsact-ub-close" title="' + QiActT('update.later_title') + '" data-tooltip-type="danger">×</button></div>' +
             (items ? '<ul class="xsact-ub-sum">' + items + '</ul>' : '') +
             '<div class="xsact-ub-actions">' +
-            (info.detailsUrl ? '<button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">查看详情</button>' : '') +
-            '<button class="xsact-ub-btn" id="xsact-ub-later">稍后</button>' +
-            '<button class="xsact-ub-btn" id="xsact-ub-ignore">不再提示此版本</button>' +
+            (info.detailsUrl ? '<button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">' + QiActT('update.details') + '</button>' : '') +
+            '<button class="xsact-ub-btn" id="xsact-ub-later">' + QiActT('update.later') + '</button>' +
+            '<button class="xsact-ub-btn" id="xsact-ub-ignore">' + QiActT('update.ignore') + '</button>' +
             '</div>';
         el.style.display = '';
         var close = el.querySelector('#xsact-ub-close');
@@ -209,18 +209,18 @@
         var el = getUpdateBannerEl();
         if (!el) { state.pendingBanner = { type: 'announce', data: ann }; return; }
         var sev = ann.severity || 'info';
-        var tagText = '公告';
+        var tagText = QiActT('update.announce_tag');
         var cls = 'xsact-update-banner';
-        if (sev === 'important') { cls += ' is-important'; tagText = '重要'; }
-        else if (sev === 'available') { cls += ' is-available'; tagText = '可用'; }
-        else { cls += ' is-announce'; tagText = '公告'; }
+        if (sev === 'important') { cls += ' is-important'; tagText = QiActT('update.important_tag'); }
+        else if (sev === 'available') { cls += ' is-available'; tagText = QiActT('update.available_tag'); }
+        else { cls += ' is-announce'; tagText = QiActT('update.announce_tag'); }
         el.className = cls;
         el.innerHTML = '' +
             '<div class="xsact-ub-head"><span class="xsact-ub-tag">' + escapeHtml(tagText) + '</span>' +
             (ann.title ? '<span class="xsact-ub-title">' + escapeHtml(ann.title) + '</span>' : '') +
-            '<button class="xsact-ub-close" id="xsact-ub-close" title="知道了" data-tooltip-type="danger">×</button></div>' +
+            '<button class="xsact-ub-close" id="xsact-ub-close" title="' + QiActT('update.know') + '" data-tooltip-type="danger">×</button></div>' +
             (ann.message ? '<div class="xsact-ub-msg">' + escapeHtml(ann.message) + '</div>' : '') +
-            (ann.detailsUrl ? '<div class="xsact-ub-actions"><button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">查看详情</button></div>' : '');
+            (ann.detailsUrl ? '<div class="xsact-ub-actions"><button class="xsact-ub-btn xsact-ub-primary" id="xsact-ub-details">' + QiActT('update.details') + '</button>' + '</div>' : '');
         el.style.display = '';
         var close = el.querySelector('#xsact-ub-close');
         var details = el.querySelector('#xsact-ub-details');

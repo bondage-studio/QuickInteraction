@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import * as vm from 'vm';
 
 const root = process.cwd();
 const srcDir = path.join(root, 'src');
@@ -14,11 +15,65 @@ const files = fs.readdirSync(srcDir)
     .filter(f => /^\d{2}-.*\.js$/.test(f))
     .sort();
 if (!files.length) { console.error('❌ src/ 下未找到模块'); process.exit(1); }
-let body = files.map(f => fs.readFileSync(path.join(srcDir, f), 'utf8')).join('\n\n');
+// i18n 引擎(02-i18n.js) 必须最先执行：部分模块（如 01-entry.js 的 BODY_PARTS / THEMES
+// 顶层数组）在加载期就调用 QiActT()，且需要字典已注册才能取到译文。
+// 引擎自包含（仅依赖 window/localStorage），不依赖其它模块，提前安全。
+const ENGINE = '02-i18n.js';
+const rest = files.filter(f => f !== ENGINE);
+const engineSrc = fs.readFileSync(path.join(srcDir, ENGINE), 'utf8');
+let body = ''; // 在字典校验后于下方拼装（引擎 + locales + 其余模块）
+
+// 1.5 读取多语言字典 src/99-locales/*.js（按字母序），构建期内联进单文件
+//     —— 对齐 liko 上游「每插件一个 XXX-i18n.js」范式，但改为构建期拼入而非运行时 import
+const localesDir = path.join(srcDir, '99-locales');
+let localeBody = '';
+// 强制必填语言：CN/EN。TW 由引擎回退 CN，DE/FR/RU/UA 由引擎回退 EN（见 src/02-i18n.js）
+const REQUIRED_LANGS = ['CN', 'EN'];
+if (fs.existsSync(localesDir)) {
+    const localeFiles = fs.readdirSync(localesDir).filter(f => /\.js$/.test(f)).sort();
+    if (localeFiles.length) {
+        localeBody = localeFiles.map(f => '/* === locales/' + f + ' === */\n' + fs.readFileSync(path.join(localesDir, f), 'utf8')).join('\n\n');
+        // 字典完整性校验：在沙箱中执行各 locale 文件，收集键并验证强制三语
+        const collected = {};
+        const sandbox = {
+            console,
+            localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+            window: {}
+        };
+        sandbox.window.QiActI18n = {
+            register(ns, dict) {
+                if (!dict || typeof dict !== 'object') return;
+                for (const k in dict) if (Object.prototype.hasOwnProperty.call(dict, k)) collected[ns + '.' + k] = dict[k];
+            }
+        };
+        // locale 文件里直接调用 QiActI18n.register(...)（全局引用），沙箱需暴露为全局
+        sandbox.QiActI18n = sandbox.window.QiActI18n;
+        vm.createContext(sandbox);
+        for (const f of localeFiles) {
+            try { vm.runInContext(fs.readFileSync(path.join(localesDir, f), 'utf8'), sandbox, { filename: f }); }
+            catch (e) { console.error('❌ 翻译文件执行失败 ' + f + ':', e.message); process.exit(1); }
+        }
+        const missing = [];
+        for (const key in collected) {
+            const e = collected[key];
+            for (const L of REQUIRED_LANGS) if (!(L in e) || e[L] == null) missing.push(key + '@' + L);
+        }
+        if (missing.length) {
+            console.error('❌ 翻译缺失（强制 CN/EN 必填；TW 回退 CN，DE/FR/RU/UA 回退 EN）：');
+            console.error('   ' + missing.slice(0, 30).join('\n   '));
+            if (missing.length > 30) console.error('   …（共 ' + missing.length + ' 处）');
+            process.exit(1);
+        }
+        console.log('🌐 翻译校验通过：' + Object.keys(collected).length + ' 键，强制三语齐全');
+    }
+}
+// locale 内联在引擎(02-i18n.js)之后、其余逻辑之前——注册早于任何运行期/加载期 QiActT() 调用
+// 顺序：引擎(02) → locales(注册字典) → 其余模块(01/03+/22)，保证顶层 QiActT() 既能解析又不空字典
+body = engineSrc + '\n\n' + localeBody + '\n\n' + rest.map(f => fs.readFileSync(path.join(srcDir, f), 'utf8')).join('\n\n');
 
 // 2. 版本单一源：const VERSION 注入到 @version 元数据头（消除双维护）
-const vm = body.match(/const VERSION\s*=\s*'([^']+)'/);
-const version = vm ? vm[1] : '0.0.0';
+const verMatch = body.match(/const VERSION\s*=\s*'([^']+)'/);
+const version = verMatch ? verMatch[1] : '0.0.0';
 body = body.replace(/(\/\/ @version\s+)\S+/, '$1' + version);
 
 // 3. 写出自包含单文件（开发者直装源 = 构建产物，进 git 供 raw 下载）

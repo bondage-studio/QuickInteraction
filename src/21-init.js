@@ -173,6 +173,14 @@
             get selectedPart() { return state.selectedPart; },
             makeActivityPacket: makeActivityPacket,
             findBestItemForActivityAsset: findBestItemForActivityAsset,
+            // ── 语言切换 ──
+            setLanguage: function(code) {
+                if (typeof QiActI18n !== 'undefined' && QiActI18n.setLang) QiActI18n.setLang(code);
+                if (typeof rebuildPanel === 'function') rebuildPanel();
+                return (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : null;
+            },
+            getCurrentLang: function() { return (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : null; },
+            rebuildPanel: rebuildPanel,
             version: VERSION,
             // ── 更新 / 公告 ──
             checkUpdate: checkUpdate,

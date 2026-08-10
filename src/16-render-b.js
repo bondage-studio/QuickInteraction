@@ -79,7 +79,7 @@
 
             if (!titleEl || !listEl) return;
             if (!charObj || !partGroup) {
-                listEl.innerHTML = '<div class="xsact-qa-empty">请先在左侧选择人物和部位</div>';
+                listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.pick_char_part') + '</div>';
                 return;
             }
 
@@ -88,7 +88,7 @@
 
             var actions = getActionsForPart(partGroup, charObj);
             if (!Array.isArray(actions) || actions.length === 0) {
-                listEl.innerHTML = '<div class="xsact-qa-empty">该部位暂无可用动作</div>';
+                listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('render.no_actions') + '</div>';
                 if (allBtn) allBtn.disabled = true;
                 return;
             }
@@ -108,11 +108,11 @@
                     (isFav ? '<span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span>' : '') +
                     '</button>';
                 if (isEditing) {
-                    html += '<button class="xsact-add-to-combo" title="加入当前组合">' + svgIcon('plus', 16) + '</button>';
+                    html += '<button class="xsact-add-to-combo" title="' + QiActT('combo.add_title') + '">' + svgIcon('plus', 16) + '</button>';
                 }
                 html += '</div>';
             });
-            listEl.innerHTML = html || '<div class="xsact-qa-empty">该部位暂无可用动作</div>';
+            listEl.innerHTML = html || '<div class="xsact-qa-empty">' + QiActT('render.no_actions') + '</div>';
 
             // 绑定动作按钮点击：收藏模式下加入/取消收藏，否则执行
             listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
@@ -139,7 +139,7 @@
                         if (srcKey === 'LSCG' || srcKey === 'LIKO') {
                             setTimeout(function() { try { updateActionPanel(charObj, partGroup); } catch (_) { console.warn('[QiAct] 延迟刷新动作面板失败（已忽略）:', _ && _.message); } }, 50);
                         } else if (execOk !== false) {
-                            toast('已执行：' + getActivityLabel(actName, partGroup), '#46E0A0');
+                            toast(QiActT('toast.executed', { name: getActivityLabel(actName, partGroup) }), '#46E0A0');
                         }
                     }
                 });
@@ -154,7 +154,7 @@
                         var act = actions.find(function(a) { return a && a.Name === actName; }) || { Name: actName, Item: null, translatedName: actName };
                         var lbl = act.translatedName || getActivityLabel(act.Name, partGroup);
                         addComboItem(state.editingComboId, partGroup, act.Name, lbl, act.Item || null);
-                        toast('已加入「' + getCombo(state.editingComboId).name + '」', '#46E0A0');
+                        toast(QiActT('toast.added_to_combo', { name: getCombo(state.editingComboId).name }), '#46E0A0');
                     });
                 });
             }
@@ -162,7 +162,7 @@
             console.error('[QiAct] updateActionPanel 渲染失败:', panelErr);
             if (state.actionPanelEl) {
                 var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
-                if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty" style="color:#FF8FA6">动作列表加载出错，请刷新或反馈。<br><small>' + escapeHtml(panelErr.message) + '</small></div>';
+                if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty" style="color:#FF8FA6">' + QiActT('render.load_err', { msg: escapeHtml(panelErr.message) }) + '</div>';
             }
         }
     }

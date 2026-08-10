@@ -2,7 +2,7 @@
     function toggleAllMode() {
         state.allModeActive = !state.allModeActive;
         updateAllButtonVisual();
-        toast(state.allModeActive ? '全员范围：开启' : '全员范围：关闭',
+        toast(state.allModeActive ? QiActT('common.all_on') : QiActT('common.all_off'),
               state.allModeActive ? '#E8B339' : '#888');
     }
     function updateAllButtonVisual() {
@@ -19,7 +19,7 @@
             var body = state.actionPanelEl.querySelector('#xsact-action-list');
             if (body) body.classList.toggle('fav-active', state.favModeActive);
         }
-        toast(state.favModeActive ? '收藏模式：开启 · 点击动作加入收藏' : '收藏模式：关闭',
+        toast(state.favModeActive ? QiActT('common.fav_on') : QiActT('common.fav_off'),
               state.favModeActive ? '#E8B339' : '#888');
     }
     function updateFavButtonVisual() {
@@ -35,10 +35,10 @@
         var idx = state.favorites.indexOf(key);
         if (idx === -1) {
             state.favorites.push(key);
-            toast('已收藏：' + getActivityLabel(name, partGroup), '#E8B339');
+            toast(QiActT('common.fav_add', { name: getActivityLabel(name, partGroup) }), '#E8B339');
         } else {
             state.favorites.splice(idx, 1);
-            toast('取消收藏', '#888');
+            toast(QiActT('common.fav_remove'), '#888');
         }
         persist(S_FAVS, state.favorites);
         if (btn) {
@@ -66,7 +66,7 @@
         persist(S_SELF, state.selfModeActive);
         updateSelfButtonVisual();
         if (state.isActive) refreshBodyGrids();
-        toast(state.selfModeActive ? '自己模式：开启' : '自己模式：关闭',
+        toast(state.selfModeActive ? QiActT('common.self_on') : QiActT('common.self_off'),
               state.selfModeActive ? '#46E0A0' : '#888');
     }
     function updateSelfButtonVisual() {
@@ -77,18 +77,18 @@
 
     /** 清空全部收藏动作 */
     function clearAllFavorites() {
-        if (!Array.isArray(state.favorites) || state.favorites.length === 0) { toast('当前没有收藏动作', '#888'); return; }
+        if (!Array.isArray(state.favorites) || state.favorites.length === 0) { toast(QiActT('common.no_fav'), '#888'); return; }
         qiactConfirm({
-            title: '清空全部收藏',
-            body: '确定清空全部收藏动作吗？此操作无法撤销。',
-            confirmText: '全部清空',
+            title: QiActT('common.clear_fav_title'),
+            body: QiActT('common.clear_fav_body'),
+            confirmText: QiActT('common.clear_fav_confirm'),
             danger: true
         }).then(function(ok) {
             if (!ok) return;
             state.favorites = [];
             persist(S_FAVS, state.favorites);
             renderPanel();
-            toast('已清空全部收藏', '#888');
+            toast(QiActT('common.cleared_fav'), '#888');
         });
     }
 
@@ -130,10 +130,10 @@
             var existing = document.getElementById('xsact-confirm');
             if (existing) existing.remove();
 
-            var title = String(opts.title || '确认操作');
+            var title = String(opts.title || QiActT('common.confirm_title'));
             var body = opts.body ? String(opts.body) : '';
-            var confirmText = String(opts.confirmText || '确定');
-            var cancelText = String(opts.cancelText || '取消');
+            var confirmText = String(opts.confirmText || QiActT('common.confirm_ok'));
+            var cancelText = String(opts.cancelText || QiActT('common.confirm_cancel'));
             var danger = opts.danger !== false; // 默认危险操作（玫红强调）
 
             var box = document.createElement('div');
