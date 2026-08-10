@@ -89,9 +89,14 @@ try {
 }
 
 // 5. 剥离元数据头 → assets/main.js（运行时零外部依赖，供 loader import() 加载）
-const endHeader = body.indexOf('// ==/UserScript==');
-if (endHeader === -1) throw new Error('未找到 ==/UserScript== 标记，无法剥离头');
-const main = body.slice(endHeader + '// ==/UserScript=='.length);
+// 注意：i18n 引擎(02-i18n.js)被提前拼接到 00-preamble.js（含 UserScript 头）之前，
+// 因此不能简单地「砍掉标记之前的全部内容」——那样会连引擎和字典一起砍掉，
+// 只能精确挖掉头块本身（==UserScript== … ==/UserScript==），保留头块前后的代码。
+const startHeader = body.indexOf('// ==UserScript==');
+const endHeaderMarker = body.indexOf('// ==/UserScript==');
+if (startHeader === -1 || endHeaderMarker === -1) throw new Error('未找到 UserScript 头标记，无法剥离头');
+const endHeader = endHeaderMarker + '// ==/UserScript=='.length;
+const main = body.slice(0, startHeader) + body.slice(endHeader);
 const outDir = path.join(root, 'assets');
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'main.js'), main);
