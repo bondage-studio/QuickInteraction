@@ -258,5 +258,10 @@
   "settings.chat_button": "收纳到 BC 聊天室按钮栏",
   "settings.enable_xiaosu": "启用小酥动作包",
   "editor.preview_label": "效果预览",
-  "render.favorite_title": "收藏动作"
+  "render.favorite_title": "收藏动作",
+  "settings.action_delay": "动作延迟",
+  "settings.action_delay_hint": "全员动作之间的等待时间（100–9999ms，默认 500ms）",
+  "settings.action_skip_members": "动作跳过名单",
+  "settings.action_skip_hint": "全员动作与全员组合不会对这些会员执行；可用逗号、空格或换行分隔",
+  "settings.action_skip_placeholder": "例如：12345, 67890"
 }

@@ -258,5 +258,10 @@
   "settings.chat_button": "BC チャット ルーム ボタンにドッキングする",
   "settings.enable_xiaosu": "XiaoSu アクション パックを有効にする",
   "editor.preview_label": "プレビュー",
-  "render.favorite_title": "好きなアクション"
+  "render.favorite_title": "好きなアクション",
+  "settings.action_delay": "アクション遅延",
+  "settings.action_delay_hint": "全員対象アクション間の待機時間（100～9999ms、既定値500ms）",
+  "settings.action_skip_members": "アクション除外リスト",
+  "settings.action_skip_hint": "全員対象のアクションとコンボでは、これらのメンバーIDを除外します。カンマ、空白、改行で区切ってください",
+  "settings.action_skip_placeholder": "例：12345, 67890"
 }

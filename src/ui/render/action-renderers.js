@@ -190,8 +190,12 @@
         listEl.innerHTML = html;
         listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
                 if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
+                state.selectedPart = btn.dataset.group;
+                state.selectedAction = btn.dataset.name;
+                state.selectedActionItem = null;
+                if (state.allModeActive) { executeActionAll(); return; }
+                if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
                 var acts = getActionsForPart(btn.dataset.group, charObj) || [];
                 var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
                 executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null, btn.dataset.group);
@@ -223,11 +227,15 @@
         listEl.innerHTML = '<div class="xsact-settings">' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
+            '<label class="xsact-settings-row"><span><strong>' + QiActT('settings.action_delay') + '</strong><small>' + QiActT('settings.action_delay_hint') + '</small></span><span class="xsact-settings-number"><input type="number" id="xsact-settings-delay" min="100" max="9999" step="100" value="' + state.actionDelay + '"><em>ms</em></span></label>' +
+            '<label class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT('settings.action_skip_members') + '</strong><small>' + QiActT('settings.action_skip_hint') + '</small></span><textarea id="xsact-settings-skip" rows="2" inputmode="numeric" placeholder="' + QiActT('settings.action_skip_placeholder') + '">' + escapeHtml(state.actionSkipMembers.join(', ')) + '</textarea></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.char_list_right') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-char-right"' + (state.charPopoverRight ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
         listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
+        listEl.querySelector('#xsact-settings-delay').addEventListener('change', function(e) { state.actionDelay = normalizeActionDelay(e.target.value); e.target.value = state.actionDelay; persist(S_ACTION_DELAY, state.actionDelay); });
+        listEl.querySelector('#xsact-settings-skip').addEventListener('change', function(e) { state.actionSkipMembers = parseActionSkipMembers(e.target.value); e.target.value = state.actionSkipMembers.join(', '); persist(S_ACTION_SKIP_MEMBERS, state.actionSkipMembers); });
         listEl.querySelector('#xsact-settings-char-right').addEventListener('change', function(e) { state.charPopoverRight = e.target.checked; persist(S_CHAR_POPOVER_RIGHT, state.charPopoverRight); applyCharPopoverSide(state.actionPanelEl); });
         listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
         listEl.querySelector('#xsact-settings-xiaosu').addEventListener('change', function(e) { setXiaosuPack(e.target.checked); });

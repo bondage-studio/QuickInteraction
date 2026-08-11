@@ -258,5 +258,10 @@
   "settings.chat_button": "In der BC-Chat-Schaltflächenleiste andocken",
   "settings.enable_xiaosu": "XiaoSu-Aktionspaket aktivieren",
   "editor.preview_label": "Vorschau",
-  "render.favorite_title": "Favoritenaktionen"
+  "render.favorite_title": "Favoritenaktionen",
+  "settings.action_delay": "Aktionsverzögerung",
+  "settings.action_delay_hint": "Wartezeit zwischen Aktionen für alle Ziele (100–9999 ms; Standard 500 ms)",
+  "settings.action_skip_members": "Aktions-Ausnahmeliste",
+  "settings.action_skip_hint": "Aktionen und Kombinationen für alle überspringen diese Mitglieds-IDs; durch Kommas, Leerzeichen oder Zeilenumbrüche trennen",
+  "settings.action_skip_placeholder": "z. B. 12345, 67890"
 }

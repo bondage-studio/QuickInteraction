@@ -86,6 +86,8 @@
     const S_CHAT_BUTTON = 'xsact_qa_chat_button';
     const S_INTERACTION_GRID = 'xsact_qa_interaction_grid';
     const S_CHAR_POPOVER_RIGHT = 'xsact_qa_char_popover_right';
+    const S_ACTION_DELAY = 'xsact_qa_action_delay';
+    const S_ACTION_SKIP_MEMBERS = 'xsact_qa_action_skip_members';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -135,7 +137,28 @@
         ,favoritePartFilter: 'all'
         ,interactionGridActive: true
         ,charPopoverRight: false
+        ,actionDelay: 500
+        ,actionSkipMembers: []
     };
+
+    function normalizeActionDelay(value) {
+        var parsed = parseInt(value, 10);
+        if (!Number.isFinite(parsed)) parsed = 500;
+        return Math.max(100, Math.min(9999, parsed));
+    }
+    function parseActionSkipMembers(value) {
+        var source = Array.isArray(value) ? value.join(',') : String(value || '');
+        var seen = {};
+        return source.split(/[^0-9]+/).map(function(token) { return parseInt(token, 10); }).filter(function(id) {
+            if (!Number.isFinite(id) || id <= 0 || seen[id]) return false;
+            seen[id] = true;
+            return true;
+        });
+    }
+    function isActionSkippedCharacter(character) {
+        var id = character && parseInt(character.MemberNumber, 10);
+        return Number.isFinite(id) && state.actionSkipMembers.indexOf(id) >= 0;
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     // 部位定义（BC Target_Group 映射）

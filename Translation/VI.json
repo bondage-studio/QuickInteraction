@@ -258,5 +258,10 @@
   "settings.chat_button": "Gắn các nút phòng trò chuyện BC",
   "settings.enable_xiaosu": "Kích hoạt gói hành động XiaoSu",
   "editor.preview_label": "Xem trước",
-  "render.favorite_title": "Hành động yêu thích"
+  "render.favorite_title": "Hành động yêu thích",
+  "settings.action_delay": "Độ trễ hành động",
+  "settings.action_delay_hint": "Thời gian chờ giữa các hành động cho tất cả mục tiêu (100–9999ms; mặc định 500ms)",
+  "settings.action_skip_members": "Danh sách bỏ qua hành động",
+  "settings.action_skip_hint": "Hành động và tổ hợp cho tất cả sẽ bỏ qua các ID thành viên này; phân cách bằng dấu phẩy, khoảng trắng hoặc dòng mới",
+  "settings.action_skip_placeholder": "Ví dụ: 12345, 67890"
 }

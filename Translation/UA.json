@@ -258,5 +258,10 @@
   "settings.chat_button": "Закріпити на панелі кнопок BC",
   "settings.enable_xiaosu": "Увімкнути набір дій XiaoSu",
   "editor.preview_label": "Попередній перегляд",
-  "render.favorite_title": "Вибрані дії"
+  "render.favorite_title": "Вибрані дії",
+  "settings.action_delay": "Затримка дій",
+  "settings.action_delay_hint": "Пауза між діями для всіх цілей (100–9999 мс; типово 500 мс)",
+  "settings.action_skip_members": "Список виключень",
+  "settings.action_skip_hint": "Дії та комбінації для всіх пропускають ці ID учасників; розділяйте комами, пробілами або новими рядками",
+  "settings.action_skip_placeholder": "Наприклад: 12345, 67890"
 }

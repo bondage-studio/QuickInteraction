@@ -258,5 +258,10 @@
   "settings.chat_button": "Dock in the BC chat-room buttons",
   "settings.enable_xiaosu": "Enable XiaoSu action pack",
   "editor.preview_label": "Preview",
-  "render.favorite_title": "Favorite actions"
+  "render.favorite_title": "Favorite actions",
+  "settings.action_delay": "Action delay",
+  "settings.action_delay_hint": "Wait between all-target actions (100–9999ms; default 500ms)",
+  "settings.action_skip_members": "Action skip list",
+  "settings.action_skip_hint": "All-target actions and combos skip these member IDs; separate with commas, spaces, or new lines",
+  "settings.action_skip_placeholder": "e.g. 12345, 67890"
 }

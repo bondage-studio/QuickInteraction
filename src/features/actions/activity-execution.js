@@ -296,12 +296,13 @@
         if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         // 如果当前选中了目标，则把目标排到第一个执行，其余随后
-        var ordered = orderBySelectedTarget(chars);
+        var ordered = orderBySelectedTarget(chars).filter(function(c) { return !isActionSkippedCharacter(c); });
+        if (!ordered.length) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         var name = String(state.selectedAction);
         var group = String(state.selectedPart);
         var success = 0;
-        var delay = 120; // ms，避免触发服务器/本地 anti-spam
+        var delay = normalizeActionDelay(state.actionDelay); // 避免触发服务器/本地 anti-spam
         var index = 0;
 
         function next() {

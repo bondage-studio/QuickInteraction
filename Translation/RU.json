@@ -258,5 +258,10 @@
   "settings.chat_button": "Закрепить на панели кнопок BC",
   "settings.enable_xiaosu": "Включить набор действий XiaoSu",
   "editor.preview_label": "Предпросмотр",
-  "render.favorite_title": "Избранные действия"
+  "render.favorite_title": "Избранные действия",
+  "settings.action_delay": "Задержка действий",
+  "settings.action_delay_hint": "Пауза между действиями для всех целей (100–9999 мс; по умолчанию 500 мс)",
+  "settings.action_skip_members": "Список исключений",
+  "settings.action_skip_hint": "Действия и комбинации для всех пропускают эти ID участников; разделяйте их запятыми, пробелами или переносами строк",
+  "settings.action_skip_placeholder": "Например: 12345, 67890"
 }

@@ -258,5 +258,10 @@
   "settings.chat_button": "BC 채팅방 버튼에 도킹",
   "settings.enable_xiaosu": "XiaoSu 액션 팩 활성화",
   "editor.preview_label": "시사",
-  "render.favorite_title": "좋아하는 행동"
+  "render.favorite_title": "좋아하는 행동",
+  "settings.action_delay": "동작 지연",
+  "settings.action_delay_hint": "전체 대상 동작 사이의 대기 시간(100~9999ms, 기본값 500ms)",
+  "settings.action_skip_members": "동작 제외 목록",
+  "settings.action_skip_hint": "전체 대상 동작과 콤보에서 제외할 회원 ID입니다. 쉼표, 공백 또는 줄바꿈으로 구분하세요",
+  "settings.action_skip_placeholder": "예: 12345, 67890"
 }

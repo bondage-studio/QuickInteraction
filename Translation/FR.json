@@ -258,5 +258,10 @@
   "settings.chat_button": "Ancrer dans les boutons de chat BC",
   "settings.enable_xiaosu": "Activer le pack d’actions XiaoSu",
   "editor.preview_label": "Aperçu",
-  "render.favorite_title": "Actions favorites"
+  "render.favorite_title": "Actions favorites",
+  "settings.action_delay": "Délai des actions",
+  "settings.action_delay_hint": "Attente entre les actions visant tout le monde (100–9999 ms ; 500 ms par défaut)",
+  "settings.action_skip_members": "Liste d’exclusion",
+  "settings.action_skip_hint": "Les actions et combos visant tout le monde ignorent ces identifiants ; séparez-les par des virgules, espaces ou retours à la ligne",
+  "settings.action_skip_placeholder": "Ex. : 12345, 67890"
 }
