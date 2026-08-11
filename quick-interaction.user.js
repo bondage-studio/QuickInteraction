@@ -2983,7 +2983,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var btn = document.createElement("button");
         btn.id = "xsact-toggle-btn";
         btn.type = "button";
-        btn.className = "blank-button button chat-room-button xsact-chat-toggle";
+        btn.className = "blank-button button HideOnPopup chat-room-button xsact-chat-toggle";
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
         btn.addEventListener("click", function(e) {
           e.preventDefault();
@@ -2997,10 +2997,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function registerChatRoomToggle() {
         var L = window.Liko = window.Liko || {};
-        var spec = ["quick-interaction", 50, createChatRoomToggleButton, { plain: true, collapse: false }];
+        var spec = ["quick-interaction", 50, createChatRoomToggleButton, { plain: true }];
         if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) {
           L.__Sys_ChatRoomButtons__.add.apply(L.__Sys_ChatRoomButtons__, spec);
-          ensureDockedToggleVisible();
         } else {
           L.__CRB_pending__ = L.__CRB_pending__ || [];
           if (!L.__CRB_pending__.some(function(x) {
@@ -3019,13 +3018,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
             });
           }
         }
-      }
-      function ensureDockedToggleVisible() {
-        if (!state.chatButtonDocked || !state.toggleBtnEl) return;
-        state.toggleBtnEl.hidden = false;
-        state.toggleBtnEl.removeAttribute("hidden");
-        state.toggleBtnEl.style.display = "";
-        state.toggleBtnEl.style.visibility = "visible";
       }
       function setChatButtonDocked(on) {
         state.chatButtonDocked = !!on;
@@ -3120,7 +3112,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function drawToggleButton() {
         if (state.chatButtonDocked) {
           if (!state.toggleBtnEl || !document.documentElement.contains(state.toggleBtnEl)) registerChatRoomToggle();
-          ensureDockedToggleVisible();
           if (state.toggleBtnEl) updateToggleBtnStyle();
           return;
         }
@@ -3136,6 +3127,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function guardToggleVisibility() {
         if (state.disposed || runtime && runtime.disposed) return;
         if (typeof CurrentScreen === "undefined") return;
+        if (state.chatButtonDocked) {
+          if (CurrentScreen === "ChatRoom") drawToggleButton();
+          return;
+        }
         if (CurrentScreen === "ChatRoom") {
           drawToggleButton();
         } else if (state.toggleBtnEl) {

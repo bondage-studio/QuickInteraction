@@ -52,3 +52,10 @@ test('custom action toolbar is rendered before category chips', () => {
     const manager = fs.readFileSync(path.join(root, 'src/features/custom-actions/manager-view.js'), 'utf8');
     assert.ok(manager.indexOf('html += toolbarHtml') < manager.indexOf('id="xsact-ca-chips"'));
 });
+
+test('docked toggle delegates collapse visibility to BC ChatRoomButtons', () => {
+    const toggle = fs.readFileSync(path.join(root, 'src/ui/toggle-button.js'), 'utf8');
+    assert.match(toggle, /\{ plain: true \}/);
+    assert.equal(toggle.includes('collapse: false'), false);
+    assert.equal(toggle.includes('ensureDockedToggleVisible'), false);
+});
