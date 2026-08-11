@@ -71,7 +71,7 @@
                 name: '快捷互动',
                 fullName: 'Quick Action Launcher',
                 version: VERSION,
-                repository: '统一动作操作台'
+                repository: 'https://github.com/bondage-studio/QuickInteraction'
             }, { allowReplace: true }); // allowReplace：支持 CDP 反复注入测试时干净替换旧实例
             logD('state.modApi 注册完成');
         } catch (regErr) {
