@@ -1,6 +1,6 @@
 // 构建脚本：从 XiaoSuActivity 仓库提取全部动作，生成 QiAct 内置「小酥动作包」。
 // 用法：node tools/build-xiaosu-pack.mjs
-// 输出：src/22-xiaosu-pack.js （声明 var XIAOSU_PACKED = [...]）
+// 输出：src/data/xiaosu-pack.js（声明 var XIAOSU_PACKED = [...]）
 //
 // 设计：把小酥动作拓展(XiaoSuActivity, 前缀 XSAct_) 的全部动作“重新编译”进 QiAct，
 // 以 QiAct_ 自定义动作形式内置发布 —— 用户无需安装原版插件即可使用，且对原版停更/故障免疫。
@@ -17,7 +17,7 @@ const xsRoot = '/Users/amoy_johnny/WorkBuddy/2026-06-03-14-48-07/XiaoSuActivity'
 
 const SRC = path.join(xsRoot, 'src/Modules/MActivity.ts');
 const CN = path.join(xsRoot, 'translation/CN.json');
-const OUT = path.join(repoRoot, 'src/22-xiaosu-pack.js');
+const OUT = path.join(repoRoot, 'src/data/xiaosu-pack.js');
 
 // BC 资产组 → 中文显示名（仅用于 isBase 动作的 {2} 占位符替换）
 const GROUP_LABELS = {
