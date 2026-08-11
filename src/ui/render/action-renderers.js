@@ -43,7 +43,6 @@
             down:     '<path d="M6 10l6 6 6-6"/>',
             grip:     '<circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/>',
             check:    '<path d="M5 12l5 5 9-11"/>',
-            bolt:     '<path d="M13 2 4 14h7l-1 8 10-12h-7z"/>',
             resize:   '<path d="M22 2L2 22M16 22h6v-6"/>',
             users:    '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
             target:   '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>',
@@ -98,7 +97,7 @@
             var isEditing = !!state.editingComboId;
             actions.forEach(function(act) {
                 if (!act || !act.Name) return;
-                var lbl = getActivityLabel(act.Name, partGroup);
+                var lbl = getActivityLabel(act.Name, act.Group || partGroup);
                 var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + '|' + act.Name) !== -1;
                 // 来源水印功能已暂停（按需求优先修复动作显示功能）。
                 // 下方点击处理器仍用 caDetectSource 判断 LSCG/Liko 以触发自动刷新。
@@ -132,7 +131,7 @@
 
                     if (state.allModeActive) executeActionAll();
                     else {
-                        var execOk = executeAction(charObj, actName, act.Item || null);
+                        var execOk = executeAction(charObj, actName, act.Item || null, act.Group || partGroup);
                         var srcKey = caDetectSource(actName);
                         // 来源为 LSCG / Liko 的动作会改变可用状态/进度（如进食进度、道具附加），
                         // 执行后立即静默刷新当前部位动作列表以反映最新状态，且不弹任何提示。
@@ -172,7 +171,7 @@
         var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (!titleEl || !listEl) return;
-        titleEl.textContent = QiActT('render.favorite_title');
+        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('render.favorite_title');
         renderFavoritePartFilter();
         if (!state.favorites.length) { listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>'; return; }
         var html = '';
@@ -195,12 +194,10 @@
                 if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
                 var acts = getActionsForPart(btn.dataset.group, charObj) || [];
                 var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
-                executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null);
+                executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null, btn.dataset.group);
             });
         });
     }
-
-    function canonicalPartGroup(group) { return SUBPART_TO_BASE[group] || group; }
 
     function renderFavoritePartFilter() {
         if (!state.actionPanelEl) return;
@@ -210,7 +207,8 @@
         var groups = []; state.favorites.forEach(function(k) { var p = k.indexOf('|'); var g = canonicalPartGroup(p < 0 ? '' : k.slice(0,p)); if (g && groups.indexOf(g) < 0) groups.push(g); });
         var bar = document.createElement('div'); bar.id = 'xsact-favorite-part-filter'; bar.className = 'xsact-favorite-part-filter';
         bar.innerHTML = '<button data-group="all" class="' + (state.favoritePartFilter === 'all' ? 'active' : '') + '">' + QiActT('custom.chip_all') + '</button>' + groups.map(function(g) { return '<button data-group="' + escapeHtml(g) + '" class="' + (state.favoritePartFilter === g ? 'active' : '') + '">' + escapeHtml(QiActT('part.' + g)) + '</button>'; }).join('');
-        footer.insertAdjacentElement('afterend', bar);
+        var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
+        if (listEl) listEl.insertAdjacentElement('beforebegin', bar);
         bar.querySelectorAll('button').forEach(function(b) { b.addEventListener('click', function() { state.favoritePartFilter = b.dataset.group; updateFavoritesPanel(state.selectedTarget); }); });
     }
 
@@ -220,15 +218,17 @@
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (titleEl) titleEl.textContent = QiActT('settings.title');
         var cur = QiActI18n.getCurrentLang ? QiActI18n.getCurrentLang() : 'auto';
-        var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','DE','FR','RU','UA']);
+        var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','JA','KO','VI','DE','FR','ES','RU','UA']);
         var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<option value="' + l + '"' + (l === cur ? ' selected' : '') + '>' + escapeHtml(m.native || (l === 'auto' ? QiActT('settings.auto') : l)) + '</option>'; }).join('');
         listEl.innerHTML = '<div class="xsact-settings">' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.char_list_right') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-char-right"' + (state.charPopoverRight ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
         listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
+        listEl.querySelector('#xsact-settings-char-right').addEventListener('change', function(e) { state.charPopoverRight = e.target.checked; persist(S_CHAR_POPOVER_RIGHT, state.charPopoverRight); applyCharPopoverSide(state.actionPanelEl); });
         listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
         listEl.querySelector('#xsact-settings-xiaosu').addEventListener('change', function(e) { setXiaosuPack(e.target.checked); });
     }

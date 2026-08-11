@@ -101,6 +101,7 @@
         state.isActive = loadSetting(S_ENABLED, false);
         state.selfModeActive = loadSetting(S_SELF, false);
         state.interactionGridActive = loadSetting(S_INTERACTION_GRID, true) !== false;
+        state.charPopoverRight = loadSetting(S_CHAR_POPOVER_RIGHT, false) === true;
         state.favorites = loadSetting(S_FAVS, []);
         migrateFavorites(); // 旧版纯动作名 → 部位复合键（一次性迁移）
         state.presets = loadSetting(S_PRESETS, []);

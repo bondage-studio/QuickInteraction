@@ -15,8 +15,8 @@
     'use strict';
 
     // 支持语言（顺序无关；兜底固定走 EN）
-    var LANGS = ['TW', 'CN', 'EN', 'DE', 'FR', 'RU', 'UA'];
-    // 强制三语：构建校验要求 CN/EN/TW 必填；DE/FR/RU/UA 缺则 EN 兜底（不阻塞发版）
+    var LANGS = ['TW', 'CN', 'EN', 'JA', 'KO', 'VI', 'DE', 'FR', 'ES', 'RU', 'UA'];
+    // 构建至少要求简中与英文齐全；其他语言缺值时统一回退英文。
     var REQUIRED = ['CN', 'EN', 'TW'];
     // 语言原生名（用于下拉菜单展示，不随界面语言翻译）
     var LANG_META = {
@@ -24,13 +24,17 @@
         TW: { code: 'TW', native: '繁體中文' },
         CN: { code: 'CN', native: '简体中文' },
         EN: { code: 'EN', native: 'English' },
+        JA: { code: 'JA', native: '日本語' },
+        KO: { code: 'KO', native: '한국어' },
+        VI: { code: 'VI', native: 'Tiếng Việt' },
         DE: { code: 'DE', native: 'Deutsch' },
         FR: { code: 'FR', native: 'Français' },
+        ES: { code: 'ES', native: 'Español' },
         RU: { code: 'RU', native: 'Русский' },
         UA: { code: 'UA', native: 'Українська' }
     };
 
-    // 扁平字典： 'ns.key' -> { TW, CN, EN, DE, FR, RU, UA }
+    // 扁平字典：'ns.key' -> { 语言码: 译文 }
     var DICT = {};
 
     // 注册某命名空间的字典（照搬 liko 的 register 范式）
@@ -39,6 +43,16 @@
         for (var k in dict) {
             if (!Object.prototype.hasOwnProperty.call(dict, k)) continue;
             DICT[ns + '.' + k] = dict[k];
+        }
+    }
+
+    // 根目录 Translation/<语言>.json 由构建器转换成此调用并内联。
+    function registerLocale(lang, dictionary) {
+        if (!lang || !dictionary || typeof dictionary !== 'object') return;
+        for (var key in dictionary) {
+            if (!Object.prototype.hasOwnProperty.call(dictionary, key)) continue;
+            DICT[key] = DICT[key] || {};
+            DICT[key][lang] = dictionary[key];
         }
     }
 
@@ -51,6 +65,9 @@
             // auto：跟随 BC 游戏语言（与 liko 一致）
             var bc = (typeof TranslationLanguage !== 'undefined' && TranslationLanguage)
                 ? String(TranslationLanguage).toUpperCase() : '';
+            if (bc === 'JP') bc = 'JA';
+            if (bc === 'KR') bc = 'KO';
+            if (bc === 'VN') bc = 'VI';
             if (LANGS.indexOf(bc) >= 0) return bc;
             // 回退浏览器语言
             var nav = (typeof navigator !== 'undefined' && navigator.language)
@@ -58,6 +75,10 @@
             if (nav.indexOf('ZH') === 0) return nav.indexOf('TW') >= 0 ? 'TW' : 'CN';
             if (nav.indexOf('DE') === 0) return 'DE';
             if (nav.indexOf('FR') === 0) return 'FR';
+            if (nav.indexOf('JA') === 0) return 'JA';
+            if (nav.indexOf('KO') === 0) return 'KO';
+            if (nav.indexOf('VI') === 0) return 'VI';
+            if (nav.indexOf('ES') === 0) return 'ES';
             if (nav.indexOf('RU') === 0) return 'RU';
             if (nav.indexOf('UK') === 0) return 'UA';
             return 'EN';
@@ -102,6 +123,7 @@
     // 暴露全局 API
     window.QiActI18n = {
         register: register,
+        registerLocale: registerLocale,
         t: QiActT,
         getCurrentLang: resolveLang,
         setLang: setLang,

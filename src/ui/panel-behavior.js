@@ -115,6 +115,7 @@
     var __langGlobalBound = false;
 
     function bindPanelEvents(panel) {
+        applyCharPopoverSide(panel);
         // 退出按钮（面板上的 ✕）
         var exitBtn = panel.querySelector('#xsact-exit-panel-btn');
         if (exitBtn) exitBtn.addEventListener('click', function() { toggleActionMode(); });
@@ -124,6 +125,8 @@
         if (refreshBtn) refreshBtn.addEventListener('click', refreshPanelState);
         var settingsBtn = panel.querySelector('#xsact-settings-btn');
         if (settingsBtn) settingsBtn.addEventListener('click', function() { setPanelMode('settings'); });
+        var announcementBtn = panel.querySelector('#xsact-announcement-btn');
+        if (announcementBtn) announcementBtn.addEventListener('click', recallAnnouncement);
 
         // 语言切换下拉（自定义菜单）：setLang 后重建面板以应用新语言（auto 跟随 BC 游戏语言）
         var langWrap = panel.querySelector('#xsact-lang');
@@ -233,22 +236,6 @@
         // 自己模式按钮
         var selfBtn = panel.querySelector('#xsact-self-btn');
         if (selfBtn) selfBtn.addEventListener('click', toggleSelfMode);
-
-
-        // ×3 连打
-        var x3Btn = panel.querySelector('#xsact-x3-btn');
-        if (x3Btn) x3Btn.addEventListener('click', function() {
-            if (!state.selectedTarget || !state.selectedAction) return;
-            var count = 0;
-            var doIt = function() {
-                if (count < 3 && state.isActive) {
-                    executeAction(state.selectedTarget, state.selectedAction);
-                    count++;
-                    setTimeout(doIt, 300);
-                }
-            };
-            doIt();
-        });
 
         // 收藏按钮：切换收藏模式
         var favBtn = panel.querySelector('#xsact-fav-btn');

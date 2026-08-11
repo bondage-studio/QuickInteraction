@@ -8,13 +8,13 @@
             var isSelected = (c.MemberNumber === charObj.MemberNumber);
             grid.classList.toggle('selected', isSelected);
             grid.querySelectorAll('.xsact-part-btn').forEach(function(btn) {
-                btn.classList.toggle('active', isSelected && btn.dataset.group === partGroup);
+                btn.classList.toggle('active', isSelected && isSamePartFamily(btn.dataset.group, partGroup));
             });
         });
 
         // 更新右侧面板（按当前模式分派）
         renderCharList();
-        renderPanel();
+        setPanelMode('part');
     }
 
     /** 获取当前房间内有效成员（自己受 selfMode 控制） */
@@ -37,7 +37,7 @@
         state.selectedPart = null;
         state.selectedAction = null;
         state.selectedActionItem = null;
-        state.popoverView = 'parts';
+        state.popoverView = state.panelMode === 'favorite' ? 'chars' : 'parts';
         // 同步高亮该角色的身体线框
         state.bodyGrids.forEach(function(grid, c) {
             grid.classList.toggle('selected', c.MemberNumber === charObj.MemberNumber);
@@ -95,7 +95,7 @@
             zones.forEach(function(z) {
                 var x = z[0], y = z[1], w = z[2], h = z[3];
                 var rx = Math.min(16, Math.min(w, h) * 0.4);
-                var sel = (state.selectedPart === part.group) ? ' selected' : '';
+                var sel = isSamePartFamily(state.selectedPart, part.group) ? ' selected' : '';
                 rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group +
                     '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) +
                     '" height="' + h.toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + part.label + '"/>';
@@ -123,10 +123,8 @@
                 e.stopPropagation();
                 state.selectedPart = zone.dataset.group;
                 // 立即高亮当前选中的矩形，避免等下次重绘
-                bodyEl.querySelectorAll('.xsact-body-part-zone').forEach(function(z) {
-                    z.classList.toggle('selected', z.dataset.group === state.selectedPart);
-                });
-                renderPanel();
+                updatePartFamilySelection(bodyEl, state.selectedPart, '.xsact-body-part-zone');
+                setPanelMode('part');
                 // 选择部位后保持浮层开启，方便继续选其他部位
             });
         });
@@ -149,6 +147,14 @@
     }
 
     /** 打开人物列表弹出层 */
+    function applyCharPopoverSide(panel) {
+        panel = panel || state.actionPanelEl;
+        if (!panel) return;
+        panel.classList.toggle('char-popover-right', !!state.charPopoverRight);
+        var popover = panel.querySelector('#xsact-char-popover');
+        if (popover) popover.classList.toggle('right', !!state.charPopoverRight);
+    }
+
     function openCharPopover() {
         if (!state.actionPanelEl) return;
         var panel = state.actionPanelEl;
@@ -157,13 +163,7 @@
         if (!popover) return;
         // 打开时默认显示人物列表
         state.popoverView = 'chars';
-        // 智能定位：若面板左侧空间不足，则弹出层显示在右侧
-        var rect = panel.getBoundingClientRect();
-        if (rect.left < 256) {
-            popover.classList.add('right');
-        } else {
-            popover.classList.remove('right');
-        }
+        applyCharPopoverSide(panel);
         popover.style.display = 'flex';
         state.charListOpen = true;
         panel.classList.add('popover-open');

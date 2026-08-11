@@ -118,6 +118,9 @@
             zones.forEach(function(z) {
                 var btn = document.createElement('button');
                 btn.className = 'xsact-part-btn';
+                if (state.selectedTarget && state.selectedTarget.MemberNumber === charObj.MemberNumber && isSamePartFamily(state.selectedPart, part.group)) {
+                    btn.classList.add('active');
+                }
                 btn.dataset.group = part.group;
                 btn.dataset.targetMn = charObj.MemberNumber;
                 // 在容器(0-500 × 0-1000)内的百分比定位

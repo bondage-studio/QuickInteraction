@@ -2,18 +2,20 @@
     function getActionsForPart(partGroup, targetChar) {
         targetChar = targetChar || state.selectedTarget;
         var actions = [];
+        var groupCandidates = getPartGroupFamily(partGroup);
 
         // ── 方案 A（推荐）：BC 原生实时可用列表 ──
         if (targetChar && typeof ActivityAllowedForGroup === 'function') {
             try {
-                var allowed = ActivityAllowedForGroup(targetChar, partGroup);
-                if (Array.isArray(allowed) && allowed.length > 0) {
-                    actions = allowed.map(function(a) {
-                        if (!a) return null;
+                groupCandidates.forEach(function(candidateGroup) {
+                    var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
+                    if (!Array.isArray(allowed)) return;
+                    allowed.forEach(function(a) {
+                        if (!a) return;
                         var name = a.Activity ? (a.Activity.Name || '') : (a.Name || '');
-                        return { Name: name, translatedName: getActivityLabelFallback(name, partGroup), Item: a.Item || null };
-                    }).filter(function(a) { return a && a.Name; });
-                }
+                        if (name) actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                    });
+                });
             } catch (e) {
                 console.warn('[QiAct] ActivityAllowedForGroup 失败，改用全量列表:', e.message);
             }
@@ -22,12 +24,13 @@
         // ── 方案 B：BC_Interactive_Index 精选索引（无实时过滤）──
         if (actions.length === 0 && window.BC_Interactive_Index && window.BC_Interactive_Index.Interactive_Index) {
             actions = window.BC_Interactive_Index.Interactive_Index.filter(function(act) {
-                return act.Target_Group === partGroup;
+                return groupCandidates.indexOf(act.Target_Group) !== -1;
             }).map(function(act) {
                 return {
                     Name: act.activityName || '',
                     translatedName: act.translatedactivity || act.activityName || '',
-                    Item: null
+                    Item: null,
+                    Group: act.Target_Group || partGroup
                 };
             });
         }
@@ -37,13 +40,17 @@
             var raw = window.ActivityFemale3DCG.filter(function(a) {
                 if (!a.Name || !a.Target) return false;
                 var targets = Array.isArray(a.Target) ? a.Target : [a.Target];
-                if (targets.indexOf(partGroup) !== -1) return true;
-                if (a.TargetSelf === true) return targets.indexOf(partGroup) !== -1;
+                if (targets.some(function(group) { return groupCandidates.indexOf(group) !== -1; })) return true;
+                if (a.TargetSelf === true) return targets.some(function(group) { return groupCandidates.indexOf(group) !== -1; });
                 var selfT = Array.isArray(a.TargetSelf) ? a.TargetSelf : (a.TargetSelf ? [a.TargetSelf] : []);
-                return selfT.indexOf(partGroup) !== -1;
+                return selfT.some(function(group) { return groupCandidates.indexOf(group) !== -1; });
             });
             actions = raw.map(function(a) {
-                return { Name: a.Name || '', translatedName: getActivityLabelFallback(a.Name, partGroup), Item: null };
+                var actualGroup = groupCandidates.find(function(group) {
+                    var targets = Array.isArray(a.Target) ? a.Target : [a.Target];
+                    return targets.indexOf(group) !== -1;
+                }) || partGroup;
+                return { Name: a.Name || '', Group: actualGroup, translatedName: getActivityLabelFallback(a.Name, actualGroup), Item: null };
             });
         }
 
@@ -54,7 +61,7 @@
                 (a.translatedName && (a.translatedName.indexOf('[STRING_RETRIEVAL_FAILED]') !== -1 ||
                                       a.translatedName.indexOf('MISSING TEXT IN') !== -1 ||
                                       a.translatedName.indexOf('MISSING ACTIVITY') !== -1))) return false;
-            if (!shouldKeepAction(a.Name, partGroup)) return false;
+            if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
             // 屏蔽已导入的 echo 原始动作名（双重兜底：ActivityAllowedForGroup hook 已过滤，
             // 但 fallback 数据源和旧数据可能绕过 hook，这里再强制过滤一次）
             if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;

@@ -151,6 +151,21 @@
         }
     }
 
+    async function recallAnnouncement() {
+        try {
+            var info = await fetchWithFallback(1);
+            if (info && info.announcement && info.announcement.id) {
+                showAnnounceBanner(info.announcement, true);
+                return true;
+            }
+            toast(QiActT('update.no_announcement'), '#888');
+        } catch (e) {
+            console.warn('[QiAct] 重新取得公告失败:', e && e.message);
+            toast(QiActT('update.announcement_failed'), '#FF5C5C');
+        }
+        return false;
+    }
+
     function startUpdateChecker() {
         if (state.updateTimer) return; // 防重复启动（热重载/多次 init）
         state.updateTimer = runtime && runtime.interval ? runtime.interval(function () {

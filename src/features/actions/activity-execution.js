@@ -193,6 +193,15 @@
         }
     }
 
+    function resolveAllowedActivity(char, preferredGroup, name) {
+        var family = getPartGroupFamily(preferredGroup);
+        for (var i = 0; i < family.length; i++) {
+            var found = findAllowedActivity(char, family[i], name);
+            if (found) return { activity: found, group: family[i] };
+        }
+        return null;
+    }
+
     /** 组合执行间隔归一化（缺失/非法时回退 160ms） */
     function comboDelay(combo) {
         return (combo && typeof combo.delay === 'number' && combo.delay >= 0) ? combo.delay : 160;
@@ -217,12 +226,15 @@
         if (!name || !group) return false;
 
         try {
-            var packet = makeActivityPacket(charObj, group, name, activityItem);
-            if (!packet) { toast(QiActT('toast.need_item'), '#FF5C5C'); return false; }
             // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）
-            if (!findAllowedActivity(charObj, group, name)) {
+            var resolved = resolveAllowedActivity(charObj, group, name);
+            if (!resolved) {
                 toast(QiActT('toast.unavailable'), '#FF5C5C'); return false;
             }
+            group = resolved.group;
+            activityItem = activityItem || (resolved.activity && resolved.activity.Item) || null;
+            var packet = makeActivityPacket(charObj, group, name, activityItem);
+            if (!packet) { toast(QiActT('toast.need_item'), '#FF5C5C'); return false; }
 
             // 先执行 BC 原生 ActivityRun(..., false) 触发本地副作用：
             // 重置 PropertyAutoPunishHandled（MakeSound 动作会触发口塞充气等自动惩罚）、
@@ -297,9 +309,9 @@
             var c = ordered[index++];
             // 预先检查该目标当前是否真的可做这个动作
             var item = null;
-            var found = findAllowedActivity(c, group, name);
-            if (!found) return next();
-            item = found.Item || null;
+            var resolved = resolveAllowedActivity(c, group, name);
+            if (!resolved) return next();
+            item = resolved.activity.Item || null;
             if (executeAction(c, name, item || state.selectedActionItem)) success++;
             setTimeout(next, delay);
         }

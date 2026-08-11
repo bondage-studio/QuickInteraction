@@ -1,14 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
 
 export const REQUIRED_LANGS = ['CN', 'EN'];
+export const TRANSLATION_LANGS = ['TW', 'CN', 'EN', 'JA', 'KO', 'VI', 'DE', 'FR', 'ES', 'RU', 'UA'];
 
 // 相容核心仍共用一个 IIFE 词法作用域，因此暂时需要明确顺序；顺序集中在此处，
 // 不再隐藏在 00-、01- 等文件名前缀。迁入真正 ESM 的功能会从此清单移除。
 export const COMPAT_SOURCE_FILES = [
     'i18n/runtime.js',
-    'i18n/dictionary.js',
     'platform/userscript-runtime.js',
     'core/application-context.js',
     'features/actions/action-catalog.js',
@@ -38,30 +37,18 @@ export function readCompatSource(root, { validateLocales = true } = {}) {
     const srcDir = path.join(root, 'src');
     const missingFiles = COMPAT_SOURCE_FILES.filter((file) => !fs.existsSync(path.join(srcDir, file)));
     if (missingFiles.length) throw new Error(`相容核心清单缺少文件：\n${missingFiles.join('\n')}`);
-    const dictionaryFiles = ['i18n/dictionary.js'];
+    const translationDir = path.join(root, 'Translation');
+    const translationFiles = TRANSLATION_LANGS.map((lang) => path.join(translationDir, `${lang}.json`));
+    const missingTranslationFiles = translationFiles.filter((file) => !fs.existsSync(file));
+    if (missingTranslationFiles.length) throw new Error(`缺少翻译文件：\n${missingTranslationFiles.join('\n')}`);
+    const translations = Object.fromEntries(TRANSLATION_LANGS.map((lang, index) => [lang, JSON.parse(fs.readFileSync(translationFiles[index], 'utf8'))]));
 
     let translationCount = 0;
     if (validateLocales) {
         const collected = {};
-        const sandbox = {
-            console,
-            localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
-            window: {},
-        };
-        sandbox.window.QiActI18n = {
-            register(namespace, dictionary) {
-                if (!dictionary || typeof dictionary !== 'object') return;
-                for (const key in dictionary) {
-                    if (Object.prototype.hasOwnProperty.call(dictionary, key)) {
-                        collected[`${namespace}.${key}`] = dictionary[key];
-                    }
-                }
-            },
-        };
-        sandbox.QiActI18n = sandbox.window.QiActI18n;
-        vm.createContext(sandbox);
-        for (const file of dictionaryFiles) {
-            vm.runInContext(fs.readFileSync(path.join(srcDir, file), 'utf8'), sandbox, { filename: file });
+        for (const lang of TRANSLATION_LANGS) for (const [key, value] of Object.entries(translations[lang])) {
+            collected[key] = collected[key] || {};
+            collected[key][lang] = value;
         }
         const missing = [];
         for (const key in collected) {
@@ -73,9 +60,13 @@ export function readCompatSource(root, { validateLocales = true } = {}) {
         translationCount = Object.keys(collected).length;
     }
 
-    const source = COMPAT_SOURCE_FILES
-        .map((file) => `/* === ${file} === */\n${fs.readFileSync(path.join(srcDir, file), 'utf8')}`)
-        .join('\n\n');
+    const localeSource = TRANSLATION_LANGS.map((lang) =>
+        `QiActI18n.registerLocale(${JSON.stringify(lang)}, ${JSON.stringify(translations[lang])});`
+    ).join('\n');
+    const source = COMPAT_SOURCE_FILES.map((file) => {
+        const body = fs.readFileSync(path.join(srcDir, file), 'utf8');
+        return `/* === ${file} === */\n${body}${file === 'i18n/runtime.js' ? `\n\n/* === Translation/*.json === */\n${localeSource}` : ''}`;
+    }).join('\n\n');
     const headerMatch = source.match(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==/);
     if (!headerMatch) throw new Error('未找到 UserScript 元数据头');
     const header = headerMatch[0];

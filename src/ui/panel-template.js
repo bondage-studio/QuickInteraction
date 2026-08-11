@@ -3,7 +3,7 @@
     function langMenuHTML() {
         var cur = (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : 'auto';
         var meta = (typeof QiActI18n !== 'undefined' && QiActI18n.LANG_META) ? QiActI18n.LANG_META : {};
-        var list = (typeof QiActI18n !== 'undefined' && QiActI18n.LANGS) ? QiActI18n.LANGS : ['TW', 'CN', 'EN', 'DE', 'FR', 'RU', 'UA'];
+        var list = (typeof QiActI18n !== 'undefined' && QiActI18n.LANGS) ? QiActI18n.LANGS : ['TW', 'CN', 'EN', 'JA', 'KO', 'VI', 'DE', 'FR', 'ES', 'RU', 'UA'];
         var order = ['auto'].concat(list);
         var curCode = (meta[cur] && meta[cur].code) ? meta[cur].code : (cur === 'auto' ? 'A' : cur);
         var items = '';
@@ -34,6 +34,7 @@
     <span class="xsact-panel-head-actions">\
       <button class="xsact-qa-mini-btn" id="xsact-refresh-btn" title="' + QiActT('ui.refresh') + '">' + svgIcon('refresh', 15) + '</button>\
       <button class="xsact-qa-mini-btn xsact-header-icon-btn" id="xsact-settings-btn" title="' + QiActT('ui.settings') + '">' + svgIcon('settings', 15) + '</button>\
+      <button class="xsact-qa-mini-btn xsact-header-icon-btn" id="xsact-announcement-btn" title="' + QiActT('ui.announcement') + '">ⓘ</button>\
       <button class="xsact-qa-mini-btn" id="xsact-exit-panel-btn" title="' + QiActT('ui.exit_mode') + '">' + svgIcon('close', 15) + '</button>\
     </span>\
   </div>\
@@ -46,15 +47,14 @@
         <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '"><span class="xsact-custom-tab-main">' + svgIcon('custom', 14) + '<span class="xsact-custom-tab-label">' + QiActT('ui.mode_custom') + '</span></span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
       </div>\
+      <div class="xsact-qa-panel-body" id="xsact-action-list">\
+        <div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>\
+      </div>\
       <div class="xsact-qa-panel-footer">\
         <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="' + QiActT('ui.self_title') + '">' + svgIcon('user', 14) + '<span>' + QiActT('ui.self') + '</span><span class="xsact-pill-dot"></span></button>\
         <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="' + QiActT('ui.all_title') + '">' + svgIcon('users', 14) + '<span>' + QiActT('ui.all') + '</span><span class="xsact-pill-dot"></span></button>\
         <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="' + QiActT('ui.fav_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.fav') + '</span><span class="xsact-pill-dot"></span></button>\
         <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-grid-btn" title="' + QiActT('ui.interaction_grid_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.interaction_grid') + '</span><span class="xsact-pill-dot"></span></button>\
-        <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="' + QiActT('ui.x3_title') + '">' + svgIcon('bolt', 14) + '<span>' + QiActT('ui.x3') + '</span></button>\
-      </div>\
-      <div class="xsact-qa-panel-body" id="xsact-action-list">\
-        <div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>\
       </div>\
     </div>\
   </div>\

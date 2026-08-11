@@ -4,15 +4,19 @@
         var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (!titleEl || !listEl) return;
+        var footerEl = state.actionPanelEl.querySelector('.xsact-qa-panel-footer');
         var allBtn = state.actionPanelEl.querySelector('#xsact-all-btn');
         if (allBtn) allBtn.disabled = true; // 自定义动作语义明确，不支持全员广播
 
         if (state.editingCustomId) {
+            if (footerEl) footerEl.style.display = 'none';
             var act = getCustom(state.editingCustomId);
             if (!act) { state.editingCustomId = null; updateCustomActionPanel(charObj); return; }
             renderCustomEditor(act, charObj, listEl, titleEl);
             return;
         }
+
+        if (footerEl) footerEl.style.display = '';
 
         // ── 列表视图 ──
         titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('custom.title');
@@ -23,7 +27,20 @@
         (state.caSelected || []).forEach(function(id){ selSet[id] = true; });
         var allOn = acts.length > 0 && acts.every(function(a){ return a.visible !== false; });
 
+        var toolbarHtml = '<div class="xsact-ca-toolbar">' +
+            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
+            '<div class="xsact-ca-toolbar-btns">' +
+            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
+            '<div class="xsact-ca-import-wrap"><button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '">' + svgIcon('download', 14) + '</button>' +
+            '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu"><button data-import="echo">' + QiActT('custom.import_echo') + '</button><button data-import="file">' + QiActT('custom.import_file') + '</button></div>' +
+            '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json"></div>' +
+            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
+            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
+            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
+            '</div></div>';
+
         html += '<div class="xsact-ca-view">';
+        html += toolbarHtml;
         // 分类 chip 过滤栏：按来源（all/xiaosu/native/echo）单选；空分类置灰
         var _counts = { all: acts.length, xiaosu: 0, native: 0, echo: 0 };
         acts.forEach(function(a) {
@@ -155,17 +172,7 @@
             html += '</div>';
             }
         }
-        html += '<div class="xsact-ca-toolbar">' +
-            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
-            '<div class="xsact-ca-toolbar-btns">' +
-            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
-            '<div class="xsact-ca-import-wrap"><button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '">' + svgIcon('download', 14) + '</button>' +
-            '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu"><button data-import="echo">' + QiActT('custom.import_echo') + '</button><button data-import="file">' + QiActT('custom.import_file') + '</button></div>' +
-            '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json"></div>' +
-            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
-            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
-            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
-            '</div></div></div>';
+        html += '</div>';
         listEl.innerHTML = html;
 
         var newBtn = listEl.querySelector('#xsact-ca-new');

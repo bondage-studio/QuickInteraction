@@ -61,7 +61,7 @@
         }
     }
 
-    const VERSION = '1.4.0';
+    const VERSION = '1.4.1';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -85,6 +85,7 @@
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'
     const S_CHAT_BUTTON = 'xsact_qa_chat_button';
     const S_INTERACTION_GRID = 'xsact_qa_interaction_grid';
+    const S_CHAR_POPOVER_RIGHT = 'xsact_qa_char_popover_right';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -133,6 +134,7 @@
         chatButtonDocked: false
         ,favoritePartFilter: 'all'
         ,interactionGridActive: true
+        ,charPopoverRight: false
     };
 
     // ════════════════════════════════════════════════════════════════════════
@@ -156,6 +158,7 @@
         { group: 'ItemTorso2', label: QiActT('part.ItemTorso2'), icon: '👕' },
         { group: 'ItemArms', label: QiActT('part.ItemArms'), icon: '💪' },
         { group: 'ItemHands', label: QiActT('part.ItemHands'), icon: '✋' },
+        { group: 'ItemHandheld', label: QiActT('part.ItemHandheld'), icon: '✋' },
         { group: 'ItemPelvis', label: QiActT('part.ItemPelvis'), icon: '〰' },
         { group: 'ItemVulva', label: QiActT('part.ItemVulva'), icon: '🌸' },
         { group: 'ItemVulvaPiercings', label: QiActT('part.ItemVulvaPiercings'), icon: '💎' },
@@ -172,8 +175,27 @@
         'ItemNeckAccessories': 'ItemNeck',
         'ItemNeckRestraints': 'ItemNeck',
         'ItemNipplesPiercings': 'ItemNipples',
-        'ItemTorso2': 'ItemTorso'
+        'ItemTorso2': 'ItemTorso',
+        'ItemHandheld': 'ItemHands'
     };
+
+    function canonicalPartGroup(group) { return SUBPART_TO_BASE[group] || group; }
+    function getPartGroupFamily(group) {
+        var canonical = canonicalPartGroup(group);
+        var family = [];
+        BODY_PARTS.forEach(function(part) {
+            if (canonicalPartGroup(part.group) === canonical && family.indexOf(part.group) < 0) family.push(part.group);
+        });
+        if (family.indexOf(canonical) < 0) family.unshift(canonical);
+        return family;
+    }
+    function isSamePartFamily(a, b) { return canonicalPartGroup(a) === canonicalPartGroup(b); }
+    function updatePartFamilySelection(container, selectedGroup, selector) {
+        if (!container) return;
+        container.querySelectorAll(selector || '[data-group]').forEach(function(element) {
+            element.classList.toggle('selected', isSamePartFamily(element.dataset.group, selectedGroup));
+        });
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     // 部位线框 —— 直接采用 BC 原生 AssetGroup[].Zone 矩形（角色本地 500×1000 空间）

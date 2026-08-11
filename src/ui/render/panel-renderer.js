@@ -4,7 +4,7 @@
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
         var footerEl = state.actionPanelEl.querySelector('.xsact-qa-panel-footer');
-        if (footerEl) footerEl.style.display = state.panelMode === 'settings' ? 'none' : '';
+        if (footerEl) footerEl.style.display = (state.panelMode === 'settings' || (state.panelMode === 'custom' && state.editingCustomId)) ? 'none' : '';
         if (state.panelMode !== 'favorite') { var favFilter = state.actionPanelEl.querySelector('#xsact-favorite-part-filter'); if (favFilter) favFilter.remove(); }
         if (listEl) {
             listEl.classList.toggle('xsact-custom-mode', state.panelMode === 'custom');

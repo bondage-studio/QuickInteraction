@@ -20,7 +20,7 @@
             var zones = getPartZones(Player, part.group);
             zones.forEach(function(z) {
                 var rx = Math.min(14, Math.min(z[2], z[3]) * 0.35);
-                var sel = (selectedGroup === part.group) ? ' selected' : '';
+                var sel = isSamePartFamily(selectedGroup, part.group) ? ' selected' : '';
                 rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group +
                     '" x="' + z[0].toFixed(1) + '" y="' + z[1].toFixed(1) + '" width="' + z[2].toFixed(1) +
                     '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT('part.' + part.group)) + '"/>';
@@ -41,15 +41,15 @@
             zone.addEventListener('click', function(e) {
                 e.stopPropagation();
                 var group = zone.dataset.group;
-                container.querySelectorAll('.xsact-body-part-zone').forEach(function(z) {
-                    z.classList.toggle('selected', z.dataset.group === group);
-                });
+                updatePartFamilySelection(container, group, '.xsact-body-part-zone');
                 if (onSelect) onSelect(group, zone.dataset.label || group);
             });
         });
     }
 
     function renderCustomEditor(act, charObj, listEl, titleEl) {
+        var footerEl = state.actionPanelEl && state.actionPanelEl.querySelector('.xsact-qa-panel-footer');
+        if (footerEl) footerEl.style.display = 'none';
         var isNew = !getCustom(act.id);
         titleEl.textContent = (isNew ? QiActT('editor.new_title') : QiActT('editor.edit_title'));
         var scope = act.scope || 'other';
@@ -63,19 +63,12 @@
             '<button data-scope="any" class="' + (scope === 'any' ? 'active' : '') + '">' + QiActT('custom.scope_any') + '</button>' +
             '</div></div>';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.part_label') + '</label>' +
-            '<div class="xsact-ca-part-display" id="xsact-ca-part-display"><span class="xsact-ca-part-label">' + escapeHtml(partLbl) + '（' + group + '）</span><span class="xsact-ca-part-change">' + QiActT('editor.part_change') + '</span>' + '</div>' +
+            '<button type="button" class="xsact-ca-part-display" id="xsact-ca-part-display"><span class="xsact-ca-part-label">' + escapeHtml(partLbl) + '（' + group + '）</span><span class="xsact-ca-part-change">' + QiActT('editor.part_change') + '</span></button>' +
             '<div class="xsact-ca-part-map" id="xsact-ca-part-map"></div>' +
             '<input type="hidden" id="xsact-ca-group" value="' + group + '">' +
             '</div>';
-        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_other_label') + '</label>' + '<textarea id="xsact-ca-dialog-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialog) + '</textarea><div id="xsact-ca-dialog" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_other_ph') + '"></div></div>';
-        html += '<div class="xsact-ca-hint">' +
-            '<div class="xsact-ca-hint-title">' + QiActT('editor.tokens_title') + '</div>' +
-            '<div class="xsact-ca-hint-btns">' +
-            '<button class="xsact-ca-token" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>' + QiActT('editor.token_self') + '</button>' +
-            '<button class="xsact-ca-token" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>' + QiActT('editor.token_other') + '</button>' +
-            '</div>' +
-            '</div>';
-        html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_self_label') + '</label>' + '<textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_self_ph') + '"></div></div>';
+        html += '<div class="xsact-combo-field"><div class="xsact-ca-field-head"><label>' + QiActT('editor.dialog_other_label') + '</label><div class="xsact-ca-field-tokens"><button type="button" class="xsact-ca-token" data-target="xsact-ca-dialog" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>' + QiActT('editor.token_self') + '</button><button type="button" class="xsact-ca-token" data-target="xsact-ca-dialog" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>' + QiActT('editor.token_other') + '</button></div></div><textarea id="xsact-ca-dialog-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialog) + '</textarea><div id="xsact-ca-dialog" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_other_ph') + '"></div></div>';
+        html += '<div class="xsact-combo-field"><div class="xsact-ca-field-head"><label>' + QiActT('editor.dialog_self_label') + '</label><div class="xsact-ca-field-tokens"><button type="button" class="xsact-ca-token" data-target="xsact-ca-dialogself" data-token="{SourceCharacter}"><span class="xsact-ca-token-dot self"></span>' + QiActT('editor.token_self') + '</button><button type="button" class="xsact-ca-token" data-target="xsact-ca-dialogself" data-token="{TargetCharacter}"><span class="xsact-ca-token-dot other"></span>' + QiActT('editor.token_other') + '</button></div></div><textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_self_ph') + '"></div></div>';
         html += '<div class="xsact-ca-preview" id="xsact-ca-preview"><span class="xsact-ca-preview-label">' + QiActT('editor.preview_label') + '</span><span class="xsact-ca-preview-text"></span></div>';
         html += '<div class="xsact-combo-actions">' +
             '<button class="xsact-combo-save-btn" id="xsact-ca-save">' + QiActT('editor.save') + '</button>' +
@@ -83,6 +76,7 @@
             '<button class="xsact-combo-cancel-btn" id="xsact-ca-cancel">' + QiActT('editor.cancel') + '</button>' +
             '</div>';
         html += '</div>';
+        html += '<div class="xsact-ca-part-picker hidden" id="xsact-ca-part-picker"><div class="xsact-ca-part-picker-backdrop" data-part-picker-close></div><div class="xsact-ca-part-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="xsact-ca-part-picker-title"><div class="xsact-ca-part-picker-head"><strong id="xsact-ca-part-picker-title">' + QiActT('editor.part_picker_title') + '</strong><button type="button" class="xsact-ca-part-picker-close" data-part-picker-close aria-label="' + QiActT('editor.part_picker_close') + '">×</button></div><div class="xsact-ca-part-map xsact-ca-part-map-large" id="xsact-ca-part-map-large"></div></div></div>';
         listEl.innerHTML = html;
 
         var lastFocusedRich = listEl.querySelector('#xsact-ca-dialog');
@@ -210,12 +204,14 @@
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                insertToken(btn.dataset.token);
+                insertTokenPill(btn.dataset.token, listEl.querySelector('#' + btn.dataset.target));
             });
         });
 
         var partMap = listEl.querySelector('#xsact-ca-part-map');
+        var partMapLarge = listEl.querySelector('#xsact-ca-part-map-large');
         var partDisplay = listEl.querySelector('#xsact-ca-part-display');
+        var partPicker = listEl.querySelector('#xsact-ca-part-picker');
         var groupInput = listEl.querySelector('#xsact-ca-group');
         function updatePartLabel(g) {
             var label = QiActT('part.' + g);
@@ -225,9 +221,23 @@
         if (partMap) {
             renderBodyMapMini(partMap, group, function(newGroup, newLabel) {
                 updatePartLabel(newGroup);
+                updatePartFamilySelection(partMapLarge, newGroup, '.xsact-body-part-zone');
                 refreshPreview();
+                if (partPicker) partPicker.classList.add('hidden');
             });
         }
+        if (partMapLarge) {
+            renderBodyMapMini(partMapLarge, group, function(newGroup) {
+                updatePartLabel(newGroup);
+                updatePartFamilySelection(partMap, newGroup, '.xsact-body-part-zone');
+                refreshPreview();
+                if (partPicker) partPicker.classList.add('hidden');
+            });
+        }
+        if (partDisplay && partPicker) partDisplay.addEventListener('click', function() { partPicker.classList.remove('hidden'); });
+        if (partPicker) partPicker.querySelectorAll('[data-part-picker-close]').forEach(function(el) {
+            el.addEventListener('click', function() { partPicker.classList.add('hidden'); });
+        });
 
         function refreshPreview() {
             var nm = (listEl.querySelector('#xsact-ca-name') || {}).value || QiActT('editor.default_name');
