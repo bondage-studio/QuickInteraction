@@ -23,9 +23,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Test modular source and translations
+        run: npm test
 
       - name: Build self-contained main.js (bcModSdk + 业务逻辑)
-        run: node build.mjs
+        run: npm run build
 
       - name: Assemble site
         run: |

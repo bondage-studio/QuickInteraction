@@ -7,6 +7,11 @@ Thumbs.db
 
 # 依赖
 node_modules/
+<<<<<<< Updated upstream
+=======
+.npm-cache/
+.vite-dist/
+>>>>>>> Stashed changes
 
 # 本地临时 / 调试脚本（不入库，仅限仓库根级 dev/）
 /dev/

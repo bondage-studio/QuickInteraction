@@ -24,16 +24,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+
+      - name: 安装锁定依赖
+        run: npm ci
+
+      - name: 执行自动测试
+        run: npm test
 
       - name: 从 src/ 重新构建 quick-interaction.user.js
-        run: node build.mjs
+        run: npm run build
 
       - name: 校验产物未被遗漏
         run: |
           if ! git diff --quiet HEAD -- quick-interaction.user.js; then
             echo "::error::构建产物 quick-interaction.user.js 与已提交的 src/ 不一致！"
-            echo "::error::你改动了 src/ 但忘记运行『node build.mjs』重新生成根脚本。本地执行该命令后再提交即可。"
+            echo "::error::源码、Translation 或版本资料有改动，但提交的根脚本不是最新产物。本地执行『npm ci && npm run build』后再提交。"
             git --no-pager diff --stat HEAD -- quick-interaction.user.js
             exit 1
           fi
           echo "✅ quick-interaction.user.js 与 src/ 完全一致，无需重新构建"
+
+      - name: 校验版本资料与构建结果
+        run: |
+          node -e "const fs=require('fs');const source=JSON.parse(fs.readFileSync('version.json','utf8'));const built=JSON.parse(fs.readFileSync('assets/version.json','utf8'));if(source.version!==built.version)throw new Error('version.json 与构建产物版本不一致');console.log('✅ version.json:',built.version)"
