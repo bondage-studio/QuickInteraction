@@ -22,7 +22,7 @@
                 var sel = (selectedGroup === part.group) ? ' selected' : '';
                 rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group +
                     '" x="' + z[0].toFixed(1) + '" y="' + z[1].toFixed(1) + '" width="' + z[2].toFixed(1) +
-                    '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + part.label + '"/>';
+                    '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT('part.' + part.group)) + '"/>';
             });
         });
         var svg = '<svg class="xsact-body-mini-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg>';
@@ -53,7 +53,7 @@
         titleEl.textContent = (isNew ? QiActT('editor.new_title') : QiActT('editor.edit_title'));
         var scope = act.scope || 'other';
         var group = act.group || 'ItemMouth';
-        var partLbl = (BODY_PARTS.find(function(p) { return p.group === group; }) || {}).label || group;
+        var partLbl = QiActT('part.' + group);
         var html = '<div class="xsact-ca-editor">';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.name_label') + '</label>' + '<input type="text" id="xsact-ca-name" value="' + escapeHtml(act.name) + '" placeholder="' + QiActT('editor.name_placeholder') + '"></div>';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.scope_label') + '</label>' + '<div class="xsact-ca-scope" id="xsact-ca-scope">' +
@@ -75,7 +75,7 @@
             '</div>' +
             '</div>';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_self_label') + '</label>' + '<textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_self_ph') + '"></div></div>';
-        html += '<div class="xsact-ca-preview" id="xsact-ca-preview"></div>';
+        html += '<div class="xsact-ca-preview" id="xsact-ca-preview"><span class="xsact-ca-preview-label">' + QiActT('editor.preview_label') + '</span><span class="xsact-ca-preview-text"></span></div>';
         html += '<div class="xsact-combo-actions">' +
             '<button class="xsact-combo-save-btn" id="xsact-ca-save">' + QiActT('editor.save') + '</button>' +
             (isNew ? '' : '<button class="xsact-ca-del-btn" id="xsact-ca-del">' + QiActT('editor.delete') + '</button>') +
@@ -217,8 +217,7 @@
         var partDisplay = listEl.querySelector('#xsact-ca-part-display');
         var groupInput = listEl.querySelector('#xsact-ca-group');
         function updatePartLabel(g) {
-            var p = BODY_PARTS.find(function(x) { return x.group === g; }) || {};
-            var label = p.label || g;
+            var label = QiActT('part.' + g);
             if (partDisplay) partDisplay.querySelector('.xsact-ca-part-label').textContent = label + '（' + g + '）';
             if (groupInput) groupInput.value = g;
         }
@@ -255,7 +254,7 @@
                 preview = resolveText(dlg, src, tgt);
             }
             var pv = listEl.querySelector('#xsact-ca-preview');
-            if (pv) pv.textContent = preview;
+            if (pv) { var pvt = pv.querySelector('.xsact-ca-preview-text'); if (pvt) pvt.textContent = preview; }
         }
         var scopeBox = listEl.querySelector('#xsact-ca-scope');
         if (scopeBox) scopeBox.querySelectorAll('button').forEach(function(b) {

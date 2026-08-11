@@ -23,6 +23,34 @@
         updateToggleBtnStyle();
     }
 
+    function createChatRoomToggleButton() {
+        var btn = document.createElement('button');
+        btn.id = 'xsact-toggle-btn'; btn.type = 'button';
+        btn.className = 'blank-button button HideOnPopup chat-room-button xsact-chat-toggle';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
+        btn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleActionMode(); updateToggleBtnStyle(); });
+        state.toggleBtnEl = btn; updateToggleBtnStyle(); return btn;
+    }
+    function registerChatRoomToggle() {
+        var L = window.Liko = window.Liko || {};
+        var spec = ['quick-interaction', 50, createChatRoomToggleButton, { plain: true }];
+        if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) L.__Sys_ChatRoomButtons__.add.apply(L.__Sys_ChatRoomButtons__, spec);
+        else {
+            L.__CRB_pending__ = L.__CRB_pending__ || []; if (!L.__CRB_pending__.some(function(x) { return x && x[0] === spec[0]; })) L.__CRB_pending__.push(spec);
+            if (!L.__QiActCRBLoading) {
+                L.__QiActCRBLoading = fetch('https://cdn.jsdelivr.net/gh/awdrrawd/liko-Plugin-Repository@main/Plugins/expand/BC_ChatRoomButtons.js', { cache:'no-store' }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function(code) { var s = document.createElement('script'); s.textContent = code; document.head.appendChild(s); }).catch(function(e) { console.warn('[QiAct] BC_ChatRoomButtons:', e && e.message); });
+            }
+        }
+    }
+    function setChatButtonDocked(on) {
+        state.chatButtonDocked = !!on; persist(S_CHAT_BUTTON, state.chatButtonDocked);
+        if (state.toggleBtnEl && state.toggleBtnEl.parentNode) state.toggleBtnEl.parentNode.removeChild(state.toggleBtnEl);
+        state.toggleBtnEl = null;
+        var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
+        if (state.chatButtonDocked) registerChatRoomToggle();
+        else { if (crb && crb.remove) crb.remove('quick-interaction'); var q = window.Liko && window.Liko.__CRB_pending__; if (Array.isArray(q)) window.Liko.__CRB_pending__ = q.filter(function(x) { return !x || x[0] !== 'quick-interaction'; }); drawToggleButton(); }
+    }
+
     /** 读取并应用保存的闪电按钮位置 */
     function applyTogglePosition() {
         var btn = state.toggleBtnEl;
@@ -111,6 +139,7 @@
 
     /** 兼容旧接口：DrawProcess hook 调用（确保聊天室内闪电图标常驻可见） */
     function drawToggleButton() {
+        if (state.chatButtonDocked) { if (!state.toggleBtnEl || !document.documentElement.contains(state.toggleBtnEl)) registerChatRoomToggle(); if (state.toggleBtnEl) updateToggleBtnStyle(); return; }
         // 按钮可能被意外移出 DOM，或仅被隐藏 —— 两种情况都要恢复
         if (!state.toggleBtnEl || !document.body.contains(state.toggleBtnEl)) {
             state.toggleBtnEl = null;
@@ -118,6 +147,7 @@
         }
         if (state.toggleBtnEl) {
             state.toggleBtnEl.style.display = '';
+            updateToggleBtnStyle();
         }
     }
 

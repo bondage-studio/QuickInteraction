@@ -409,6 +409,24 @@
         'combo_title'    :        { TW: '組合動作', CN: '组合动作', EN: 'Combo actions', DE: 'Kombiaktionen', FR: 'Actions combinées', RU: 'Комбинированные действия', UA: 'Комбіновані дії' }
     });
 
+    QiActI18n.register('ui', {
+        'settings': { TW:'設定', CN:'设置', EN:'Settings', DE:'Einstellungen', FR:'Paramètres', RU:'Настройки', UA:'Налаштування' },
+        'mode_favorite': { TW:'收藏', CN:'收藏', EN:'Favorites', DE:'Favoriten', FR:'Favoris', RU:'Избранное', UA:'Вибране' },
+        'mode_favorite_title': { TW:'管理與使用所有收藏動作', CN:'管理与使用所有收藏动作', EN:'Manage and use all favorite actions', DE:'Alle Favoriten verwalten und verwenden', FR:'Gérer et utiliser tous les favoris', RU:'Управление всеми избранными действиями', UA:'Керування всіма вибраними діями' }
+    });
+    QiActI18n.register('settings', {
+        'title': { TW:'設定', CN:'设置', EN:'Settings', DE:'Einstellungen', FR:'Paramètres', RU:'Настройки', UA:'Налаштування' },
+        'language': { TW:'語系', CN:'语言', EN:'Language', DE:'Sprache', FR:'Langue', RU:'Язык', UA:'Мова' },
+        'theme': { TW:'主題', CN:'主题', EN:'Theme', DE:'Thema', FR:'Thème', RU:'Тема', UA:'Тема' },
+        'auto': { TW:'自動', CN:'自动', EN:'Auto', DE:'Auto', FR:'Auto', RU:'Авто', UA:'Авто' },
+        'chat_button': { TW:'收納到 BC 聊天室按鈕列', CN:'收纳到 BC 聊天室按钮栏', EN:'Dock in the BC chat-room buttons', DE:'In der BC-Chat-Schaltflächenleiste andocken', FR:'Ancrer dans les boutons de chat BC', RU:'Закрепить на панели кнопок BC', UA:'Закріпити на панелі кнопок BC' }
+    });
+    QiActI18n.register('editor', {
+        'preview_label': { TW:'效果預覽', CN:'效果预览', EN:'Preview', DE:'Vorschau', FR:'Aperçu', RU:'Предпросмотр', UA:'Попередній перегляд' }
+    });
+    QiActI18n.register('render', {
+        'favorite_title': { TW:'收藏動作', CN:'收藏动作', EN:'Favorite actions', DE:'Favoritenaktionen', FR:'Actions favorites', RU:'Избранные действия', UA:'Вибрані дії' }
+    });
 })();
 
 
@@ -511,6 +529,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     const S_ECHO_SUPPRESS = 'xsact_qa_echo_suppressed'; // 已导入并屏蔽的 echo 原始动作名
     const S_XIAOSU_PACK = 'xsact_qa_xiaosu_pack'; // 是否启用内置「小酥动作包」（预编译进插件，离线可用）
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'
+    const S_CHAT_BUTTON = 'xsact_qa_chat_button';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -554,7 +573,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         cachedScaleY: 1,
         refreshInterval: null,        // 线框刷新定时器
         lastLayoutCount: 0,           // 上次布局角色数
-        toggleDragged: false          // 本次按下闪电按钮是否已拖动
+        toggleDragged: false,         // 本次按下闪电按钮是否已拖动
+        chatButtonDocked: false
     };
 
     // ════════════════════════════════════════════════════════════════════════
@@ -2503,7 +2523,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 var sel = (selectedGroup === part.group) ? ' selected' : '';
                 rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group +
                     '" x="' + z[0].toFixed(1) + '" y="' + z[1].toFixed(1) + '" width="' + z[2].toFixed(1) +
-                    '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + part.label + '"/>';
+                    '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT('part.' + part.group)) + '"/>';
             });
         });
         var svg = '<svg class="xsact-body-mini-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg>';
@@ -2534,7 +2554,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         titleEl.textContent = (isNew ? QiActT('editor.new_title') : QiActT('editor.edit_title'));
         var scope = act.scope || 'other';
         var group = act.group || 'ItemMouth';
-        var partLbl = (BODY_PARTS.find(function(p) { return p.group === group; }) || {}).label || group;
+        var partLbl = QiActT('part.' + group);
         var html = '<div class="xsact-ca-editor">';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.name_label') + '</label>' + '<input type="text" id="xsact-ca-name" value="' + escapeHtml(act.name) + '" placeholder="' + QiActT('editor.name_placeholder') + '"></div>';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.scope_label') + '</label>' + '<div class="xsact-ca-scope" id="xsact-ca-scope">' +
@@ -2556,7 +2576,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '</div>' +
             '</div>';
         html += '<div class="xsact-combo-field"><label>' + QiActT('editor.dialog_self_label') + '</label>' + '<textarea id="xsact-ca-dialogself-raw" class="xsact-ca-raw" rows="2">' + escapeHtml(act.dialogSelf || '') + '</textarea><div id="xsact-ca-dialogself" class="xsact-ca-dialog-rich" contenteditable="true" tabindex="0" data-placeholder="' + QiActT('editor.dialog_self_ph') + '"></div></div>';
-        html += '<div class="xsact-ca-preview" id="xsact-ca-preview"></div>';
+        html += '<div class="xsact-ca-preview" id="xsact-ca-preview"><span class="xsact-ca-preview-label">' + QiActT('editor.preview_label') + '</span><span class="xsact-ca-preview-text"></span></div>';
         html += '<div class="xsact-combo-actions">' +
             '<button class="xsact-combo-save-btn" id="xsact-ca-save">' + QiActT('editor.save') + '</button>' +
             (isNew ? '' : '<button class="xsact-ca-del-btn" id="xsact-ca-del">' + QiActT('editor.delete') + '</button>') +
@@ -2698,8 +2718,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var partDisplay = listEl.querySelector('#xsact-ca-part-display');
         var groupInput = listEl.querySelector('#xsact-ca-group');
         function updatePartLabel(g) {
-            var p = BODY_PARTS.find(function(x) { return x.group === g; }) || {};
-            var label = p.label || g;
+            var label = QiActT('part.' + g);
             if (partDisplay) partDisplay.querySelector('.xsact-ca-part-label').textContent = label + '（' + g + '）';
             if (groupInput) groupInput.value = g;
         }
@@ -2736,7 +2755,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 preview = resolveText(dlg, src, tgt);
             }
             var pv = listEl.querySelector('#xsact-ca-preview');
-            if (pv) pv.textContent = preview;
+            if (pv) { var pvt = pv.querySelector('.xsact-ca-preview-text'); if (pvt) pvt.textContent = preview; }
         }
         var scopeBox = listEl.querySelector('#xsact-ca-scope');
         if (scopeBox) scopeBox.querySelectorAll('button').forEach(function(b) {
@@ -3265,6 +3284,34 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         updateToggleBtnStyle();
     }
 
+    function createChatRoomToggleButton() {
+        var btn = document.createElement('button');
+        btn.id = 'xsact-toggle-btn'; btn.type = 'button';
+        btn.className = 'blank-button button HideOnPopup chat-room-button xsact-chat-toggle';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
+        btn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleActionMode(); updateToggleBtnStyle(); });
+        state.toggleBtnEl = btn; updateToggleBtnStyle(); return btn;
+    }
+    function registerChatRoomToggle() {
+        var L = window.Liko = window.Liko || {};
+        var spec = ['quick-interaction', 50, createChatRoomToggleButton, { plain: true }];
+        if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) L.__Sys_ChatRoomButtons__.add.apply(L.__Sys_ChatRoomButtons__, spec);
+        else {
+            L.__CRB_pending__ = L.__CRB_pending__ || []; if (!L.__CRB_pending__.some(function(x) { return x && x[0] === spec[0]; })) L.__CRB_pending__.push(spec);
+            if (!L.__QiActCRBLoading) {
+                L.__QiActCRBLoading = fetch('https://cdn.jsdelivr.net/gh/awdrrawd/liko-Plugin-Repository@main/Plugins/expand/BC_ChatRoomButtons.js', { cache:'no-store' }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function(code) { var s = document.createElement('script'); s.textContent = code; document.head.appendChild(s); }).catch(function(e) { console.warn('[QiAct] BC_ChatRoomButtons:', e && e.message); });
+            }
+        }
+    }
+    function setChatButtonDocked(on) {
+        state.chatButtonDocked = !!on; persist(S_CHAT_BUTTON, state.chatButtonDocked);
+        if (state.toggleBtnEl && state.toggleBtnEl.parentNode) state.toggleBtnEl.parentNode.removeChild(state.toggleBtnEl);
+        state.toggleBtnEl = null;
+        var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
+        if (state.chatButtonDocked) registerChatRoomToggle();
+        else { if (crb && crb.remove) crb.remove('quick-interaction'); var q = window.Liko && window.Liko.__CRB_pending__; if (Array.isArray(q)) window.Liko.__CRB_pending__ = q.filter(function(x) { return !x || x[0] !== 'quick-interaction'; }); drawToggleButton(); }
+    }
+
     /** 读取并应用保存的闪电按钮位置 */
     function applyTogglePosition() {
         var btn = state.toggleBtnEl;
@@ -3353,6 +3400,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     /** 兼容旧接口：DrawProcess hook 调用（确保聊天室内闪电图标常驻可见） */
     function drawToggleButton() {
+        if (state.chatButtonDocked) { if (!state.toggleBtnEl || !document.documentElement.contains(state.toggleBtnEl)) registerChatRoomToggle(); if (state.toggleBtnEl) updateToggleBtnStyle(); return; }
         // 按钮可能被意外移出 DOM，或仅被隐藏 —— 两种情况都要恢复
         if (!state.toggleBtnEl || !document.body.contains(state.toggleBtnEl)) {
             state.toggleBtnEl = null;
@@ -3360,6 +3408,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
         if (state.toggleBtnEl) {
             state.toggleBtnEl.style.display = '';
+            updateToggleBtnStyle();
         }
     }
 
@@ -3421,7 +3470,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
         // 恢复上次使用的模式（首次无记录则默认「单部位」）
         var savedMode = loadSetting(S_MODE, 'part');
-        if (!/^(part|combo|custom)$/.test(savedMode)) savedMode = 'part';
+        if (!/^(part|favorite|combo|custom)$/.test(savedMode)) savedMode = 'part';
         state.panelMode = savedMode;
         state.actionPanelEl.querySelectorAll('.xsact-mode-tab').forEach(function(tab) {
             tab.classList.toggle('active', tab.dataset.mode === state.panelMode);
@@ -3529,9 +3578,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     <span class="xsact-panel-grip" id="xsact-drag-grip" title="' + QiActT('ui.drag_panel') + '">' + svgIcon('grip', 16) + '</span>\
     <span id="xsact-panel-title">' + QiActT('render.select_action') + '</span>\
     <span class="xsact-panel-head-actions">\
-      ' + langMenuHTML() + '\
-      <button class="xsact-qa-mini-btn" id="xsact-theme-btn" title="' + QiActT('ui.theme_toggle') + '"><span class="xsact-theme-icon sun">' + svgIcon('sun', 15) + '</span><span class="xsact-theme-icon moon">' + svgIcon('moon', 15) + '</span></button>\
       <button class="xsact-qa-mini-btn" id="xsact-refresh-btn" title="' + QiActT('ui.refresh') + '">' + svgIcon('refresh', 15) + '</button>\
+      <button class="xsact-qa-mini-btn xsact-header-icon-btn" id="xsact-settings-btn" title="' + QiActT('ui.settings') + '">' + svgIcon('settings', 15) + '</button>\
       <button class="xsact-qa-mini-btn" id="xsact-exit-panel-btn" title="' + QiActT('ui.exit_mode') + '">' + svgIcon('close', 15) + '</button>\
     </span>\
   </div>\
@@ -3540,6 +3588,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     <div class="xsact-qa-panel-main">\
       <div class="xsact-qa-mode-tabs">\
         <button class="xsact-mode-tab active" data-mode="part" title="' + QiActT('ui.mode_part_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.mode_part') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="favorite" title="' + QiActT('ui.mode_favorite_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.mode_favorite') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '">' + svgIcon('custom', 14) + '<span>' + QiActT('ui.mode_custom') + '</span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
       </div>\
@@ -4078,6 +4127,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         if (listEl) {
             listEl.classList.toggle('xsact-custom-mode', state.panelMode === 'custom');
             listEl.classList.toggle('xsact-combo-mode', state.panelMode === 'combo');
+            listEl.classList.toggle('xsact-favorite-mode', state.panelMode === 'favorite');
         }
         updateAllButtonVisual();
         updateFavButtonVisual();
@@ -4091,6 +4141,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             updateComboPanel(state.selectedTarget);          // charObj 可能为 null
             return;
         }
+        if (state.panelMode === 'favorite') { updateFavoritesPanel(state.selectedTarget); return; }
+        if (state.panelMode === 'settings') { updateSettingsPanel(); return; }
 
         // 「动作」模式：必须先选中人物与身体部位
         if (!state.selectedTarget) {
@@ -4108,7 +4160,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
     /** 切换面板模式（部位 / 自定义组合） */
     function setPanelMode(mode) {
-        if (!/^(part|combo|custom)$/.test(mode)) return;
+        if (!/^(part|favorite|combo|custom|settings)$/.test(mode)) return;
         state.panelMode = mode;
         persist(S_MODE, mode);
         if (state.actionPanelEl) {
@@ -4125,6 +4177,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         if (state.panelMode === 'custom') {
             updateCustomActionPanel(state.selectedTarget);
             toast(QiActT('toast.refreshed_custom'), '#FF5C7A');
+        } else if (state.panelMode === 'favorite') {
+            updateFavoritesPanel(state.selectedTarget);
+            toast(QiActT('toast.refreshed_actions'), '#FF5C7A');
         } else if (state.panelMode === 'combo') {
             // 重新从存储加载组合，并刷新视图
             state.combos = loadSetting(S_COMBOS, []);
@@ -4374,8 +4429,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 return;
             }
 
-            var partLabel = BODY_PARTS.find(function(p) { return p.group === partGroup; });
-            titleEl.textContent = (characterDisplayName(charObj) || '?') + ' → ' + (partLabel ? partLabel.label : partGroup);
+            titleEl.textContent = (characterDisplayName(charObj) || '?') + ' → ' + QiActT('part.' + partGroup);
 
             var actions = getActionsForPart(partGroup, charObj);
             if (!Array.isArray(actions) || actions.length === 0) {
@@ -4456,6 +4510,59 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
                 if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty" style="color:#FF8FA6">' + QiActT('render.load_err', { msg: escapeHtml(panelErr.message) }) + '</div>';
             }
         }
+    }
+
+    function updateFavoritesPanel(charObj) {
+        if (!state.actionPanelEl) return;
+        var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
+        var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
+        if (!titleEl || !listEl) return;
+        titleEl.textContent = QiActT('render.favorite_title');
+        if (!state.favorites.length) { listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>'; return; }
+        var html = '';
+        state.favorites.forEach(function(key) {
+            var sep = key.indexOf('|');
+            var group = sep < 0 ? '' : key.slice(0, sep);
+            var name = sep < 0 ? key : key.slice(sep + 1);
+            var part = BODY_PARTS.find(function(p) { return p.group === group; });
+            html += '<div class="xsact-action-row" data-key="' + escapeHtml(key) + '">' +
+                '<button class="xsact-action-btn fav" data-group="' + escapeHtml(group) + '" data-name="' + escapeHtml(name) + '"><span class="xsact-action-label">' + escapeHtml(getActivityLabel(name, group)) + '</span><span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span><small>' + escapeHtml(part ? part.label : group) + '</small></button>' +
+                '<button class="xsact-favorite-remove" title="' + QiActT('common.fav_remove') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button></div>';
+        });
+        listEl.innerHTML = html;
+        listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
+                var acts = getActionsForPart(btn.dataset.group, charObj) || [];
+                var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
+                executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null);
+            });
+        });
+        listEl.querySelectorAll('.xsact-favorite-remove').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var key = btn.parentNode.dataset.key;
+                state.favorites = state.favorites.filter(function(v) { return v !== key; });
+                persist(S_FAVS, state.favorites);
+                updateFavoritesPanel(charObj);
+            });
+        });
+    }
+
+    function updateSettingsPanel() {
+        if (!state.actionPanelEl) return;
+        var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
+        var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
+        if (titleEl) titleEl.textContent = QiActT('settings.title');
+        var cur = QiActI18n.getCurrentLang ? QiActI18n.getCurrentLang() : 'auto';
+        var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','DE','FR','RU','UA']);
+        var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<option value="' + l + '"' + (l === cur ? ' selected' : '') + '>' + escapeHtml(m.native || (l === 'auto' ? QiActT('settings.auto') : l)) + '</option>'; }).join('');
+        listEl.innerHTML = '<div class="xsact-settings">' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '></label></div>';
+        listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
+        listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
+        listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -4588,6 +4695,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         // 刷新按钮：重新渲染当前面板状态（单部位刷新动作列表，组合模式刷新组合列表）
         var refreshBtn = panel.querySelector('#xsact-refresh-btn');
         if (refreshBtn) refreshBtn.addEventListener('click', refreshPanelState);
+        var settingsBtn = panel.querySelector('#xsact-settings-btn');
+        if (settingsBtn) settingsBtn.addEventListener('click', function() { setPanelMode('settings'); });
 
         // 语言切换下拉（自定义菜单）：setLang 后重建面板以应用新语言（auto 跟随 BC 游戏语言）
         var langWrap = panel.querySelector('#xsact-lang');
@@ -4875,6 +4984,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '#xsact-toggle-btn.active:hover{',
             '  background:#46E0A0;transform:scale(1.08);',
             '}',
+            '#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}',
 
             /* ===== 右侧面板（暗色战术操作台） ===== */
             '#xsact-qa-panel{',
@@ -5189,7 +5299,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-ca-part-map .xsact-body-part-zone:hover,.xsact-ca-part-map .xsact-body-part-zone.hover{fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(var(--xs-accent-rgb), 0.6));}',
             '.xsact-ca-part-map .xsact-body-part-zone.selected{fill:var(--xs-zone-fill-selected);stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;filter:drop-shadow(0 0 10px rgba(var(--xs-accent-rgb), 0.55));}',
             '.xsact-ca-preview{padding:12px 14px;border-radius:9px;background:rgba(255,92,122,0.08);border:1px dashed rgba(255,92,122,0.35);color:var(--xs-text);font-size:13px;line-height:1.55;white-space:pre-line;}',
-            '.xsact-ca-preview::before{content:"效果预览";display:block;font-size:10px;font-weight:600;color:var(--xs-accent-text);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;}',
+            '.xsact-ca-preview-label{display:block;font-size:10px;font-weight:600;color:var(--xs-accent-text);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;}',
             '.xsact-ca-editor .xsact-combo-actions{display:flex;gap:8px;margin-top:4px;}',
             '.xsact-ca-editor .xsact-combo-actions button{flex:1;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;border:none;color:var(--xs-text);transition:background .15s,transform .1s;}',
             '.xsact-ca-editor .xsact-combo-actions button:hover{transform:translateY(-1px);}',
@@ -5216,7 +5326,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '  display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,border-color .15s,color .15s,box-shadow .15s;',
             '}',
             '.xsact-qa-mini-btn:hover{background:var(--xs-hover);border-color:var(--xs-border-strong);color:var(--xs-text);}',
-            '#xsact-refresh-btn,#xsact-exit-panel-btn{padding:0;width:28px;height:28px;}',
+            '.xsact-header-icon-btn,#xsact-refresh-btn,#xsact-settings-btn,#xsact-exit-panel-btn{padding:0;width:28px;height:28px;flex:0 0 28px;}',
+            '.xsact-settings{grid-column:1/-1;display:flex;flex-direction:column;gap:12px;}',
+            '.xsact-settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--xs-border);border-radius:9px;background:var(--xs-btn-bg);color:var(--xs-text);font-size:12px;}',
+            '.xsact-settings-row select{min-width:120px;background:var(--xs-panel-bg);color:var(--xs-text);border:1px solid var(--xs-border);border-radius:7px;padding:6px 8px;}',
             '#xsact-x3-btn{padding:8px 10px;min-width:34px;}',
             /* 语言切换下拉（自定义菜单，暗色战术台风格） */
             '.xsact-lang{position:relative;flex-shrink:0;}',
@@ -5536,7 +5649,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
               '.xsact-mode-tab .xsact-ico{width:16px;height:16px;}',
             '}',
             '@container xsact-panel (max-width: 240px){',
-              '.xsact-panel-head-actions button:not(#xsact-exit-panel-btn):not(#xsact-lang-trigger){display:none;}',
+              '.xsact-panel-head-actions button:not(#xsact-refresh-btn):not(#xsact-settings-btn):not(#xsact-exit-panel-btn){display:none;}',
             '}',
 
             /* ===== 主题色切换过渡 ===== */
@@ -6350,6 +6463,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
 
         // 恢复主题设置（优先读游戏账号，回退本地）
         state.theme = loadSetting(S_THEME, 'dark');
+        state.chatButtonDocked = loadSetting(S_CHAT_BUTTON, false) === true;
         applyTheme(state.theme);
 
         // 注入样式

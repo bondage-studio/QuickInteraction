@@ -75,6 +75,7 @@
     const S_ECHO_SUPPRESS = 'xsact_qa_echo_suppressed'; // 已导入并屏蔽的 echo 原始动作名
     const S_XIAOSU_PACK = 'xsact_qa_xiaosu_pack'; // 是否启用内置「小酥动作包」（预编译进插件，离线可用）
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'
+    const S_CHAT_BUTTON = 'xsact_qa_chat_button';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -118,7 +119,8 @@
         cachedScaleY: 1,
         refreshInterval: null,        // 线框刷新定时器
         lastLayoutCount: 0,           // 上次布局角色数
-        toggleDragged: false          // 本次按下闪电按钮是否已拖动
+        toggleDragged: false,         // 本次按下闪电按钮是否已拖动
+        chatButtonDocked: false
     };
 
     // ════════════════════════════════════════════════════════════════════════

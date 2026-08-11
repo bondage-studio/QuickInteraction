@@ -76,6 +76,7 @@
 
         // 恢复主题设置（优先读游戏账号，回退本地）
         state.theme = loadSetting(S_THEME, 'dark');
+        state.chatButtonDocked = loadSetting(S_CHAT_BUTTON, false) === true;
         applyTheme(state.theme);
 
         // 注入样式

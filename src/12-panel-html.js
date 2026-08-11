@@ -32,9 +32,8 @@
     <span class="xsact-panel-grip" id="xsact-drag-grip" title="' + QiActT('ui.drag_panel') + '">' + svgIcon('grip', 16) + '</span>\
     <span id="xsact-panel-title">' + QiActT('render.select_action') + '</span>\
     <span class="xsact-panel-head-actions">\
-      ' + langMenuHTML() + '\
-      <button class="xsact-qa-mini-btn" id="xsact-theme-btn" title="' + QiActT('ui.theme_toggle') + '"><span class="xsact-theme-icon sun">' + svgIcon('sun', 15) + '</span><span class="xsact-theme-icon moon">' + svgIcon('moon', 15) + '</span></button>\
       <button class="xsact-qa-mini-btn" id="xsact-refresh-btn" title="' + QiActT('ui.refresh') + '">' + svgIcon('refresh', 15) + '</button>\
+      <button class="xsact-qa-mini-btn xsact-header-icon-btn" id="xsact-settings-btn" title="' + QiActT('ui.settings') + '">' + svgIcon('settings', 15) + '</button>\
       <button class="xsact-qa-mini-btn" id="xsact-exit-panel-btn" title="' + QiActT('ui.exit_mode') + '">' + svgIcon('close', 15) + '</button>\
     </span>\
   </div>\
@@ -43,6 +42,7 @@
     <div class="xsact-qa-panel-main">\
       <div class="xsact-qa-mode-tabs">\
         <button class="xsact-mode-tab active" data-mode="part" title="' + QiActT('ui.mode_part_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.mode_part') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="favorite" title="' + QiActT('ui.mode_favorite_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.mode_favorite') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '">' + svgIcon('custom', 14) + '<span>' + QiActT('ui.mode_custom') + '</span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
       </div>\

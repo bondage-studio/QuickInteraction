@@ -292,4 +292,22 @@
         'combo_title'    :        { TW: '組合動作', CN: '组合动作', EN: 'Combo actions', DE: 'Kombiaktionen', FR: 'Actions combinées', RU: 'Комбинированные действия', UA: 'Комбіновані дії' }
     });
 
+    QiActI18n.register('ui', {
+        'settings': { TW:'設定', CN:'设置', EN:'Settings', DE:'Einstellungen', FR:'Paramètres', RU:'Настройки', UA:'Налаштування' },
+        'mode_favorite': { TW:'收藏', CN:'收藏', EN:'Favorites', DE:'Favoriten', FR:'Favoris', RU:'Избранное', UA:'Вибране' },
+        'mode_favorite_title': { TW:'管理與使用所有收藏動作', CN:'管理与使用所有收藏动作', EN:'Manage and use all favorite actions', DE:'Alle Favoriten verwalten und verwenden', FR:'Gérer et utiliser tous les favoris', RU:'Управление всеми избранными действиями', UA:'Керування всіма вибраними діями' }
+    });
+    QiActI18n.register('settings', {
+        'title': { TW:'設定', CN:'设置', EN:'Settings', DE:'Einstellungen', FR:'Paramètres', RU:'Настройки', UA:'Налаштування' },
+        'language': { TW:'語系', CN:'语言', EN:'Language', DE:'Sprache', FR:'Langue', RU:'Язык', UA:'Мова' },
+        'theme': { TW:'主題', CN:'主题', EN:'Theme', DE:'Thema', FR:'Thème', RU:'Тема', UA:'Тема' },
+        'auto': { TW:'自動', CN:'自动', EN:'Auto', DE:'Auto', FR:'Auto', RU:'Авто', UA:'Авто' },
+        'chat_button': { TW:'收納到 BC 聊天室按鈕列', CN:'收纳到 BC 聊天室按钮栏', EN:'Dock in the BC chat-room buttons', DE:'In der BC-Chat-Schaltflächenleiste andocken', FR:'Ancrer dans les boutons de chat BC', RU:'Закрепить на панели кнопок BC', UA:'Закріпити на панелі кнопок BC' }
+    });
+    QiActI18n.register('editor', {
+        'preview_label': { TW:'效果預覽', CN:'效果预览', EN:'Preview', DE:'Vorschau', FR:'Aperçu', RU:'Предпросмотр', UA:'Попередній перегляд' }
+    });
+    QiActI18n.register('render', {
+        'favorite_title': { TW:'收藏動作', CN:'收藏动作', EN:'Favorite actions', DE:'Favoritenaktionen', FR:'Actions favorites', RU:'Избранные действия', UA:'Вибрані дії' }
+    });
 })();

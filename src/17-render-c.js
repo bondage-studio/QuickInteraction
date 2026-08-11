@@ -121,6 +121,8 @@
         // 刷新按钮：重新渲染当前面板状态（单部位刷新动作列表，组合模式刷新组合列表）
         var refreshBtn = panel.querySelector('#xsact-refresh-btn');
         if (refreshBtn) refreshBtn.addEventListener('click', refreshPanelState);
+        var settingsBtn = panel.querySelector('#xsact-settings-btn');
+        if (settingsBtn) settingsBtn.addEventListener('click', function() { setPanelMode('settings'); });
 
         // 语言切换下拉（自定义菜单）：setLang 后重建面板以应用新语言（auto 跟随 BC 游戏语言）
         var langWrap = panel.querySelector('#xsact-lang');

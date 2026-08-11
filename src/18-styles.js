@@ -44,6 +44,7 @@
             '#xsact-toggle-btn.active:hover{',
             '  background:#46E0A0;transform:scale(1.08);',
             '}',
+            '#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}',
 
             /* ===== 右侧面板（暗色战术操作台） ===== */
             '#xsact-qa-panel{',
@@ -358,7 +359,7 @@
             '.xsact-ca-part-map .xsact-body-part-zone:hover,.xsact-ca-part-map .xsact-body-part-zone.hover{fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(var(--xs-accent-rgb), 0.6));}',
             '.xsact-ca-part-map .xsact-body-part-zone.selected{fill:var(--xs-zone-fill-selected);stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;filter:drop-shadow(0 0 10px rgba(var(--xs-accent-rgb), 0.55));}',
             '.xsact-ca-preview{padding:12px 14px;border-radius:9px;background:rgba(255,92,122,0.08);border:1px dashed rgba(255,92,122,0.35);color:var(--xs-text);font-size:13px;line-height:1.55;white-space:pre-line;}',
-            '.xsact-ca-preview::before{content:"效果预览";display:block;font-size:10px;font-weight:600;color:var(--xs-accent-text);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;}',
+            '.xsact-ca-preview-label{display:block;font-size:10px;font-weight:600;color:var(--xs-accent-text);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;}',
             '.xsact-ca-editor .xsact-combo-actions{display:flex;gap:8px;margin-top:4px;}',
             '.xsact-ca-editor .xsact-combo-actions button{flex:1;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;border:none;color:var(--xs-text);transition:background .15s,transform .1s;}',
             '.xsact-ca-editor .xsact-combo-actions button:hover{transform:translateY(-1px);}',
@@ -385,7 +386,10 @@
             '  display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,border-color .15s,color .15s,box-shadow .15s;',
             '}',
             '.xsact-qa-mini-btn:hover{background:var(--xs-hover);border-color:var(--xs-border-strong);color:var(--xs-text);}',
-            '#xsact-refresh-btn,#xsact-exit-panel-btn{padding:0;width:28px;height:28px;}',
+            '.xsact-header-icon-btn,#xsact-refresh-btn,#xsact-settings-btn,#xsact-exit-panel-btn{padding:0;width:28px;height:28px;flex:0 0 28px;}',
+            '.xsact-settings{grid-column:1/-1;display:flex;flex-direction:column;gap:12px;}',
+            '.xsact-settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--xs-border);border-radius:9px;background:var(--xs-btn-bg);color:var(--xs-text);font-size:12px;}',
+            '.xsact-settings-row select{min-width:120px;background:var(--xs-panel-bg);color:var(--xs-text);border:1px solid var(--xs-border);border-radius:7px;padding:6px 8px;}',
             '#xsact-x3-btn{padding:8px 10px;min-width:34px;}',
             /* 语言切换下拉（自定义菜单，暗色战术台风格） */
             '.xsact-lang{position:relative;flex-shrink:0;}',
@@ -705,7 +709,7 @@
               '.xsact-mode-tab .xsact-ico{width:16px;height:16px;}',
             '}',
             '@container xsact-panel (max-width: 240px){',
-              '.xsact-panel-head-actions button:not(#xsact-exit-panel-btn):not(#xsact-lang-trigger){display:none;}',
+              '.xsact-panel-head-actions button:not(#xsact-refresh-btn):not(#xsact-settings-btn):not(#xsact-exit-panel-btn){display:none;}',
             '}',
 
             /* ===== 主题色切换过渡 ===== */

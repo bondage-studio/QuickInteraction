@@ -83,8 +83,7 @@
                 return;
             }
 
-            var partLabel = BODY_PARTS.find(function(p) { return p.group === partGroup; });
-            titleEl.textContent = (characterDisplayName(charObj) || '?') + ' → ' + (partLabel ? partLabel.label : partGroup);
+            titleEl.textContent = (characterDisplayName(charObj) || '?') + ' → ' + QiActT('part.' + partGroup);
 
             var actions = getActionsForPart(partGroup, charObj);
             if (!Array.isArray(actions) || actions.length === 0) {
@@ -165,6 +164,59 @@
                 if (listEl) listEl.innerHTML = '<div class="xsact-qa-empty" style="color:#FF8FA6">' + QiActT('render.load_err', { msg: escapeHtml(panelErr.message) }) + '</div>';
             }
         }
+    }
+
+    function updateFavoritesPanel(charObj) {
+        if (!state.actionPanelEl) return;
+        var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
+        var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
+        if (!titleEl || !listEl) return;
+        titleEl.textContent = QiActT('render.favorite_title');
+        if (!state.favorites.length) { listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>'; return; }
+        var html = '';
+        state.favorites.forEach(function(key) {
+            var sep = key.indexOf('|');
+            var group = sep < 0 ? '' : key.slice(0, sep);
+            var name = sep < 0 ? key : key.slice(sep + 1);
+            var part = BODY_PARTS.find(function(p) { return p.group === group; });
+            html += '<div class="xsact-action-row" data-key="' + escapeHtml(key) + '">' +
+                '<button class="xsact-action-btn fav" data-group="' + escapeHtml(group) + '" data-name="' + escapeHtml(name) + '"><span class="xsact-action-label">' + escapeHtml(getActivityLabel(name, group)) + '</span><span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span><small>' + escapeHtml(part ? part.label : group) + '</small></button>' +
+                '<button class="xsact-favorite-remove" title="' + QiActT('common.fav_remove') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button></div>';
+        });
+        listEl.innerHTML = html;
+        listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
+                var acts = getActionsForPart(btn.dataset.group, charObj) || [];
+                var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
+                executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null);
+            });
+        });
+        listEl.querySelectorAll('.xsact-favorite-remove').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var key = btn.parentNode.dataset.key;
+                state.favorites = state.favorites.filter(function(v) { return v !== key; });
+                persist(S_FAVS, state.favorites);
+                updateFavoritesPanel(charObj);
+            });
+        });
+    }
+
+    function updateSettingsPanel() {
+        if (!state.actionPanelEl) return;
+        var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
+        var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
+        if (titleEl) titleEl.textContent = QiActT('settings.title');
+        var cur = QiActI18n.getCurrentLang ? QiActI18n.getCurrentLang() : 'auto';
+        var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','DE','FR','RU','UA']);
+        var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<option value="' + l + '"' + (l === cur ? ' selected' : '') + '>' + escapeHtml(m.native || (l === 'auto' ? QiActT('settings.auto') : l)) + '</option>'; }).join('');
+        listEl.innerHTML = '<div class="xsact-settings">' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '></label></div>';
+        listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
+        listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
+        listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
     }
 
     // ════════════════════════════════════════════════════════════════════════

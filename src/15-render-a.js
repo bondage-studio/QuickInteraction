@@ -6,6 +6,7 @@
         if (listEl) {
             listEl.classList.toggle('xsact-custom-mode', state.panelMode === 'custom');
             listEl.classList.toggle('xsact-combo-mode', state.panelMode === 'combo');
+            listEl.classList.toggle('xsact-favorite-mode', state.panelMode === 'favorite');
         }
         updateAllButtonVisual();
         updateFavButtonVisual();
@@ -19,6 +20,8 @@
             updateComboPanel(state.selectedTarget);          // charObj 可能为 null
             return;
         }
+        if (state.panelMode === 'favorite') { updateFavoritesPanel(state.selectedTarget); return; }
+        if (state.panelMode === 'settings') { updateSettingsPanel(); return; }
 
         // 「动作」模式：必须先选中人物与身体部位
         if (!state.selectedTarget) {
@@ -36,7 +39,7 @@
 
     /** 切换面板模式（部位 / 自定义组合） */
     function setPanelMode(mode) {
-        if (!/^(part|combo|custom)$/.test(mode)) return;
+        if (!/^(part|favorite|combo|custom|settings)$/.test(mode)) return;
         state.panelMode = mode;
         persist(S_MODE, mode);
         if (state.actionPanelEl) {
@@ -53,6 +56,9 @@
         if (state.panelMode === 'custom') {
             updateCustomActionPanel(state.selectedTarget);
             toast(QiActT('toast.refreshed_custom'), '#FF5C7A');
+        } else if (state.panelMode === 'favorite') {
+            updateFavoritesPanel(state.selectedTarget);
+            toast(QiActT('toast.refreshed_actions'), '#FF5C7A');
         } else if (state.panelMode === 'combo') {
             // 重新从存储加载组合，并刷新视图
             state.combos = loadSetting(S_COMBOS, []);

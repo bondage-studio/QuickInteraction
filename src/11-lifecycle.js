@@ -32,7 +32,7 @@
         }
         // 恢复上次使用的模式（首次无记录则默认「单部位」）
         var savedMode = loadSetting(S_MODE, 'part');
-        if (!/^(part|combo|custom)$/.test(savedMode)) savedMode = 'part';
+        if (!/^(part|favorite|combo|custom)$/.test(savedMode)) savedMode = 'part';
         state.panelMode = savedMode;
         state.actionPanelEl.querySelectorAll('.xsact-mode-tab').forEach(function(tab) {
             tab.classList.toggle('active', tab.dataset.mode === state.panelMode);
