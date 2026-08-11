@@ -30,7 +30,19 @@
         var ico = btn.querySelector('.xsact-ico');
         if (ico) ico.outerHTML = svgIcon(state.favModeActive ? 'starFill' : 'star', 14);
     }
+    function toggleInteractionGrid() {
+        state.interactionGridActive = !state.interactionGridActive;
+        persist(S_INTERACTION_GRID, state.interactionGridActive);
+        updateInteractionGridVisual();
+        if (state.interactionGridActive) refreshBodyGrids(); else clearBodyGrids();
+    }
+    function updateInteractionGridVisual() {
+        if (!state.actionPanelEl) return;
+        var btn = state.actionPanelEl.querySelector('#xsact-grid-btn');
+        if (btn) btn.classList.toggle('on', state.interactionGridActive);
+    }
     function toggleFavoriteAction(partGroup, name, btn) {
+        partGroup = canonicalPartGroup(partGroup);
         var key = partGroup + '|' + name;
         var idx = state.favorites.indexOf(key);
         if (idx === -1) {

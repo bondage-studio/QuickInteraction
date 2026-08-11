@@ -98,7 +98,7 @@
             actions.forEach(function(act) {
                 if (!act || !act.Name) return;
                 var lbl = getActivityLabel(act.Name, partGroup);
-                var isFav = state.favorites.indexOf(partGroup + '|' + act.Name) !== -1;
+                var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + '|' + act.Name) !== -1;
                 // 来源水印功能已暂停（按需求优先修复动作显示功能）。
                 // 下方点击处理器仍用 caDetectSource 判断 LSCG/Liko 以触发自动刷新。
                 html += '<div class="xsact-action-row' + (isEditing ? ' editing' : '') + '" data-name="' + escapeHtml(act.Name) + '">' +
@@ -172,34 +172,45 @@
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (!titleEl || !listEl) return;
         titleEl.textContent = QiActT('render.favorite_title');
+        renderFavoritePartFilter();
         if (!state.favorites.length) { listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>'; return; }
         var html = '';
+        var seen = {};
         state.favorites.forEach(function(key) {
             var sep = key.indexOf('|');
-            var group = sep < 0 ? '' : key.slice(0, sep);
+            var group = canonicalPartGroup(sep < 0 ? '' : key.slice(0, sep));
             var name = sep < 0 ? key : key.slice(sep + 1);
-            var part = BODY_PARTS.find(function(p) { return p.group === group; });
+            var normalizedKey = group + '|' + name;
+            if (seen[normalizedKey] || (state.favoritePartFilter !== 'all' && state.favoritePartFilter !== group)) return;
+            seen[normalizedKey] = true;
             html += '<div class="xsact-action-row" data-key="' + escapeHtml(key) + '">' +
-                '<button class="xsact-action-btn fav" data-group="' + escapeHtml(group) + '" data-name="' + escapeHtml(name) + '"><span class="xsact-action-label">' + escapeHtml(getActivityLabel(name, group)) + '</span><span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span><small>' + escapeHtml(part ? part.label : group) + '</small></button>' +
-                '<button class="xsact-favorite-remove" title="' + QiActT('common.fav_remove') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button></div>';
+                '<button class="xsact-action-btn fav" data-group="' + escapeHtml(group) + '" data-name="' + escapeHtml(name) + '"><span class="xsact-action-label">' + escapeHtml(getActivityLabel(name, group)) + '</span><span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span></button></div>';
         });
+        if (!html) html = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>';
         listEl.innerHTML = html;
         listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
+                if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
                 var acts = getActionsForPart(btn.dataset.group, charObj) || [];
                 var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
                 executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null);
             });
         });
-        listEl.querySelectorAll('.xsact-favorite-remove').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var key = btn.parentNode.dataset.key;
-                state.favorites = state.favorites.filter(function(v) { return v !== key; });
-                persist(S_FAVS, state.favorites);
-                updateFavoritesPanel(charObj);
-            });
-        });
+    }
+
+    function canonicalPartGroup(group) { return SUBPART_TO_BASE[group] || group; }
+
+    function renderFavoritePartFilter() {
+        if (!state.actionPanelEl) return;
+        var old = state.actionPanelEl.querySelector('#xsact-favorite-part-filter'); if (old) old.remove();
+        if (state.panelMode !== 'favorite') return;
+        var footer = state.actionPanelEl.querySelector('.xsact-qa-panel-footer'); if (!footer) return;
+        var groups = []; state.favorites.forEach(function(k) { var p = k.indexOf('|'); var g = canonicalPartGroup(p < 0 ? '' : k.slice(0,p)); if (g && groups.indexOf(g) < 0) groups.push(g); });
+        var bar = document.createElement('div'); bar.id = 'xsact-favorite-part-filter'; bar.className = 'xsact-favorite-part-filter';
+        bar.innerHTML = '<button data-group="all" class="' + (state.favoritePartFilter === 'all' ? 'active' : '') + '">' + QiActT('custom.chip_all') + '</button>' + groups.map(function(g) { return '<button data-group="' + escapeHtml(g) + '" class="' + (state.favoritePartFilter === g ? 'active' : '') + '">' + escapeHtml(QiActT('part.' + g)) + '</button>'; }).join('');
+        footer.insertAdjacentElement('afterend', bar);
+        bar.querySelectorAll('button').forEach(function(b) { b.addEventListener('click', function() { state.favoritePartFilter = b.dataset.group; updateFavoritesPanel(state.selectedTarget); }); });
     }
 
     function updateSettingsPanel() {
@@ -213,10 +224,12 @@
         listEl.innerHTML = '<div class="xsact-settings">' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
-            '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '></label></div>';
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
         listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
         listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
+        listEl.querySelector('#xsact-settings-xiaosu').addEventListener('change', function(e) { setXiaosuPack(e.target.checked); });
     }
 
     // ════════════════════════════════════════════════════════════════════════

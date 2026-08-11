@@ -117,11 +117,12 @@
     /** 开关「内置小酥动作包」：持久化 → 同步列表 → 重新注册到 BC → 刷新面板 */
     function setXiaosuPack(enabled) {
         state.xiaosuPack = !!enabled;
+        if (!state.xiaosuPack && state.caFilter === 'xiaosu') { state.caFilter = 'all'; persist(S_CA_FILTER, 'all'); }
         persist(S_XIAOSU_PACK, state.xiaosuPack);
         syncXiaosuPack();
         registerAllCustomActions();
         saveCustomActions();
-        updateCustomActionPanel(state.selectedTarget);
+        if (state.panelMode === 'custom') updateCustomActionPanel(state.selectedTarget);
     }
 
     /** 导出自定义动作为 JSON 文件 */

@@ -252,10 +252,10 @@
         // 收藏按钮：切换收藏模式
         var favBtn = panel.querySelector('#xsact-fav-btn');
         if (favBtn) favBtn.addEventListener('click', toggleFavMode);
+        var gridBtn = panel.querySelector('#xsact-grid-btn');
+        if (gridBtn) gridBtn.addEventListener('click', toggleInteractionGrid);
 
         // 清空收藏按钮
-        var favClearBtn = panel.querySelector('#xsact-fav-clear-btn');
-        if (favClearBtn) favClearBtn.addEventListener('click', clearAllFavorites);
 
         // 主题切换按钮（太阳/月亮）
         var themeBtn = panel.querySelector('#xsact-theme-btn');

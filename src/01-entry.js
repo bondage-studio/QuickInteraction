@@ -76,6 +76,7 @@
     const S_XIAOSU_PACK = 'xsact_qa_xiaosu_pack'; // 是否启用内置「小酥动作包」（预编译进插件，离线可用）
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'
     const S_CHAT_BUTTON = 'xsact_qa_chat_button';
+    const S_INTERACTION_GRID = 'xsact_qa_interaction_grid';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -121,6 +122,8 @@
         lastLayoutCount: 0,           // 上次布局角色数
         toggleDragged: false,         // 本次按下闪电按钮是否已拖动
         chatButtonDocked: false
+        ,favoritePartFilter: 'all'
+        ,interactionGridActive: true
     };
 
     // ════════════════════════════════════════════════════════════════════════
@@ -323,7 +326,14 @@
         var needMigrate = state.favorites.some(function(f) {
             return typeof f === 'string' && f.indexOf('|') === -1;
         });
-        if (!needMigrate) return;
+        if (!needMigrate) {
+            var normalized = state.favorites.map(function(key) {
+                var p = key.indexOf('|');
+                return p < 0 ? key : canonicalPartGroup(key.slice(0, p)) + key.slice(p);
+            }).filter(function(key, i, arr) { return arr.indexOf(key) === i; });
+            if (JSON.stringify(normalized) !== JSON.stringify(state.favorites)) { state.favorites = normalized; persist(S_FAVS, state.favorites); }
+            return;
+        }
         var groups = BODY_PARTS.map(function(p) { return p.group; });
         var out = [];
         state.favorites.forEach(function(f) {
@@ -344,7 +354,10 @@
             }
             if (!expanded) out.push(name); // 兜底：无法展开则保留裸名
         });
-        state.favorites = out;
+        state.favorites = out.map(function(key) {
+            var p = key.indexOf('|');
+            return p < 0 ? key : canonicalPartGroup(key.slice(0, p)) + key.slice(p);
+        }).filter(function(key, i, arr) { return arr.indexOf(key) === i; });
         persist(S_FAVS, state.favorites);
     }
 

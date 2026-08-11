@@ -23,24 +23,6 @@
         var allOn = acts.length > 0 && acts.every(function(a){ return a.visible !== false; });
 
         html += '<div class="xsact-ca-view">';
-        // 工具栏
-        html += '<div class="xsact-ca-toolbar">' +
-            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
-            '<div class="xsact-ca-toolbar-btns">' +
-            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
-            '<div class="xsact-ca-import-wrap">' +
-            '<button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '" data-tooltip="' + QiActT('custom.import_tooltip') + '">' + svgIcon('download', 14) + '</button>' +
-            '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu">' +
-            '<button data-import="echo">' + QiActT('custom.import_echo') + '</button>' +
-            '<button data-import="file">' + QiActT('custom.import_file') + '</button>' +
-            '</div>' +
-            '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json">' +
-            '</div>' +
-            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
-            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
-            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
-            '</div></div>';
-
         // 分类 chip 过滤栏：按来源（all/xiaosu/native/echo）单选；空分类置灰
         var _counts = { all: acts.length, xiaosu: 0, native: 0, echo: 0 };
         acts.forEach(function(a) {
@@ -50,14 +32,15 @@
         });
         var _chips = [
             { key: 'all', label: QiActT('custom.chip_all'), count: _counts.all, color: 'all' },
-            { key: 'xiaosu', label: QiActT('custom.chip_xiaosu'), count: _counts.xiaosu, color: 'xiaosu' },
+            state.xiaosuPack ? { key: 'xiaosu', label: QiActT('custom.chip_xiaosu'), count: _counts.xiaosu, color: 'xiaosu' } : null,
             { key: 'native', label: QiActT('custom.chip_native'), count: _counts.native, color: 'native' },
             { key: 'echo', label: 'echo', count: _counts.echo, color: 'echo' }
         ];
+        _chips = _chips.filter(Boolean);
         html += '<div class="xsact-ca-chips" id="xsact-ca-chips">';
         _chips.forEach(function(ch) {
             var active = state.caFilter === ch.key;
-            var empty = ch.count === 0 && ch.key !== 'all';
+            var empty = ch.count === 0 && ch.key !== 'all' && ch.key !== 'xiaosu';
             var dis = empty ? ' is-disabled' : '';
             var act = active ? ' is-active' : '';
             html += '<button type="button" class="xsact-ca-chip ' + ch.color + act + dis + '" data-filter="' + ch.key + '"' + (empty ? ' disabled' : '') + '>' +
@@ -171,7 +154,17 @@
             html += '</div>';
             }
         }
-        html += '</div>';
+        html += '<div class="xsact-ca-toolbar">' +
+            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
+            '<div class="xsact-ca-toolbar-btns">' +
+            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
+            '<div class="xsact-ca-import-wrap"><button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '">' + svgIcon('download', 14) + '</button>' +
+            '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu"><button data-import="echo">' + QiActT('custom.import_echo') + '</button><button data-import="file">' + QiActT('custom.import_file') + '</button></div>' +
+            '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json"></div>' +
+            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
+            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
+            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
+            '</div></div></div>';
         listEl.innerHTML = html;
 
         var newBtn = listEl.querySelector('#xsact-ca-new');

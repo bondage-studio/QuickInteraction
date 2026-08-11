@@ -198,8 +198,8 @@
     // toast 命名空间
     QiActI18n.register('toast', {
         'need_item'              :        { TW: '該動作需要特定道具', CN: '该动作需要特定道具', EN: 'This action requires a specific item', DE: 'Für diese Aktion ist ein bestimmtes Element erforderlich', FR: 'Cette action nécessite un élément spécifique', RU: 'Для этого действия требуется определенный элемент', UA: 'Для цієї дії потрібен певний предмет' },
-        'unavailable'            :        { TW: '該動作目前不可用', CN: '该动作当前不可用', EN: 'This action is currently unavailable', DE: 'Diese Aktion ist derzeit nicht verfügbar', FR: 'Cette action est actuellement indisponible', RU: 'Это действие в настоящее время недоступно', UA: 'Ця дія зараз недоступна' },
-        'temporarily_unavailable':        { TW: '該動作暫不可用', CN: '该动作暂不可用', EN: 'This action is temporarily unavailable', DE: 'Diese Aktion ist vorübergehend nicht verfügbar', FR: 'Cette action est temporairement indisponible', RU: 'Это действие временно недоступно', UA: 'Ця дія тимчасово недоступна' },
+        'unavailable'            :        { TW: '該動作目前不可用或對方禁用該動作', CN: '该动作目前不可用或对方禁用该动作', EN: 'This action is unavailable or the target has disabled it', DE: 'Diese Aktion ist nicht verfügbar oder wurde vom Ziel deaktiviert', FR: 'Cette action est indisponible ou désactivée par la cible', RU: 'Действие недоступно или отключено целью', UA: 'Дія недоступна або вимкнена ціллю' },
+        'temporarily_unavailable':        { TW: '該動作目前不可用或對方禁用該動作', CN: '该动作目前不可用或对方禁用该动作', EN: 'This action is unavailable or the target has disabled it', DE: 'Diese Aktion ist nicht verfügbar oder wurde vom Ziel deaktiviert', FR: 'Cette action est indisponible ou désactivée par la cible', RU: 'Действие недоступно или отключено целью', UA: 'Дія недоступна або вимкнена ціллю' },
         'exec_failed'            :        { TW: '執行失敗: {msg}', CN: '执行失败: {msg}', EN: 'Execution failed: {msg}', DE: 'Ausführung fehlgeschlagen: {msg}', FR: 'Échec de l\'exécution : {msg}', RU: 'Не удалось выполнить: {msg}', UA: 'Помилка виконання: {msg}' },
         'pick_action'            :        { TW: '請先選擇一個動作', CN: '请先选择一个动作', EN: 'Please select an action first', DE: 'Bitte wählen Sie zunächst eine Aktion aus', FR: 'Veuillez d\'abord sélectionner une action', RU: 'Сначала выберите действие', UA: 'Спочатку виберіть дію' },
         'no_others'              :        { TW: '房間內沒有其他人', CN: '房间内没有其他人', EN: 'No other members in the room', DE: 'Keine anderen Mitglieder im Raum', FR: 'Aucun autre membre dans la salle', RU: 'В комнате нет других участников', UA: 'У кімнаті немає інших учасників' },
@@ -411,6 +411,8 @@
 
     QiActI18n.register('ui', {
         'settings': { TW:'設定', CN:'设置', EN:'Settings', DE:'Einstellungen', FR:'Paramètres', RU:'Настройки', UA:'Налаштування' },
+        'interaction_grid': { TW:'互動格', CN:'互动格', EN:'Interaction grid', DE:'Interaktionsraster', FR:'Grille interactive', RU:'Сетка взаимодействия', UA:'Сітка взаємодії' },
+        'interaction_grid_title': { TW:'顯示或隱藏人物身體互動格', CN:'显示或隐藏人物身体互动格', EN:'Show or hide character interaction grids', DE:'Interaktionsraster ein- oder ausblenden', FR:'Afficher ou masquer les grilles interactives', RU:'Показать или скрыть сетку взаимодействия', UA:'Показати або приховати сітку взаємодії' },
         'mode_favorite': { TW:'收藏', CN:'收藏', EN:'Favorites', DE:'Favoriten', FR:'Favoris', RU:'Избранное', UA:'Вибране' },
         'mode_favorite_title': { TW:'管理與使用所有收藏動作', CN:'管理与使用所有收藏动作', EN:'Manage and use all favorite actions', DE:'Alle Favoriten verwalten und verwenden', FR:'Gérer et utiliser tous les favoris', RU:'Управление всеми избранными действиями', UA:'Керування всіма вибраними діями' }
     });
@@ -420,6 +422,7 @@
         'theme': { TW:'主題', CN:'主题', EN:'Theme', DE:'Thema', FR:'Thème', RU:'Тема', UA:'Тема' },
         'auto': { TW:'自動', CN:'自动', EN:'Auto', DE:'Auto', FR:'Auto', RU:'Авто', UA:'Авто' },
         'chat_button': { TW:'收納到 BC 聊天室按鈕列', CN:'收纳到 BC 聊天室按钮栏', EN:'Dock in the BC chat-room buttons', DE:'In der BC-Chat-Schaltflächenleiste andocken', FR:'Ancrer dans les boutons de chat BC', RU:'Закрепить на панели кнопок BC', UA:'Закріпити на панелі кнопок BC' }
+        ,'enable_xiaosu': { TW:'啟用小酥動作包', CN:'启用小酥动作包', EN:'Enable XiaoSu action pack', DE:'XiaoSu-Aktionspaket aktivieren', FR:'Activer le pack d’actions XiaoSu', RU:'Включить набор действий XiaoSu', UA:'Увімкнути набір дій XiaoSu' }
     });
     QiActI18n.register('editor', {
         'preview_label': { TW:'效果預覽', CN:'效果预览', EN:'Preview', DE:'Vorschau', FR:'Aperçu', RU:'Предпросмотр', UA:'Попередній перегляд' }
@@ -530,6 +533,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     const S_XIAOSU_PACK = 'xsact_qa_xiaosu_pack'; // 是否启用内置「小酥动作包」（预编译进插件，离线可用）
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'
     const S_CHAT_BUTTON = 'xsact_qa_chat_button';
+    const S_INTERACTION_GRID = 'xsact_qa_interaction_grid';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -575,6 +579,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         lastLayoutCount: 0,           // 上次布局角色数
         toggleDragged: false,         // 本次按下闪电按钮是否已拖动
         chatButtonDocked: false
+        ,favoritePartFilter: 'all'
+        ,interactionGridActive: true
     };
 
     // ════════════════════════════════════════════════════════════════════════
@@ -777,7 +783,14 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var needMigrate = state.favorites.some(function(f) {
             return typeof f === 'string' && f.indexOf('|') === -1;
         });
-        if (!needMigrate) return;
+        if (!needMigrate) {
+            var normalized = state.favorites.map(function(key) {
+                var p = key.indexOf('|');
+                return p < 0 ? key : canonicalPartGroup(key.slice(0, p)) + key.slice(p);
+            }).filter(function(key, i, arr) { return arr.indexOf(key) === i; });
+            if (JSON.stringify(normalized) !== JSON.stringify(state.favorites)) { state.favorites = normalized; persist(S_FAVS, state.favorites); }
+            return;
+        }
         var groups = BODY_PARTS.map(function(p) { return p.group; });
         var out = [];
         state.favorites.forEach(function(f) {
@@ -798,7 +811,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             }
             if (!expanded) out.push(name); // 兜底：无法展开则保留裸名
         });
-        state.favorites = out;
+        state.favorites = out.map(function(key) {
+            var p = key.indexOf('|');
+            return p < 0 ? key : canonicalPartGroup(key.slice(0, p)) + key.slice(p);
+        }).filter(function(key, i, arr) { return arr.indexOf(key) === i; });
         persist(S_FAVS, state.favorites);
     }
 
@@ -2125,24 +2141,6 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var allOn = acts.length > 0 && acts.every(function(a){ return a.visible !== false; });
 
         html += '<div class="xsact-ca-view">';
-        // 工具栏
-        html += '<div class="xsact-ca-toolbar">' +
-            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
-            '<div class="xsact-ca-toolbar-btns">' +
-            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
-            '<div class="xsact-ca-import-wrap">' +
-            '<button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '" data-tooltip="' + QiActT('custom.import_tooltip') + '">' + svgIcon('download', 14) + '</button>' +
-            '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu">' +
-            '<button data-import="echo">' + QiActT('custom.import_echo') + '</button>' +
-            '<button data-import="file">' + QiActT('custom.import_file') + '</button>' +
-            '</div>' +
-            '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json">' +
-            '</div>' +
-            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
-            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
-            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
-            '</div></div>';
-
         // 分类 chip 过滤栏：按来源（all/xiaosu/native/echo）单选；空分类置灰
         var _counts = { all: acts.length, xiaosu: 0, native: 0, echo: 0 };
         acts.forEach(function(a) {
@@ -2152,14 +2150,15 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         });
         var _chips = [
             { key: 'all', label: QiActT('custom.chip_all'), count: _counts.all, color: 'all' },
-            { key: 'xiaosu', label: QiActT('custom.chip_xiaosu'), count: _counts.xiaosu, color: 'xiaosu' },
+            state.xiaosuPack ? { key: 'xiaosu', label: QiActT('custom.chip_xiaosu'), count: _counts.xiaosu, color: 'xiaosu' } : null,
             { key: 'native', label: QiActT('custom.chip_native'), count: _counts.native, color: 'native' },
             { key: 'echo', label: 'echo', count: _counts.echo, color: 'echo' }
         ];
+        _chips = _chips.filter(Boolean);
         html += '<div class="xsact-ca-chips" id="xsact-ca-chips">';
         _chips.forEach(function(ch) {
             var active = state.caFilter === ch.key;
-            var empty = ch.count === 0 && ch.key !== 'all';
+            var empty = ch.count === 0 && ch.key !== 'all' && ch.key !== 'xiaosu';
             var dis = empty ? ' is-disabled' : '';
             var act = active ? ' is-active' : '';
             html += '<button type="button" class="xsact-ca-chip ' + ch.color + act + dis + '" data-filter="' + ch.key + '"' + (empty ? ' disabled' : '') + '>' +
@@ -2273,7 +2272,17 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             html += '</div>';
             }
         }
-        html += '</div>';
+        html += '<div class="xsact-ca-toolbar">' +
+            '<input type="text" id="xsact-ca-search" class="xsact-ca-search' + (editMode ? ' is-hidden' : '') + '" placeholder="' + QiActT('custom.search_placeholder') + '">' +
+            '<div class="xsact-ca-toolbar-btns">' +
+            '<button class="xsact-ca-new" id="xsact-ca-new" title="' + QiActT('custom.new') + '">' + svgIcon('plus', 14) + '<span>' + QiActT('custom.new') + '</span></button>' +
+            '<div class="xsact-ca-import-wrap"><button class="xsact-ca-import" id="xsact-ca-import" title="' + QiActT('custom.import') + '">' + svgIcon('download', 14) + '</button>' +
+            '<div class="xsact-ca-import-menu hidden" id="xsact-ca-import-menu"><button data-import="echo">' + QiActT('custom.import_echo') + '</button><button data-import="file">' + QiActT('custom.import_file') + '</button></div>' +
+            '<input type="file" id="xsact-ca-file-input" class="xsact-ca-file-input" accept="application/json,.json"></div>' +
+            '<button class="xsact-ca-export" id="xsact-ca-export" title="' + QiActT('custom.export') + '">' + svgIcon('upload', 14) + '</button>' +
+            '<button class="xsact-ca-editmode' + (editMode ? ' is-active' : '') + '" id="xsact-ca-editmode" title="' + (editMode ? QiActT('custom.editmode_on') : QiActT('custom.editmode_off')) + '">' + svgIcon('bulkEdit', 16) + '</button>' +
+            '<button class="xsact-ca-toggleall' + (allOn ? ' is-on' : '') + '" id="xsact-ca-toggleall" title="' + (allOn ? QiActT('custom.toggleall_on') : QiActT('custom.toggleall_off')) + '">' + svgIcon(allOn ? 'toggleOn' : 'toggleOff', 16) + '</button>' +
+            '</div></div></div>';
         listEl.innerHTML = html;
 
         var newBtn = listEl.querySelector('#xsact-ca-new');
@@ -2930,11 +2939,12 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     /** 开关「内置小酥动作包」：持久化 → 同步列表 → 重新注册到 BC → 刷新面板 */
     function setXiaosuPack(enabled) {
         state.xiaosuPack = !!enabled;
+        if (!state.xiaosuPack && state.caFilter === 'xiaosu') { state.caFilter = 'all'; persist(S_CA_FILTER, 'all'); }
         persist(S_XIAOSU_PACK, state.xiaosuPack);
         syncXiaosuPack();
         registerAllCustomActions();
         saveCustomActions();
-        updateCustomActionPanel(state.selectedTarget);
+        if (state.panelMode === 'custom') updateCustomActionPanel(state.selectedTarget);
     }
 
     /** 导出自定义动作为 JSON 文件 */
@@ -3092,7 +3102,19 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var ico = btn.querySelector('.xsact-ico');
         if (ico) ico.outerHTML = svgIcon(state.favModeActive ? 'starFill' : 'star', 14);
     }
+    function toggleInteractionGrid() {
+        state.interactionGridActive = !state.interactionGridActive;
+        persist(S_INTERACTION_GRID, state.interactionGridActive);
+        updateInteractionGridVisual();
+        if (state.interactionGridActive) refreshBodyGrids(); else clearBodyGrids();
+    }
+    function updateInteractionGridVisual() {
+        if (!state.actionPanelEl) return;
+        var btn = state.actionPanelEl.querySelector('#xsact-grid-btn');
+        if (btn) btn.classList.toggle('on', state.interactionGridActive);
+    }
     function toggleFavoriteAction(partGroup, name, btn) {
+        partGroup = canonicalPartGroup(partGroup);
         var key = partGroup + '|' + name;
         var idx = state.favorites.indexOf(key);
         if (idx === -1) {
@@ -3590,20 +3612,19 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         <button class="xsact-mode-tab active" data-mode="part" title="' + QiActT('ui.mode_part_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.mode_part') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="favorite" title="' + QiActT('ui.mode_favorite_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.mode_favorite') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
-        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '">' + svgIcon('custom', 14) + '<span>' + QiActT('ui.mode_custom') + '</span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '"><span class="xsact-custom-tab-main">' + svgIcon('custom', 14) + '<span class="xsact-custom-tab-label">' + QiActT('ui.mode_custom') + '</span></span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
+      </div>\
+      <div class="xsact-qa-panel-footer">\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="' + QiActT('ui.self_title') + '">' + svgIcon('user', 14) + '<span>' + QiActT('ui.self') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="' + QiActT('ui.all_title') + '">' + svgIcon('users', 14) + '<span>' + QiActT('ui.all') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="' + QiActT('ui.fav_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.fav') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-grid-btn" title="' + QiActT('ui.interaction_grid_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.interaction_grid') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="' + QiActT('ui.x3_title') + '">' + svgIcon('bolt', 14) + '<span>' + QiActT('ui.x3') + '</span></button>\
       </div>\
       <div class="xsact-qa-panel-body" id="xsact-action-list">\
         <div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>\
       </div>\
     </div>\
-  </div>\
-  <div class="xsact-qa-panel-footer">\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="' + QiActT('ui.self_title') + '">' + svgIcon('user', 14) + '<span>' + QiActT('ui.self') + '</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="' + QiActT('ui.all_title') + '">' + svgIcon('users', 14) + '<span>' + QiActT('ui.all') + '</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="' + QiActT('ui.fav_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.fav') + '</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn" id="xsact-fav-clear-btn" title="' + QiActT('ui.fav_clear') + '" data-tooltip-type="danger">' + svgIcon('favRemove', 14) + '</button>\
-    <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="' + QiActT('ui.x3_title') + '">' + svgIcon('bolt', 14) + '<span>' + QiActT('ui.x3') + '</span></button>\
-    <span class="xsact-version-tag" title="' + QiActT('ui.version') + '">v' + VERSION + '</span>\
   </div>\
   <div class="xsact-qa-state.presets-bar" id="xsact-state.presets-bar"></div>\
   <div class="xsact-resize-handle" id="xsact-resize-handle" title="' + QiActT('ui.resize') + '">' + svgIcon('resize', 14) + '</div>\
@@ -3826,22 +3847,19 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
     }
 
     /** 将指定网格提升到最前（解决人物重叠时的选择问题） */
-    var _gridZTop = 89999;
     function bringGridToFront(grid) {
         if (!grid) return;
-        _gridZTop += 1;
-        grid.style.zIndex = _gridZTop;
+        grid.style.zIndex = '89999';
         // 同时降低其他网格
         state.bodyGrids.forEach(function(g) {
-            if (g !== grid && g.style.zIndex > 90000) {
-                g.style.zIndex = 89999;
-            }
+            g.style.zIndex = '89999';
         });
     }
 
     /** 更新所有角色的身体网格 */
     function refreshBodyGrids() {
         clearBodyGrids();
+        if (!state.interactionGridActive) { renderCharList(); return; }
         var layout = getCharLayout();
         var shifts = computeOverlapShifts(layout);
         layout.forEach(function(entry) {
@@ -4124,6 +4142,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         if (!state.actionPanelEl) return;
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
+        var footerEl = state.actionPanelEl.querySelector('.xsact-qa-panel-footer');
+        if (footerEl) footerEl.style.display = state.panelMode === 'settings' ? 'none' : '';
+        if (state.panelMode !== 'favorite') { var favFilter = state.actionPanelEl.querySelector('#xsact-favorite-part-filter'); if (favFilter) favFilter.remove(); }
         if (listEl) {
             listEl.classList.toggle('xsact-custom-mode', state.panelMode === 'custom');
             listEl.classList.toggle('xsact-combo-mode', state.panelMode === 'combo');
@@ -4131,6 +4152,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         }
         updateAllButtonVisual();
         updateFavButtonVisual();
+        updateInteractionGridVisual();
 
         // 「我的动作」「组合动作」可独立展开，无需先选中人物或身体部位
         if (state.panelMode === 'custom') {
@@ -4444,7 +4466,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             actions.forEach(function(act) {
                 if (!act || !act.Name) return;
                 var lbl = getActivityLabel(act.Name, partGroup);
-                var isFav = state.favorites.indexOf(partGroup + '|' + act.Name) !== -1;
+                var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + '|' + act.Name) !== -1;
                 // 来源水印功能已暂停（按需求优先修复动作显示功能）。
                 // 下方点击处理器仍用 caDetectSource 判断 LSCG/Liko 以触发自动刷新。
                 html += '<div class="xsact-action-row' + (isEditing ? ' editing' : '') + '" data-name="' + escapeHtml(act.Name) + '">' +
@@ -4518,34 +4540,45 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (!titleEl || !listEl) return;
         titleEl.textContent = QiActT('render.favorite_title');
+        renderFavoritePartFilter();
         if (!state.favorites.length) { listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>'; return; }
         var html = '';
+        var seen = {};
         state.favorites.forEach(function(key) {
             var sep = key.indexOf('|');
-            var group = sep < 0 ? '' : key.slice(0, sep);
+            var group = canonicalPartGroup(sep < 0 ? '' : key.slice(0, sep));
             var name = sep < 0 ? key : key.slice(sep + 1);
-            var part = BODY_PARTS.find(function(p) { return p.group === group; });
+            var normalizedKey = group + '|' + name;
+            if (seen[normalizedKey] || (state.favoritePartFilter !== 'all' && state.favoritePartFilter !== group)) return;
+            seen[normalizedKey] = true;
             html += '<div class="xsact-action-row" data-key="' + escapeHtml(key) + '">' +
-                '<button class="xsact-action-btn fav" data-group="' + escapeHtml(group) + '" data-name="' + escapeHtml(name) + '"><span class="xsact-action-label">' + escapeHtml(getActivityLabel(name, group)) + '</span><span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span><small>' + escapeHtml(part ? part.label : group) + '</small></button>' +
-                '<button class="xsact-favorite-remove" title="' + QiActT('common.fav_remove') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button></div>';
+                '<button class="xsact-action-btn fav" data-group="' + escapeHtml(group) + '" data-name="' + escapeHtml(name) + '"><span class="xsact-action-label">' + escapeHtml(getActivityLabel(name, group)) + '</span><span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span></button></div>';
         });
+        if (!html) html = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>';
         listEl.innerHTML = html;
         listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
+                if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
                 var acts = getActionsForPart(btn.dataset.group, charObj) || [];
                 var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
                 executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null);
             });
         });
-        listEl.querySelectorAll('.xsact-favorite-remove').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var key = btn.parentNode.dataset.key;
-                state.favorites = state.favorites.filter(function(v) { return v !== key; });
-                persist(S_FAVS, state.favorites);
-                updateFavoritesPanel(charObj);
-            });
-        });
+    }
+
+    function canonicalPartGroup(group) { return SUBPART_TO_BASE[group] || group; }
+
+    function renderFavoritePartFilter() {
+        if (!state.actionPanelEl) return;
+        var old = state.actionPanelEl.querySelector('#xsact-favorite-part-filter'); if (old) old.remove();
+        if (state.panelMode !== 'favorite') return;
+        var footer = state.actionPanelEl.querySelector('.xsact-qa-panel-footer'); if (!footer) return;
+        var groups = []; state.favorites.forEach(function(k) { var p = k.indexOf('|'); var g = canonicalPartGroup(p < 0 ? '' : k.slice(0,p)); if (g && groups.indexOf(g) < 0) groups.push(g); });
+        var bar = document.createElement('div'); bar.id = 'xsact-favorite-part-filter'; bar.className = 'xsact-favorite-part-filter';
+        bar.innerHTML = '<button data-group="all" class="' + (state.favoritePartFilter === 'all' ? 'active' : '') + '">' + QiActT('custom.chip_all') + '</button>' + groups.map(function(g) { return '<button data-group="' + escapeHtml(g) + '" class="' + (state.favoritePartFilter === g ? 'active' : '') + '">' + escapeHtml(QiActT('part.' + g)) + '</button>'; }).join('');
+        footer.insertAdjacentElement('afterend', bar);
+        bar.querySelectorAll('button').forEach(function(b) { b.addEventListener('click', function() { state.favoritePartFilter = b.dataset.group; updateFavoritesPanel(state.selectedTarget); }); });
     }
 
     function updateSettingsPanel() {
@@ -4559,10 +4592,12 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         listEl.innerHTML = '<div class="xsact-settings">' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
-            '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '></label></div>';
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
         listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
         listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
+        listEl.querySelector('#xsact-settings-xiaosu').addEventListener('change', function(e) { setXiaosuPack(e.target.checked); });
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -4826,10 +4861,10 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         // 收藏按钮：切换收藏模式
         var favBtn = panel.querySelector('#xsact-fav-btn');
         if (favBtn) favBtn.addEventListener('click', toggleFavMode);
+        var gridBtn = panel.querySelector('#xsact-grid-btn');
+        if (gridBtn) gridBtn.addEventListener('click', toggleInteractionGrid);
 
         // 清空收藏按钮
-        var favClearBtn = panel.querySelector('#xsact-fav-clear-btn');
-        if (favClearBtn) favClearBtn.addEventListener('click', clearAllFavorites);
 
         // 主题切换按钮（太阳/月亮）
         var themeBtn = panel.querySelector('#xsact-theme-btn');
@@ -5032,6 +5067,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '  border-radius:8px;color:var(--xs-text-dim);transition:all 0.15s ease;',
             '  display:flex;align-items:center;justify-content:center;gap:6px;',
             '}',
+            '.xsact-mode-tab[data-mode="custom"]{flex-direction:column;gap:2px;padding-top:5px;padding-bottom:5px;line-height:1.05;}',
+            '.xsact-custom-tab-main{display:flex;align-items:center;justify-content:center;gap:5px;}',
+            '.xsact-mode-tab[data-mode="custom"] .xsact-beta-badge{position:static;margin:0;font-size:9px;line-height:1;}',
             '.xsact-mode-tab .xsact-ico{width:14px;height:14px;stroke-width:2.2px;}',
             '.xsact-mode-tab:hover{color:var(--xs-text);border-color:var(--xs-border-strong);}',
             '.xsact-mode-tab.active{',
@@ -5167,18 +5205,22 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-combo-cancel-btn:hover{background:var(--xs-border-strong);}',
 
             /* ===== 自定义动作（我的动作 tab） ===== */
-            '#xsact-action-list.xsact-custom-mode{display:flex;flex-direction:column;gap:12px;padding:10px 12px;}',
+            '#xsact-action-list.xsact-custom-mode{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;}',
             '#xsact-action-list.xsact-custom-mode > *{width:100%;min-width:0;}',
-            '.xsact-ca-view{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;padding:2px 0;}',
+            '.xsact-ca-view{display:flex;flex-direction:column;gap:0;width:100%;height:100%;min-width:0;min-height:0;padding:0;border:1px solid var(--xs-border);border-radius:12px;overflow:hidden;background:var(--xs-card-bg);}',
+            '.xsact-ca-view,.xsact-ca-view *{box-sizing:border-box;}',
+            '.xsact-ca-view>div{padding:10px 12px;border-bottom:1px solid var(--xs-border);flex-shrink:0;}',
+            '.xsact-ca-view>div:last-child{border-bottom:0;}',
 
-            '.xsact-ca-toolbar{display:flex;align-items:center;gap:8px;width:100%;min-width:0;}',
-            '.xsact-ca-search{flex:1;min-width:0;padding:9px 12px;border-radius:8px;border:1px solid var(--xs-border);background:var(--xs-input-bg);color:var(--xs-text);font-size:13px;transition:opacity .15s;}',
+            '.xsact-ca-toolbar{display:flex;align-items:center;gap:6px;width:100%;min-width:0;padding:8px!important;}',
+            '.xsact-ca-search{flex:1 1 0;min-width:0;width:0;padding:7px 9px;border-radius:7px;border:1px solid var(--xs-border);background:var(--xs-input-bg);color:var(--xs-text);font-size:12px;transition:opacity .15s;}',
             '.xsact-ca-search:focus{outline:none;border-color:var(--xs-accent);}',
             '.xsact-ca-search.is-hidden{visibility:hidden;pointer-events:none;opacity:0;}',
-            '.xsact-ca-toolbar-btns{display:flex;gap:6px;flex-shrink:0;}',
-            '.xsact-ca-toolbar-btns button{display:flex;align-items:center;justify-content:center;gap:5px;width:34px;height:34px;padding:0;border-radius:8px;border:1px solid var(--xs-border);background:var(--xs-btn-bg);color:var(--xs-text-dim);cursor:pointer;font-size:12px;transition:background .15s,border-color .15s,color .15s;}',
+            '.xsact-ca-toolbar-btns{display:flex;gap:4px;flex-shrink:0;}',
+            '.xsact-ca-toolbar-btns button{display:flex;align-items:center;justify-content:center;gap:3px;width:28px;height:28px;padding:0;border-radius:7px;border:1px solid var(--xs-border);background:var(--xs-btn-bg);color:var(--xs-text-dim);cursor:pointer;font-size:11px;transition:background .15s,border-color .15s,color .15s;}',
             '.xsact-ca-toolbar-btns button:hover{background:var(--xs-hover);border-color:var(--xs-border-strong);color:var(--xs-text);}',
-            '.xsact-ca-toolbar-btns button.xsact-ca-new{width:auto;padding:0 12px;background:rgba(255,92,122,0.14);border-color:rgba(255,92,122,0.45);color:#FF8FA6;}',
+            '.xsact-ca-toolbar-btns button.xsact-ca-new{width:28px;padding:0;background:rgba(255,92,122,0.14);border-color:rgba(255,92,122,0.45);color:#FF8FA6;}',
+            '.xsact-ca-toolbar-btns button.xsact-ca-new span{display:none;}',
             '.xsact-ca-toolbar-btns button.xsact-ca-new:hover{background:rgba(255,92,122,0.24);color:#FFB3C6;}',
 
             '.xsact-ca-import-wrap{position:relative;display:flex;align-items:center;}',
@@ -5212,8 +5254,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-ca-echo-clean-btn{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,92,122,0.5);background:rgba(255,92,122,0.16);color:#FFB3C6;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}',
             '.xsact-ca-echo-clean-btn:hover{background:rgba(255,92,122,0.28);border-color:#FF5C7A;color:#FFFFFF;}',
 
-            '.xsact-ca-list{display:flex;flex-direction:column;gap:10px;width:100%;}',
-            '.xsact-ca-card{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--xs-card-bg);border:1px solid var(--xs-border);transition:border-color .15s,background .15s,transform .1s;min-width:0;}',
+            '.xsact-ca-list{display:flex;flex-direction:column;gap:10px;width:auto;max-width:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1 1 auto!important;scrollbar-width:thin;}',
+            '.xsact-ca-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;max-width:100%;padding:12px 14px;border-radius:10px;background:var(--xs-card-bg);border:1px solid var(--xs-border);transition:border-color .15s,background .15s,transform .1s;min-width:0;overflow:hidden;}',
             '.xsact-ca-card:hover{border-color:var(--xs-border-strong);background:var(--xs-hover);transform:translateY(-1px);}',
             '.xsact-ca-info{display:flex;flex-direction:column;gap:5px;min-width:0;overflow:hidden;}',
             '.xsact-ca-title{display:flex;align-items:center;gap:8px;min-width:0;}',
@@ -5320,6 +5362,9 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-qa-panel-footer{',
             '  display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:11px 12px;border-top:1px solid var(--xs-border);min-height:0;',
             '}',
+            '.xsact-favorite-part-filter{display:flex;gap:5px;padding:7px 12px;border-top:1px solid var(--xs-border);border-bottom:1px solid var(--xs-border);overflow-x:auto;flex-shrink:0;scrollbar-width:thin;}',
+            '.xsact-favorite-part-filter button{flex:0 0 auto;padding:5px 9px;border-radius:999px;border:1px solid var(--xs-border);background:var(--xs-btn-bg);color:var(--xs-text-dim);font-size:11px;cursor:pointer;}',
+            '.xsact-favorite-part-filter button.active{border-color:var(--xs-accent);background:rgba(var(--xs-accent-rgb),.14);color:var(--xs-accent-text);}',
             '.xsact-qa-mini-btn{',
             '  background:var(--xs-btn-bg);border:1px solid var(--xs-border);',
             '  border-radius:8px;padding:8px 10px;font-size:12px;color:var(--xs-text-dim);cursor:pointer;',
@@ -5330,6 +5375,12 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-settings{grid-column:1/-1;display:flex;flex-direction:column;gap:12px;}',
             '.xsact-settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--xs-border);border-radius:9px;background:var(--xs-btn-bg);color:var(--xs-text);font-size:12px;}',
             '.xsact-settings-row select{min-width:120px;background:var(--xs-panel-bg);color:var(--xs-text);border:1px solid var(--xs-border);border-radius:7px;padding:6px 8px;}',
+            '.xsact-switch{position:relative;display:inline-flex;width:42px;height:24px;flex:0 0 42px;}',
+            '.xsact-switch input{position:absolute;opacity:0;pointer-events:none;}',
+            '.xsact-switch-track{width:100%;height:100%;border-radius:999px;background:var(--xs-border-strong);box-shadow:inset 0 0 0 1px var(--xs-border);cursor:pointer;transition:background .18s,box-shadow .18s;}',
+            '.xsact-switch-track::after{content:"";display:block;width:18px;height:18px;margin:3px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:transform .18s;}',
+            '.xsact-switch input:checked+.xsact-switch-track{background:var(--xs-accent);box-shadow:inset 0 0 0 1px var(--xs-accent);}',
+            '.xsact-switch input:checked+.xsact-switch-track::after{transform:translateX(18px);}',
             '#xsact-x3-btn{padding:8px 10px;min-width:34px;}',
             /* 语言切换下拉（自定义菜单，暗色战术台风格） */
             '.xsact-lang{position:relative;flex-shrink:0;}',
@@ -5381,11 +5432,6 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '.xsact-lang-item:focus{outline:none;background:var(--xs-hover);}',
             '.xsact-lang-item.active:focus{background:rgba(var(--xs-accent-rgb),.16);}',
             /* 版本号隐约显示（footer 右下，hover 才清晰） */
-            '.xsact-version-tag{',
-            '  margin-left:auto;font-size:10px;line-height:1;letter-spacing:.04em;user-select:none;',
-            '  color:rgba(var(--xs-accent-rgb),0.9);opacity:.32;transition:opacity .25s ease;align-self:center;',
-            '}',
-            '.xsact-version-tag:hover{opacity:.72;}',
             '.xsact-toggle-pill{gap:5px;padding:8px 10px;}',
             '.xsact-toggle-pill .xsact-ico{width:14px;height:14px;stroke-width:2.2px;}',
             '.xsact-pill-dot{width:7px;height:7px;border-radius:50%;background:var(--xs-text-faint);border:1px solid var(--xs-border-strong);transition:background .15s,box-shadow .15s,border-color .15s;}',
@@ -5395,8 +5441,6 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '#xsact-fav-btn.on .xsact-pill-dot{background:#E8B339;border-color:#E8B339;}',
             '#xsact-self-btn.on{color:#46E0A0;border-color:rgba(70,224,160,0.6);background:rgba(70,224,160,0.12);}',
             '#xsact-self-btn.on .xsact-pill-dot{background:#46E0A0;border-color:#46E0A0;box-shadow:0 0 8px rgba(70,224,160,0.7);}',
-            '#xsact-fav-clear-btn{padding:0;width:28px;height:28px;color:var(--xs-text-dim);}',
-            '#xsact-fav-clear-btn:hover{background:rgba(255,92,92,0.12);border-color:rgba(255,92,92,0.5);color:#FFB3B3;}',
 
             '.xsact-qa-panel-content{',
             '  flex:1;position:relative;display:flex;flex-direction:column;min-width:0;',
@@ -5595,7 +5639,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '  background:transparent !important;',
             '}',
             '.xsact-part-btn{',
-            '  position:absolute;padding:0;margin:0;',
+            '  position:absolute;z-index:1;padding:0;margin:0;',
             '  background:transparent;color:transparent;font-size:0;border:none;',
             '  cursor:pointer;transition:box-shadow 0.12s ease;box-sizing:border-box;',
             '  pointer-events:auto;',
@@ -5645,7 +5689,8 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
             '@container xsact-panel (max-width: 280px){',
               '.xsact-qa-panel-footer .xsact-qa-mini-btn span:not(.xsact-pill-dot){display:none;}',
               '.xsact-qa-panel-footer .xsact-qa-mini-btn{flex:0 0 36px;padding:6px;}',
-              '.xsact-qa-mode-tabs .xsact-mode-tab span{display:none;}',
+              '.xsact-qa-mode-tabs .xsact-mode-tab>span:not(.xsact-custom-tab-main){display:none;}',
+              '.xsact-qa-mode-tabs .xsact-custom-tab-label{display:none;}',
               '.xsact-mode-tab .xsact-ico{width:16px;height:16px;}',
             '}',
             '@container xsact-panel (max-width: 240px){',
@@ -5689,7 +5734,6 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
               '.xsact-action-btn{padding:14px 12px;font-size:14px;}',
               '.xsact-qa-panel-footer{padding:10px 14px;gap:8px;}',
               '.xsact-qa-mini-btn{flex:1 1 0;min-height:44px;padding:10px 8px;font-size:13px;}',
-              '#xsact-fav-clear-btn{flex:0 0 44px;}',
               '.xsact-body-select{padding:8px 6px;}',
               '.xsact-body-part-hint{font-size:13px;}',
             '}',
@@ -6436,6 +6480,7 @@ var bcModSdk=function(){"use strict";const o="1.2.0";function e(o){alert("Mod ER
         // 加载存储
         state.isActive = loadSetting(S_ENABLED, false);
         state.selfModeActive = loadSetting(S_SELF, false);
+        state.interactionGridActive = loadSetting(S_INTERACTION_GRID, true) !== false;
         state.favorites = loadSetting(S_FAVS, []);
         migrateFavorites(); // 旧版纯动作名 → 部位复合键（一次性迁移）
         state.presets = loadSetting(S_PRESETS, []);

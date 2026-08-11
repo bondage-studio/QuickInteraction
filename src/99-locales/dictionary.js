@@ -81,8 +81,8 @@
     // toast 命名空间
     QiActI18n.register('toast', {
         'need_item'              :        { TW: '該動作需要特定道具', CN: '该动作需要特定道具', EN: 'This action requires a specific item', DE: 'Für diese Aktion ist ein bestimmtes Element erforderlich', FR: 'Cette action nécessite un élément spécifique', RU: 'Для этого действия требуется определенный элемент', UA: 'Для цієї дії потрібен певний предмет' },
-        'unavailable'            :        { TW: '該動作目前不可用', CN: '该动作当前不可用', EN: 'This action is currently unavailable', DE: 'Diese Aktion ist derzeit nicht verfügbar', FR: 'Cette action est actuellement indisponible', RU: 'Это действие в настоящее время недоступно', UA: 'Ця дія зараз недоступна' },
-        'temporarily_unavailable':        { TW: '該動作暫不可用', CN: '该动作暂不可用', EN: 'This action is temporarily unavailable', DE: 'Diese Aktion ist vorübergehend nicht verfügbar', FR: 'Cette action est temporairement indisponible', RU: 'Это действие временно недоступно', UA: 'Ця дія тимчасово недоступна' },
+        'unavailable'            :        { TW: '該動作目前不可用或對方禁用該動作', CN: '该动作目前不可用或对方禁用该动作', EN: 'This action is unavailable or the target has disabled it', DE: 'Diese Aktion ist nicht verfügbar oder wurde vom Ziel deaktiviert', FR: 'Cette action est indisponible ou désactivée par la cible', RU: 'Действие недоступно или отключено целью', UA: 'Дія недоступна або вимкнена ціллю' },
+        'temporarily_unavailable':        { TW: '該動作目前不可用或對方禁用該動作', CN: '该动作目前不可用或对方禁用该动作', EN: 'This action is unavailable or the target has disabled it', DE: 'Diese Aktion ist nicht verfügbar oder wurde vom Ziel deaktiviert', FR: 'Cette action est indisponible ou désactivée par la cible', RU: 'Действие недоступно или отключено целью', UA: 'Дія недоступна або вимкнена ціллю' },
         'exec_failed'            :        { TW: '執行失敗: {msg}', CN: '执行失败: {msg}', EN: 'Execution failed: {msg}', DE: 'Ausführung fehlgeschlagen: {msg}', FR: 'Échec de l\'exécution : {msg}', RU: 'Не удалось выполнить: {msg}', UA: 'Помилка виконання: {msg}' },
         'pick_action'            :        { TW: '請先選擇一個動作', CN: '请先选择一个动作', EN: 'Please select an action first', DE: 'Bitte wählen Sie zunächst eine Aktion aus', FR: 'Veuillez d\'abord sélectionner une action', RU: 'Сначала выберите действие', UA: 'Спочатку виберіть дію' },
         'no_others'              :        { TW: '房間內沒有其他人', CN: '房间内没有其他人', EN: 'No other members in the room', DE: 'Keine anderen Mitglieder im Raum', FR: 'Aucun autre membre dans la salle', RU: 'В комнате нет других участников', UA: 'У кімнаті немає інших учасників' },
@@ -294,6 +294,8 @@
 
     QiActI18n.register('ui', {
         'settings': { TW:'設定', CN:'设置', EN:'Settings', DE:'Einstellungen', FR:'Paramètres', RU:'Настройки', UA:'Налаштування' },
+        'interaction_grid': { TW:'互動格', CN:'互动格', EN:'Interaction grid', DE:'Interaktionsraster', FR:'Grille interactive', RU:'Сетка взаимодействия', UA:'Сітка взаємодії' },
+        'interaction_grid_title': { TW:'顯示或隱藏人物身體互動格', CN:'显示或隐藏人物身体互动格', EN:'Show or hide character interaction grids', DE:'Interaktionsraster ein- oder ausblenden', FR:'Afficher ou masquer les grilles interactives', RU:'Показать или скрыть сетку взаимодействия', UA:'Показати або приховати сітку взаємодії' },
         'mode_favorite': { TW:'收藏', CN:'收藏', EN:'Favorites', DE:'Favoriten', FR:'Favoris', RU:'Избранное', UA:'Вибране' },
         'mode_favorite_title': { TW:'管理與使用所有收藏動作', CN:'管理与使用所有收藏动作', EN:'Manage and use all favorite actions', DE:'Alle Favoriten verwalten und verwenden', FR:'Gérer et utiliser tous les favoris', RU:'Управление всеми избранными действиями', UA:'Керування всіма вибраними діями' }
     });
@@ -303,6 +305,7 @@
         'theme': { TW:'主題', CN:'主题', EN:'Theme', DE:'Thema', FR:'Thème', RU:'Тема', UA:'Тема' },
         'auto': { TW:'自動', CN:'自动', EN:'Auto', DE:'Auto', FR:'Auto', RU:'Авто', UA:'Авто' },
         'chat_button': { TW:'收納到 BC 聊天室按鈕列', CN:'收纳到 BC 聊天室按钮栏', EN:'Dock in the BC chat-room buttons', DE:'In der BC-Chat-Schaltflächenleiste andocken', FR:'Ancrer dans les boutons de chat BC', RU:'Закрепить на панели кнопок BC', UA:'Закріпити на панелі кнопок BC' }
+        ,'enable_xiaosu': { TW:'啟用小酥動作包', CN:'启用小酥动作包', EN:'Enable XiaoSu action pack', DE:'XiaoSu-Aktionspaket aktivieren', FR:'Activer le pack d’actions XiaoSu', RU:'Включить набор действий XiaoSu', UA:'Увімкнути набір дій XiaoSu' }
     });
     QiActI18n.register('editor', {
         'preview_label': { TW:'效果預覽', CN:'效果预览', EN:'Preview', DE:'Vorschau', FR:'Aperçu', RU:'Предпросмотр', UA:'Попередній перегляд' }

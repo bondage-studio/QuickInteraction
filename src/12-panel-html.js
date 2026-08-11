@@ -44,20 +44,19 @@
         <button class="xsact-mode-tab active" data-mode="part" title="' + QiActT('ui.mode_part_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.mode_part') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="favorite" title="' + QiActT('ui.mode_favorite_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.mode_favorite') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
-        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '">' + svgIcon('custom', 14) + '<span>' + QiActT('ui.mode_custom') + '</span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '"><span class="xsact-custom-tab-main">' + svgIcon('custom', 14) + '<span class="xsact-custom-tab-label">' + QiActT('ui.mode_custom') + '</span></span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
+      </div>\
+      <div class="xsact-qa-panel-footer">\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="' + QiActT('ui.self_title') + '">' + svgIcon('user', 14) + '<span>' + QiActT('ui.self') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="' + QiActT('ui.all_title') + '">' + svgIcon('users', 14) + '<span>' + QiActT('ui.all') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="' + QiActT('ui.fav_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.fav') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-grid-btn" title="' + QiActT('ui.interaction_grid_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.interaction_grid') + '</span><span class="xsact-pill-dot"></span></button>\
+        <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="' + QiActT('ui.x3_title') + '">' + svgIcon('bolt', 14) + '<span>' + QiActT('ui.x3') + '</span></button>\
       </div>\
       <div class="xsact-qa-panel-body" id="xsact-action-list">\
         <div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>\
       </div>\
     </div>\
-  </div>\
-  <div class="xsact-qa-panel-footer">\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-self-btn" title="' + QiActT('ui.self_title') + '">' + svgIcon('user', 14) + '<span>' + QiActT('ui.self') + '</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-all-btn" title="' + QiActT('ui.all_title') + '">' + svgIcon('users', 14) + '<span>' + QiActT('ui.all') + '</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn xsact-toggle-pill" id="xsact-fav-btn" title="' + QiActT('ui.fav_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.fav') + '</span><span class="xsact-pill-dot"></span></button>\
-    <button class="xsact-qa-mini-btn" id="xsact-fav-clear-btn" title="' + QiActT('ui.fav_clear') + '" data-tooltip-type="danger">' + svgIcon('favRemove', 14) + '</button>\
-    <button class="xsact-qa-mini-btn" id="xsact-x3-btn" title="' + QiActT('ui.x3_title') + '">' + svgIcon('bolt', 14) + '<span>' + QiActT('ui.x3') + '</span></button>\
-    <span class="xsact-version-tag" title="' + QiActT('ui.version') + '">v' + VERSION + '</span>\
   </div>\
   <div class="xsact-qa-state.presets-bar" id="xsact-state.presets-bar"></div>\
   <div class="xsact-resize-handle" id="xsact-resize-handle" title="' + QiActT('ui.resize') + '">' + svgIcon('resize', 14) + '</div>\

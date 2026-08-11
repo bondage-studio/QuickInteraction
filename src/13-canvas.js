@@ -194,22 +194,19 @@
     }
 
     /** 将指定网格提升到最前（解决人物重叠时的选择问题） */
-    var _gridZTop = 89999;
     function bringGridToFront(grid) {
         if (!grid) return;
-        _gridZTop += 1;
-        grid.style.zIndex = _gridZTop;
+        grid.style.zIndex = '89999';
         // 同时降低其他网格
         state.bodyGrids.forEach(function(g) {
-            if (g !== grid && g.style.zIndex > 90000) {
-                g.style.zIndex = 89999;
-            }
+            g.style.zIndex = '89999';
         });
     }
 
     /** 更新所有角色的身体网格 */
     function refreshBodyGrids() {
         clearBodyGrids();
+        if (!state.interactionGridActive) { renderCharList(); return; }
         var layout = getCharLayout();
         var shifts = computeOverlapShifts(layout);
         layout.forEach(function(entry) {
