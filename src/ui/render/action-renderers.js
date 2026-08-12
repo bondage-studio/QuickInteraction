@@ -67,7 +67,7 @@
             inner + '</svg>';
     }
 
-    function updateActionPanel(charObj, partGroup) {
+    function updateActionPanel(charObj, partGroup, renderImmediately) {
         try {
             // 该函数只应在「单部位」动作面板模式下渲染；若当前处于 custom/combo，避免覆盖界面。
             if (state.panelMode !== 'part') return;
@@ -84,6 +84,20 @@
             }
 
             titleEl.textContent = (characterDisplayName(charObj) || '?') + ' → ' + QiActT('part.' + partGroup);
+
+            // Paint the selected zone before entering BC's synchronous action resolver.
+            // The token prevents an older tap from replacing a newer selection.
+            if (!renderImmediately) {
+                var renderToken = (state._actionRenderToken || 0) + 1;
+                state._actionRenderToken = renderToken;
+                listEl.innerHTML = '<div class="xsact-qa-empty xsact-action-loading">…</div>';
+                requestAnimationFrame(function() {
+                    if (state._actionRenderToken !== renderToken || state.panelMode !== 'part' ||
+                        state.selectedTarget !== charObj || canonicalPartGroup(state.selectedPart) !== canonicalPartGroup(partGroup)) return;
+                    updateActionPanel(charObj, partGroup, true);
+                });
+                return;
+            }
 
             var actions = getActionsForPart(partGroup, charObj);
             if (!Array.isArray(actions) || actions.length === 0) {

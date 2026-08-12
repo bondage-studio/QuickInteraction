@@ -4123,7 +4123,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var inner = P[name] || "";
         return '<svg class="xsact-ico" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + "</svg>";
       }
-      function updateActionPanel(charObj, partGroup) {
+      function updateActionPanel(charObj, partGroup, renderImmediately) {
         try {
           if (state.panelMode !== "part") return;
           if (!state.actionPanelEl) return;
@@ -4136,6 +4136,16 @@ One of mods you are using is using an old version of SDK. It will work for now b
             return;
           }
           titleEl.textContent = (characterDisplayName(charObj) || "?") + " → " + QiActT("part." + partGroup);
+          if (!renderImmediately) {
+            var renderToken = (state._actionRenderToken || 0) + 1;
+            state._actionRenderToken = renderToken;
+            listEl.innerHTML = '<div class="xsact-qa-empty xsact-action-loading">…</div>';
+            requestAnimationFrame(function() {
+              if (state._actionRenderToken !== renderToken || state.panelMode !== "part" || state.selectedTarget !== charObj || canonicalPartGroup(state.selectedPart) !== canonicalPartGroup(partGroup)) return;
+              updateActionPanel(charObj, partGroup, true);
+            });
+            return;
+          }
           var actions = getActionsForPart(partGroup, charObj);
           if (!Array.isArray(actions) || actions.length === 0) {
             listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT("render.no_actions") + "</div>";

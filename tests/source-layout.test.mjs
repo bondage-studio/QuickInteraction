@@ -97,6 +97,8 @@ test('part availability reuses the initial BC filtering result', () => {
     assert.match(catalog, /allowedCache\[candidateGroup\] = allowedSet/);
     assert.equal((catalog.match(/var allowedCache = \{\}/g) || []).length, 1);
     assert.match(renderer, /getActivityLabel\(act, act\.Group \|\| partGroup\)/);
+    assert.match(renderer, /requestAnimationFrame\(function\(\)/);
+    assert.match(renderer, /state\._actionRenderToken/);
     assert.match(catalog, /function activityDictionaryFallback/);
     assert.equal(catalog.includes('for (var i = 0; i < arr.length; i++)'), false);
 });
