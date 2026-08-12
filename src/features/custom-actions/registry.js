@@ -171,15 +171,18 @@
         '躺上去',
         '拉上床', '拉到床上'
     ];
+    var _forceAvailableCache = Object.create(null);
     function isForceAvailableActivity(activityName, displayName) {
         try {
+            var cacheKey = String(activityName || '') + '|' + String(displayName || '');
+            if (Object.prototype.hasOwnProperty.call(_forceAvailableCache, cacheKey)) return _forceAvailableCache[cacheKey];
             // 多来源解析显示名：传入的 displayName、已导入自定义动作名、字典标签、原始活动名（可能内嵌中文）。
             // echo/sugarch 原始动作名（如「躺上去」或带前后缀）无 QiAct_ 记录，靠标签与原始名兜底。
             var cands = [];
             if (displayName) cands.push(String(displayName));
             var ca = caFindByActivityName(activityName);
             if (ca && ca.name) cands.push(String(ca.name));
-            if (typeof getActivityLabelFallback === 'function' && activityName) {
+            if (!displayName && typeof getActivityLabelFallback === 'function' && activityName) {
                 var lbl = getActivityLabelFallback(activityName, '');
                 if (lbl) cands.push(String(lbl));
             }
@@ -188,10 +191,10 @@
                 var disp = cands[c].trim();
                 if (!disp) continue;
                 for (var i = 0; i < FORCE_AVAILABLE_ACTION_NAMES.length; i++) {
-                    if (disp.indexOf(FORCE_AVAILABLE_ACTION_NAMES[i]) !== -1) return true; // 命中即强制可用
+                    if (disp.indexOf(FORCE_AVAILABLE_ACTION_NAMES[i]) !== -1) return (_forceAvailableCache[cacheKey] = true); // 命中即强制可用
                 }
             }
-            return false;
+            return (_forceAvailableCache[cacheKey] = false);
         } catch (e) { return false; }
     }
     /**

@@ -35,3 +35,21 @@
 npm.cmd run build
 npm.cmd test
 ```
+
+## 2026-08-12：v1.4.3 效能收尾
+
+- 身體部位共用同一份幾何資料；場景熱區使用藍色直角 DOM，人物選擇器與動作編輯器使用粉色圓角 SVG。
+- Mouth、Neck、Nipples、Torso 等重複格保留完整外觀，但統一為代表部位名稱、收藏鍵與動作查詢。
+- 移除 `DrawProcess`、`ChatRoomMenuDraw` 與每三秒人物網格重建；人物加入／離開改用 BC SDK Hook，位置只在數值改變時更新。
+- 修正 `ChatRoomRun` 被誤當成進房事件而造成的每幀骨架重建。
+- `ActivityAllowedForGroup` 視為 BC 的權威狀態、權限、方向與道具過濾結果，不再對每個動作進行第二次相同驗證。
+- 強制顯示動作改用判定快取；BC API 正常回傳空清單時不再進入全量 fallback。
+- `ActivityDictionary` 建立一次索引，避免每個缺少翻譯的動作反覆掃描完整字典。
+- 動作載入延後至下一個動畫影格，快速切換部位時會取消過期結果，避免舊清單覆蓋新選擇。
+- 人物 popover 保持開啟以便改選部位，並以 CSS containment 隔離動作列表更新造成的重繪。
+
+### 驗證
+
+- `npm.cmd test`：11/11 通過。
+- `npm.cmd run build`：成功產生 v1.4.3 使用者腳本與 ESM 產物。
+- `git diff --check`：通過。

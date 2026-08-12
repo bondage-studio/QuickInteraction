@@ -846,28 +846,26 @@ One of mods you are using is using an old version of SDK. It will work for now b
         targetChar = targetChar || state.selectedTarget;
         var actions = [];
         var groupCandidates = getPartActionGroups(partGroup);
-        var allowedCache = {};
+        var hasAuthoritativeResult = false;
         if (targetChar && typeof ActivityAllowedForGroup === "function") {
           try {
             groupCandidates.forEach(function(candidateGroup) {
               var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
               if (!Array.isArray(allowed)) return;
-              var allowedSet = {};
+              hasAuthoritativeResult = true;
               allowed.forEach(function(a) {
                 if (!a) return;
                 var name = a.Activity ? a.Activity.Name || "" : a.Name || "";
                 if (name) {
-                  allowedSet[name] = true;
                   actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
                 }
               });
-              allowedCache[candidateGroup] = allowedSet;
             });
           } catch (e) {
             console.warn("[QiAct] ActivityAllowedForGroup 失败，改用全量列表:", e.message);
           }
         }
-        if (actions.length === 0 && window.BC_Interactive_Index && window.BC_Interactive_Index.Interactive_Index) {
+        if (!hasAuthoritativeResult && actions.length === 0 && window.BC_Interactive_Index && window.BC_Interactive_Index.Interactive_Index) {
           actions = window.BC_Interactive_Index.Interactive_Index.filter(function(act) {
             return groupCandidates.indexOf(act.Target_Group) !== -1;
           }).map(function(act) {
@@ -879,7 +877,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
             };
           });
         }
-        if (actions.length === 0 && window.ActivityFemale3DCG) {
+        if (!hasAuthoritativeResult && actions.length === 0 && window.ActivityFemale3DCG) {
           var raw = window.ActivityFemale3DCG.filter(function(a) {
             if (!a.Name || !a.Target) return false;
             var targets = Array.isArray(a.Target) ? a.Target : [a.Target];
@@ -924,41 +922,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
           }
         }
         var seen = {};
-        function allowedNamesFor(g) {
-          if (g in allowedCache) return allowedCache[g];
-          var set = null;
-          if (targetChar && typeof ActivityAllowedForGroup === "function") {
-            try {
-              var list = ActivityAllowedForGroup(targetChar, g);
-              if (Array.isArray(list)) {
-                set = {};
-                list.forEach(function(x) {
-                  var n = x && (x.Activity ? x.Activity.Name : x.Name);
-                  if (n) set[n] = true;
-                });
-              }
-            } catch (e) {
-              set = null;
-            }
-          }
-          allowedCache[g] = set;
-          return set;
-        }
-        function actionExecutable(name, group) {
-          var fam = getPartActionGroups(group);
-          var sawAuthoritative = false;
-          for (var i = 0; i < fam.length; i++) {
-            var set = allowedNamesFor(fam[i]);
-            if (set === null) continue;
-            sawAuthoritative = true;
-            if (set[name]) return true;
-          }
-          return !sawAuthoritative;
-        }
         return actions.filter(function(a) {
           if (!a.Name || a.Name.indexOf("MISSING") !== -1 || a.translatedName && (a.translatedName.indexOf("[STRING_RETRIEVAL_FAILED]") !== -1 || a.translatedName.indexOf("MISSING TEXT IN") !== -1 || a.translatedName.indexOf("MISSING ACTIVITY") !== -1)) return false;
           if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
-          if (!isForceAvailableActivity(a.Name, a.translatedName) && !actionExecutable(a.Name, a.Group || partGroup)) return false;
           if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;
           if (a.Name.indexOf(CA_PREFIX) === 0) {
             var ca = caFindByActivityName(a.Name);
@@ -1647,13 +1613,16 @@ One of mods you are using is using an old version of SDK. It will work for now b
         "拉上床",
         "拉到床上"
       ];
+      var _forceAvailableCache = /* @__PURE__ */ Object.create(null);
       function isForceAvailableActivity(activityName, displayName) {
         try {
+          var cacheKey = String(activityName || "") + "|" + String(displayName || "");
+          if (Object.prototype.hasOwnProperty.call(_forceAvailableCache, cacheKey)) return _forceAvailableCache[cacheKey];
           var cands = [];
           if (displayName) cands.push(String(displayName));
           var ca = caFindByActivityName(activityName);
           if (ca && ca.name) cands.push(String(ca.name));
-          if (typeof getActivityLabelFallback === "function" && activityName) {
+          if (!displayName && typeof getActivityLabelFallback === "function" && activityName) {
             var lbl = getActivityLabelFallback(activityName, "");
             if (lbl) cands.push(String(lbl));
           }
@@ -1662,10 +1631,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
             var disp = cands[c].trim();
             if (!disp) continue;
             for (var i = 0; i < FORCE_AVAILABLE_ACTION_NAMES.length; i++) {
-              if (disp.indexOf(FORCE_AVAILABLE_ACTION_NAMES[i]) !== -1) return true;
+              if (disp.indexOf(FORCE_AVAILABLE_ACTION_NAMES[i]) !== -1) return _forceAvailableCache[cacheKey] = true;
             }
           }
-          return false;
+          return _forceAvailableCache[cacheKey] = false;
         } catch (e) {
           return false;
         }

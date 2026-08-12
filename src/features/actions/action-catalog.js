@@ -3,7 +3,7 @@
         targetChar = targetChar || state.selectedTarget;
         var actions = [];
         var groupCandidates = getPartActionGroups(partGroup);
-        var allowedCache = {};
+        var hasAuthoritativeResult = false;
 
         // ── 方案 A（推荐）：BC 原生实时可用列表 ──
         if (targetChar && typeof ActivityAllowedForGroup === 'function') {
@@ -11,16 +11,14 @@
                 groupCandidates.forEach(function(candidateGroup) {
                     var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
                     if (!Array.isArray(allowed)) return;
-                    var allowedSet = {};
+                    hasAuthoritativeResult = true;
                     allowed.forEach(function(a) {
                         if (!a) return;
                         var name = a.Activity ? (a.Activity.Name || '') : (a.Name || '');
                         if (name) {
-                            allowedSet[name] = true;
                             actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
                         }
                     });
-                    allowedCache[candidateGroup] = allowedSet;
                 });
             } catch (e) {
                 console.warn('[QiAct] ActivityAllowedForGroup 失败，改用全量列表:', e.message);
@@ -28,7 +26,7 @@
         }
 
         // ── 方案 B：BC_Interactive_Index 精选索引（无实时过滤）──
-        if (actions.length === 0 && window.BC_Interactive_Index && window.BC_Interactive_Index.Interactive_Index) {
+        if (!hasAuthoritativeResult && actions.length === 0 && window.BC_Interactive_Index && window.BC_Interactive_Index.Interactive_Index) {
             actions = window.BC_Interactive_Index.Interactive_Index.filter(function(act) {
                 return groupCandidates.indexOf(act.Target_Group) !== -1;
             }).map(function(act) {
@@ -42,7 +40,7 @@
         }
 
         // ── 方案 C：fallback 从 ActivityFemale3DCG 原始数组构建 ──
-        if (actions.length === 0 && window.ActivityFemale3DCG) {
+        if (!hasAuthoritativeResult && actions.length === 0 && window.ActivityFemale3DCG) {
             var raw = window.ActivityFemale3DCG.filter(function(a) {
                 if (!a.Name || !a.Target) return false;
                 var targets = Array.isArray(a.Target) ? a.Target : [a.Target];
@@ -87,44 +85,14 @@
         // 与执行端同源的权威白名单：execution 用 resolveAllowedActivity → ActivityAllowedForGroup 判定「能否执行」，
         // 显示端必须同源，否则会出现「显示了、点了却报不可用」。ActivityAllowedForGroup 已内含
         // 前置条件(束缚)、权限、自我/对他方向、Needs-道具展开、源头封锁等全部判定，无需再各自复刻。
-        // 按候选部位组缓存其权威可用名集合，避免逐动作重复调用。
-        function allowedNamesFor(g) {
-            if (g in allowedCache) return allowedCache[g];
-            var set = null;
-            if (targetChar && typeof ActivityAllowedForGroup === 'function') {
-                try {
-                    var list = ActivityAllowedForGroup(targetChar, g);
-                    if (Array.isArray(list)) {
-                        set = {};
-                        list.forEach(function(x) { var n = x && (x.Activity ? x.Activity.Name : x.Name); if (n) set[n] = true; });
-                    }
-                } catch (e) { set = null; }
-            }
-            allowedCache[g] = set;
-            return set;
-        }
-        // 动作只要在其部位族任一候选组的权威白名单中即可执行；候选组都能权威判定却都不含它 → 隐藏（点了必然不可用）。
-        // 完全无法权威判定（旧版 BC 无此函数/自定义组解析不出）→ 放行，退回原有数据源行为，避免整块空白。
-        function actionExecutable(name, group) {
-            var fam = getPartActionGroups(group);
-            var sawAuthoritative = false;
-            for (var i = 0; i < fam.length; i++) {
-                var set = allowedNamesFor(fam[i]);
-                if (set === null) continue;
-                sawAuthoritative = true;
-                if (set[name]) return true;
-            }
-            return !sawAuthoritative;
-        }
         return actions.filter(function(a) {
             if (!a.Name || a.Name.indexOf('MISSING') !== -1 ||
                 (a.translatedName && (a.translatedName.indexOf('[STRING_RETRIEVAL_FAILED]') !== -1 ||
                                       a.translatedName.indexOf('MISSING TEXT IN') !== -1 ||
                                       a.translatedName.indexOf('MISSING ACTIVITY') !== -1))) return false;
             if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
-            // 与执行端一致：不在 BC 权威可用列表里的一律不显示（束缚/权限/方向/道具缺失等都在此判定）。
-            // 例外：强制可用白名单动作始终显示（执行端亦强制放行，保持一致）。
-            if (!isForceAvailableActivity(a.Name, a.translatedName) && !actionExecutable(a.Name, a.Group || partGroup)) return false;
+            // ActivityAllowedForGroup already performed BC's state, permission, direction
+            // and item checks. Forced entries are appended separately above.
             // 屏蔽已导入的 echo 原始动作名（双重兜底：ActivityAllowedForGroup hook 已过滤，
             // 但 fallback 数据源和旧数据可能绕过 hook，这里再强制过滤一次）
             if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;

@@ -87,7 +87,7 @@ test('body overlays use shared geometry and event-driven room updates', () => {
     assert.match(styles, /\.xsact-char-popover\{[\s\S]*contain:layout paint style/);
 });
 
-test('part availability reuses the initial BC filtering result', () => {
+test('part availability trusts the initial BC filtering result', () => {
     const context = fs.readFileSync(path.join(root, 'src/core/application-context.js'), 'utf8');
     const catalog = fs.readFileSync(path.join(root, 'src/features/actions/action-catalog.js'), 'utf8');
     const renderer = fs.readFileSync(path.join(root, 'src/ui/render/action-renderers.js'), 'utf8');
@@ -97,8 +97,9 @@ test('part availability reuses the initial BC filtering result', () => {
     assert.match(context, /canonical === 'ItemHands' \? \['ItemHands', 'ItemHandheld'\] : \[canonical\]/);
     assert.match(catalog, /getPartActionGroups\(partGroup\)/);
     assert.equal(catalog.includes('getPartGroupFamily(partGroup)'), false);
-    assert.match(catalog, /allowedCache\[candidateGroup\] = allowedSet/);
-    assert.equal((catalog.match(/var allowedCache = \{\}/g) || []).length, 1);
+    assert.match(catalog, /hasAuthoritativeResult = true/);
+    assert.equal(catalog.includes('function actionExecutable'), false);
+    assert.equal(catalog.includes('function allowedNamesFor'), false);
     assert.match(renderer, /getActivityLabel\(act, act\.Group \|\| partGroup\)/);
     assert.match(renderer, /requestAnimationFrame\(function\(\)/);
     assert.match(renderer, /state\._actionRenderToken/);
