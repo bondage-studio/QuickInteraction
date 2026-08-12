@@ -5935,30 +5935,14 @@ One of mods you are using is using an old version of SDK. It will work for now b
             name: "快捷互动",
             fullName: "Quick Action Launcher",
             version: VERSION,
-            repository: "统一动作操作台"
+            repository: "https://github.com/bondage-studio/QuickInteraction"
           }, { allowReplace: true });
           logD("state.modApi 注册完成");
         } catch (regErr) {
-          console.warn("[QiAct] registerMod 异常（可能已注册）:", regErr.message);
-          try {
-            var mods = bcModSdk.getModsInfo ? bcModSdk.getModsInfo() : [];
-            for (var mi = 0; mi < mods.length; mi++) {
-              if (mods[mi].name === "快捷互动") {
-                state.modApi = mods[mi];
-                break;
-              }
-            }
-          } catch (_) {
-          }
-          if (!state.modApi) state.modApi = {};
+          console.error("[QiAct] registerMod 失败，停止初始化:", regErr);
+          return;
         }
-        await waitFor(function() {
-          try {
-            return Player && typeof Player.MemberNumber === "number";
-          } catch (_) {
-            return false;
-          }
-        });
+        await waitForLogin();
         if (state.disposed || runtime && runtime.disposed) return;
         logD("玩家已登入:", Player.AccountName || Player.Name);
         try {
@@ -6193,6 +6177,27 @@ One of mods you are using is using an old version of SDK. It will work for now b
           showAnnounceBanner,
           hideUpdateBanner
         };
+      }
+      function waitForLogin() {
+        try {
+          if (typeof Player !== "undefined" && Player && Player.MemberNumber !== void 0) return Promise.resolve();
+        } catch (_) {
+        }
+        return new Promise(function(resolve) {
+          var removeHook = state.modApi.hookFunction("LoginResponse", 0, function(args, next) {
+            var result = next(args);
+            queueMicrotask(function() {
+              try {
+                if (typeof Player === "undefined" || !Player || Player.MemberNumber === void 0) return;
+              } catch (_) {
+                return;
+              }
+              removeHook();
+              resolve();
+            });
+            return result;
+          });
+        });
       }
       main().catch(function(err) {
         console.error("[QiAct] 初始化失败:", err);

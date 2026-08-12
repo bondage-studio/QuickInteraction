@@ -75,22 +75,13 @@
             }, { allowReplace: true }); // allowReplace：支持 CDP 反复注入测试时干净替换旧实例
             logD('state.modApi 注册完成');
         } catch (regErr) {
-            // 已注册过（热重注入场景）：尝试从已有 mods 中取回
-            console.warn('[QiAct] registerMod 异常（可能已注册）:', regErr.message);
-            try {
-                var mods = bcModSdk.getModsInfo ? bcModSdk.getModsInfo() : [];
-                for (var mi = 0; mi < mods.length; mi++) {
-                    if (mods[mi].name === '快捷互动') { state.modApi = mods[mi]; break; }
-                }
-            } catch (_) { /* 忽略：取回已注册 mod 失败则降级为空对象继续运行 */ }
-            if (!state.modApi) state.modApi = {}; // 降级：无 state.modApi 但继续运行
+            // getModsInfo() 只回傳描述資料，不是可用的 ModAPI；沒有 API 就不能安全安裝 hook。
+            console.error('[QiAct] registerMod 失败，停止初始化:', regErr);
+            return;
         }
 
         // Phase 2: 等玩家登入
-        await waitFor(function() {
-            try { return Player && typeof Player.MemberNumber === 'number'; }
-            catch (_) { return false; }
-        });
+        await waitForLogin();
         if (state.disposed || (runtime && runtime.disposed)) return;
         logD('玩家已登入:', Player.AccountName || Player.Name);
 
@@ -250,6 +241,25 @@
         };
 
         logD('✅ 初始化完成 · 版本 ' + VERSION);
+    }
+
+    function waitForLogin() {
+        try {
+            if (typeof Player !== 'undefined' && Player && Player.MemberNumber !== undefined) return Promise.resolve();
+        } catch (_) { /* 尚未建立 Player */ }
+        return new Promise(function(resolve) {
+            var removeHook = state.modApi.hookFunction('LoginResponse', 0, function(args, next) {
+                var result = next(args);
+                queueMicrotask(function() {
+                    try {
+                        if (typeof Player === 'undefined' || !Player || Player.MemberNumber === undefined) return;
+                    } catch (_) { return; }
+                    removeHook();
+                    resolve();
+                });
+                return result;
+            });
+        });
     }
 
     // 启动
