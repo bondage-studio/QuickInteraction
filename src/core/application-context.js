@@ -223,6 +223,29 @@
         var canonical = canonicalPartGroup(group);
         return canonical === 'ItemHands' ? ['ItemHands', 'ItemHandheld'] : [canonical];
     }
+    // 部位名 → BC AssetGroup 对象（找不到时用最小占位）。
+    function resolveFocusGroup(groupName) {
+        if (typeof AssetGroup !== 'undefined' && Array.isArray(AssetGroup)) {
+            var g = AssetGroup.find(function(x) { return x && x.Name === groupName; });
+            if (g) return g;
+        }
+        return { Name: groupName };
+    }
+    // ActivityAllowedForGroup 包装：临时把角色 FocusGroup 设为查询部位再枚举。
+    // LSCG 的 Give/Steal/Swap（交出/偷窃/交换物品）等 CustomPrereq 直接读
+    // acted.FocusGroup.Name（要求聚焦在 ItemHandheld）。原生 UI 点击部位会设置该值，
+    // 本插件直接枚举/发包不经过点击，必须手动补上——否则这些动作在 prereq 源头即被挡掉，
+    // 显示端看不到、执行端预校验（findAllowedActivity）也会判不可用。发完立即还原。
+    function activitiesAllowedForGroup(char, groupName) {
+        if (!char || typeof ActivityAllowedForGroup !== 'function') return [];
+        var prev = char.FocusGroup;
+        try {
+            char.FocusGroup = resolveFocusGroup(groupName);
+            return ActivityAllowedForGroup(char, groupName) || [];
+        } finally {
+            char.FocusGroup = prev;
+        }
+    }
     function isSamePartFamily(a, b) { return canonicalPartGroup(a) === canonicalPartGroup(b); }
     function updatePartFamilySelection(container, selectedGroup, selector) {
         if (!container) return;
@@ -450,7 +473,7 @@
             if (typeof ActivityAllowedForGroup === 'function' && Player) {
                 groups.forEach(function(g) {
                     try {
-                        var acts = ActivityAllowedForGroup(Player, g);
+                        var acts = activitiesAllowedForGroup(Player, g);
                         if (acts.some(function(a) { return a.Activity && a.Activity.Name === name; })) {
                             out.push(g + '|' + name);
                             expanded = true;

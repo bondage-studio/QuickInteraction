@@ -583,6 +583,25 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var canonical = canonicalPartGroup(group);
         return canonical === "ItemHands" ? ["ItemHands", "ItemHandheld"] : [canonical];
       }
+      function resolveFocusGroup(groupName) {
+        if (typeof AssetGroup !== "undefined" && Array.isArray(AssetGroup)) {
+          var g = AssetGroup.find(function(x) {
+            return x && x.Name === groupName;
+          });
+          if (g) return g;
+        }
+        return { Name: groupName };
+      }
+      function activitiesAllowedForGroup(char, groupName) {
+        if (!char || typeof ActivityAllowedForGroup !== "function") return [];
+        var prev = char.FocusGroup;
+        try {
+          char.FocusGroup = resolveFocusGroup(groupName);
+          return ActivityAllowedForGroup(char, groupName) || [];
+        } finally {
+          char.FocusGroup = prev;
+        }
+      }
       function isSamePartFamily(a, b) {
         return canonicalPartGroup(a) === canonicalPartGroup(b);
       }
@@ -810,7 +829,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           if (typeof ActivityAllowedForGroup === "function" && Player) {
             groups.forEach(function(g) {
               try {
-                var acts = ActivityAllowedForGroup(Player, g);
+                var acts = activitiesAllowedForGroup(Player, g);
                 if (acts.some(function(a) {
                   return a.Activity && a.Activity.Name === name;
                 })) {
@@ -850,7 +869,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         if (targetChar && typeof ActivityAllowedForGroup === "function") {
           try {
             groupCandidates.forEach(function(candidateGroup) {
-              var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
+              var allowed = activitiesAllowedForGroup(targetChar, candidateGroup);
               if (!Array.isArray(allowed)) return;
               hasAuthoritativeResult = true;
               allowed.forEach(function(a) {
@@ -1209,7 +1228,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function findAllowedActivity(char, group, name) {
         if (typeof ActivityAllowedForGroup !== "function") return null;
         try {
-          var allowed = ActivityAllowedForGroup(char, group);
+          var allowed = activitiesAllowedForGroup(char, group);
           if (!Array.isArray(allowed)) return null;
           return allowed.find(function(a) {
             if (!a) return false;

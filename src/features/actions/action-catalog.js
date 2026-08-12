@@ -9,7 +9,9 @@
         if (targetChar && typeof ActivityAllowedForGroup === 'function') {
             try {
                 groupCandidates.forEach(function(candidateGroup) {
-                    var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
+                    // 经包装枚举：设置 targetChar.FocusGroup 后再调 ActivityAllowedForGroup，
+                    // 否则 LSCG 交出/偷窃/交换物品等读 FocusGroup 的 prereq 会被源头过滤。
+                    var allowed = activitiesAllowedForGroup(targetChar, candidateGroup);
                     if (!Array.isArray(allowed)) return;
                     hasAuthoritativeResult = true;
                     allowed.forEach(function(a) {

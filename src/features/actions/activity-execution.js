@@ -181,7 +181,8 @@
     function findAllowedActivity(char, group, name) {
         if (typeof ActivityAllowedForGroup !== 'function') return null;
         try {
-            var allowed = ActivityAllowedForGroup(char, group);
+            // 与显示端同源：设置 FocusGroup 后枚举，交出物品等 prereq 才能通过。
+            var allowed = activitiesAllowedForGroup(char, group);
             if (!Array.isArray(allowed)) return null;
             return allowed.find(function(a) {
                 if (!a) return false;
