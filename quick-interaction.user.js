@@ -2,7 +2,7 @@
 // @name         快捷互动 (QiAct)
 // @name:zh      快捷互动
 // @namespace    https://github.com/bondage-studio/QuickInteraction
-// @version      1.4.2
+// @version      1.4.3
 // @description  Bondage Club - 统一动作操作台。一键进入动作模式，在聊天室场景内直接点人物部位选动作，绕过原生5步嵌套菜单。
 // @author       Tao MUSE
 // @homepageURL  https://github.com/bondage-studio/QuickInteraction
@@ -399,7 +399,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function silent(e, ctx) {
         return;
       }
-      const VERSION = "1.4.2";
+      const VERSION = "1.4.3";
       const S_ENABLED = "xsact_qa_enabled";
       const S_FAVS = "xsact_qa_favorites";
       const S_PRESETS = "xsact_qa_presets";
@@ -1997,6 +1997,58 @@ One of mods you are using is using an old version of SDK. It will work for now b
         }
         html += "</div>";
         listEl.innerHTML = html;
+        if (!editMode) {
+          var scEl = listEl.querySelector(".xsact-ca-list");
+          if (scEl) {
+            var scDown = false, scStartY = 0, scStartTop = 0, scMoved = false, scPid = null;
+            scEl.addEventListener("pointerdown", function(e) {
+              if (e.button !== 0) return;
+              if (e.target.closest("button, input, label, a")) return;
+              scDown = true;
+              scMoved = false;
+              scPid = e.pointerId;
+              scStartY = e.clientY;
+              scStartTop = scEl.scrollTop;
+              try {
+                scEl.setPointerCapture(e.pointerId);
+              } catch (_) {
+              }
+            });
+            scEl.addEventListener("pointermove", function(e) {
+              if (!scDown) return;
+              var dy = e.clientY - scStartY;
+              if (!scMoved && Math.abs(dy) < 4) return;
+              scMoved = true;
+              scEl.classList.add("is-grabscroll");
+              scEl.scrollTop = scStartTop - dy;
+            });
+            var scEnd = function() {
+              scDown = false;
+              scEl.classList.remove("is-grabscroll");
+              if (scPid !== null) {
+                try {
+                  scEl.releasePointerCapture(scPid);
+                } catch (_) {
+                }
+                scPid = null;
+              }
+            };
+            scEl.addEventListener("pointerup", scEnd);
+            scEl.addEventListener("pointercancel", scEnd);
+            scEl.addEventListener("wheel", function(e) {
+              var d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+              var before = scEl.scrollTop;
+              scEl.scrollTop += d;
+              if (scEl.scrollTop !== before) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }, { passive: false });
+            scEl.addEventListener("touchmove", function(e) {
+              e.stopPropagation();
+            }, { passive: true });
+          }
+        }
         var newBtn = listEl.querySelector("#xsact-ca-new");
         if (newBtn) newBtn.addEventListener("click", function() {
           state.editingCustomId = caNewId();
@@ -4671,8 +4723,13 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-ca-echo-clean-text b{color:#FF8FA6;font-weight:700;}",
           ".xsact-ca-echo-clean-btn{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,92,122,0.5);background:rgba(255,92,122,0.16);color:#FFB3C6;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}",
           ".xsact-ca-echo-clean-btn:hover{background:rgba(255,92,122,0.28);border-color:#FF5C7A;color:#FFFFFF;}",
-          ".xsact-ca-list{display:flex;flex-direction:column;gap:10px;width:auto;max-width:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1 1 auto!important;scrollbar-width:thin;}",
-          ".xsact-ca-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;max-width:100%;padding:12px 14px;border-radius:10px;background:var(--xs-card-bg);border:1px solid var(--xs-border);transition:border-color .15s,background .15s,transform .1s;min-width:0;overflow:hidden;}",
+          ".xsact-ca-list{display:flex;flex-direction:column;gap:10px;width:auto;max-width:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1 1 auto!important;scrollbar-width:thin;scrollbar-color:var(--xs-accent) transparent;}",
+          ".xsact-ca-list::-webkit-scrollbar{width:6px;}",
+          ".xsact-ca-list::-webkit-scrollbar-track{background:transparent;}",
+          ".xsact-ca-list::-webkit-scrollbar-thumb{background:var(--xs-accent);border-radius:3px;}",
+          ".xsact-ca-list::-webkit-scrollbar-thumb:hover{background:rgba(var(--xs-accent-rgb),0.8);}",
+          ".xsact-ca-list.is-grabscroll{cursor:grabbing;user-select:none;}",
+          ".xsact-ca-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;max-width:100%;padding:12px 14px;border-radius:10px;background:var(--xs-card-bg);border:1px solid var(--xs-border);transition:border-color .15s,background .15s,transform .1s;min-width:0;overflow:hidden;flex-shrink:0;}",
           ".xsact-ca-card:hover{border-color:var(--xs-border-strong);background:var(--xs-hover);transform:translateY(-1px);}",
           ".xsact-ca-info{display:flex;flex-direction:column;gap:5px;min-width:0;overflow:hidden;}",
           ".xsact-ca-title{display:flex;align-items:center;gap:8px;min-width:0;}",

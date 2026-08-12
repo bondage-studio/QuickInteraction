@@ -1,16 +1,16 @@
 {
-  "version": "1.4.2",
+  "version": "1.4.3",
   "date": "2026-08-12",
   "severity": "normal",
   "summary": [
-    "修复「我的动作」列表卡片：左侧文字未设置最小宽度导致不收缩，挤压右侧操作按钮（执行/编辑/删除）被截断在卡片外"
+    "「我的动作」列表支持滚轮滚动与鼠标拖曳滚动；卷轴改用粉色主题色；卡片过多时不再被纵向压缩变形"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.2",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.3",
   "announcement": {
-    "id": "2026-08-12-fix-ca-button-truncation",
-    "title": "QiAct v1.4.2 · 修复自定义动作列表按钮截断",
+    "id": "2026-08-12-ca-list-scroll",
+    "title": "QiAct v1.4.3 · 自定义动作列表滚动优化",
     "severity": "normal",
-    "message": "本次更新（v1.4.2）修复一个界面显示问题：\n\n「我的动作」列表中的卡片，左侧动作名称/部位标签因未设置最小宽度而不收缩，挤压右侧操作按钮，使「执行 / 编辑 / 删除」三个按钮被截断在卡片之外。\n\n修复后：文本在空间不足时会正确显示省略号，三个操作按钮完整显示在卡片右侧。\n\n重新注入脚本即可生效。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.2"
+    "message": "本次更新（v1.4.3）优化「我的动作」列表的滚动体验：\n\n1. 支持滚轮滚动 —— 修复宿主页面拦截滚轮导致列表滚不动的问题。\n2. 支持鼠标拖曳滚动 —— 按住列表空白处拖动即可滚动，鼠标移出列表也会持续，直到松开左键。\n3. 卷轴改用粉色主题色，随主题自动适配。\n4. 卡片过多时不再被纵向压缩变形。\n\n重新注入脚本即可生效。",
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.3"
   }
 }

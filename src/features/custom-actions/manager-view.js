@@ -175,6 +175,43 @@
         html += '</div>';
         listEl.innerHTML = html;
 
+        // 拖曳捲動 + 滚轮接管（非编辑模式；编辑模式用原生 HTML5 拖拽排序，避免冲突）。
+        // BC 宿主页在 capture 阶段 preventDefault 滚动，故手动接管 wheel/touchmove。
+        if (!editMode) {
+            var scEl = listEl.querySelector('.xsact-ca-list');
+            if (scEl) {
+                var scDown = false, scStartY = 0, scStartTop = 0, scMoved = false, scPid = null;
+                scEl.addEventListener('pointerdown', function(e) {
+                    if (e.button !== 0) return;
+                    if (e.target.closest('button, input, label, a')) return; // 控件正常点击
+                    scDown = true; scMoved = false; scPid = e.pointerId;
+                    scStartY = e.clientY; scStartTop = scEl.scrollTop;
+                    try { scEl.setPointerCapture(e.pointerId); } catch (_) {} // 捕获指针：离开元素仍持续拖动，直到松开左键
+                });
+                scEl.addEventListener('pointermove', function(e) {
+                    if (!scDown) return;
+                    var dy = e.clientY - scStartY;
+                    if (!scMoved && Math.abs(dy) < 4) return; // 阈值：区分点击与拖曳
+                    scMoved = true;
+                    scEl.classList.add('is-grabscroll');
+                    scEl.scrollTop = scStartTop - dy;
+                });
+                var scEnd = function() {
+                    scDown = false; scEl.classList.remove('is-grabscroll');
+                    if (scPid !== null) { try { scEl.releasePointerCapture(scPid); } catch (_) {} scPid = null; }
+                };
+                scEl.addEventListener('pointerup', scEnd);
+                scEl.addEventListener('pointercancel', scEnd);
+                scEl.addEventListener('wheel', function(e) {
+                    var d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; // 行模式换算成像素
+                    var before = scEl.scrollTop;
+                    scEl.scrollTop += d;
+                    if (scEl.scrollTop !== before) { e.preventDefault(); e.stopPropagation(); }
+                }, { passive: false });
+                scEl.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+            }
+        }
+
         var newBtn = listEl.querySelector('#xsact-ca-new');
         if (newBtn) newBtn.addEventListener('click', function() {
             state.editingCustomId = caNewId();
