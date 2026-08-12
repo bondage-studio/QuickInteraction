@@ -3035,7 +3035,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var btn = document.createElement("button");
         btn.id = "xsact-toggle-btn";
         btn.type = "button";
-        btn.className = "blank-button button HideOnPopup chat-room-button xsact-chat-toggle";
+        btn.className = "blank-button button chat-room-button xsact-chat-toggle";
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
         btn.addEventListener("click", function(e) {
           e.preventDefault();

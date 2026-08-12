@@ -26,7 +26,10 @@
     function createChatRoomToggleButton() {
         var btn = document.createElement('button');
         btn.id = 'xsact-toggle-btn'; btn.type = 'button';
-        btn.className = 'blank-button button HideOnPopup chat-room-button xsact-chat-toggle';
+        // 不加 HideOnPopup：那是 BC 的「彈窗時隱藏」機制，會在打開任意對話框/主頁面時把按鈕藏掉，
+        // 且關閉後常無法可靠復原（本按鈕的顯隱同時被協調器收合邏輯與 guard 迴圈接管，三方打架）。
+        // 想要的「跟隨收納列收合」由 registerChatRoomToggle 的 opts 不帶 collapse:false（即跟隨收合）達成。
+        btn.className = 'blank-button button chat-room-button xsact-chat-toggle';
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
         btn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleActionMode(); updateToggleBtnStyle(); });
         state.toggleBtnEl = btn; updateToggleBtnStyle(); return btn;
