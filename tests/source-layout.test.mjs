@@ -15,7 +15,7 @@ test('compat source manifest is explicit, complete and has semantic names', () =
     }
     const source = readCompatSource(root);
     assert.equal(source.files.length, COMPAT_SOURCE_FILES.length);
-    assert.equal(source.version, '1.4.1');
+    assert.match(source.version, /^\d+\.\d+\.\d+$/); // 版本會隨發佈變動，只校驗格式，不釘死字面值
     assert.ok(source.translationCount > 0);
 });
 
