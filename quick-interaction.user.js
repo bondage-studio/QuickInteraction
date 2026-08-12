@@ -861,6 +861,27 @@ One of mods you are using is using an old version of SDK. It will work for now b
             return { Name: a.Name || "", Group: actualGroup, translatedName: getActivityLabelFallback(a.Name, actualGroup), Item: null };
           });
         }
+        if (typeof caRawAllActivities === "function" && typeof isForceAvailableActivity === "function") {
+          var _toSelf = !!(targetChar && targetChar.IsPlayer && targetChar.IsPlayer());
+          var _rawAll = caRawAllActivities(typeof Player !== "undefined" && Player && Player.AssetFamily || "Female3DCG");
+          if (Array.isArray(_rawAll)) {
+            _rawAll.forEach(function(a) {
+              if (!a || !a.Name) return;
+              var g = _toSelf ? a.TargetSelf === true ? a.Target : a.TargetSelf : a.Target;
+              g = Array.isArray(g) ? g : g ? [g] : [];
+              var hit = g.find(function(x) {
+                return groupCandidates.indexOf(x) !== -1;
+              });
+              if (!hit) return;
+              var disp = (caFindByActivityName(a.Name) || {}).name || getActivityLabelFallback(a.Name, hit);
+              if (!isForceAvailableActivity(a.Name, disp)) return;
+              if (actions.some(function(x) {
+                return x.Name === a.Name;
+              })) return;
+              actions.push({ Name: a.Name, Group: hit, translatedName: disp, Item: null });
+            });
+          }
+        }
         var seen = {};
         var allowedCache = {};
         function allowedNamesFor(g) {
@@ -897,7 +918,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         return actions.filter(function(a) {
           if (!a.Name || a.Name.indexOf("MISSING") !== -1 || a.translatedName && (a.translatedName.indexOf("[STRING_RETRIEVAL_FAILED]") !== -1 || a.translatedName.indexOf("MISSING TEXT IN") !== -1 || a.translatedName.indexOf("MISSING ACTIVITY") !== -1)) return false;
           if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
-          if (!actionExecutable(a.Name, a.Group || partGroup)) return false;
+          if (!isForceAvailableActivity(a.Name, a.translatedName) && !actionExecutable(a.Name, a.Group || partGroup)) return false;
           if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;
           if (a.Name.indexOf(CA_PREFIX) === 0) {
             var ca = caFindByActivityName(a.Name);
@@ -1212,11 +1233,15 @@ One of mods you are using is using an old version of SDK. It will work for now b
         try {
           var resolved = resolveAllowedActivity(charObj, group, name);
           if (!resolved) {
-            toast(QiActT("toast.unavailable"), "#FF5C5C");
-            return false;
+            var _disp = typeof getActivityLabelFallback === "function" ? getActivityLabelFallback(name, group) : "";
+            if (!isForceAvailableActivity(name, _disp)) {
+              toast(QiActT("toast.unavailable"), "#FF5C5C");
+              return false;
+            }
+          } else {
+            group = resolved.group;
+            activityItem = activityItem || resolved.activity && resolved.activity.Item || null;
           }
-          group = resolved.group;
-          activityItem = activityItem || resolved.activity && resolved.activity.Item || null;
           var packet = makeActivityPacket(charObj, group, name, activityItem);
           if (!packet) {
             toast(QiActT("toast.need_item"), "#FF5C5C");
@@ -1559,6 +1584,39 @@ One of mods you are using is using an old version of SDK. It will work for now b
           if (caActivityName(state.customActions[i]) === name) return state.customActions[i];
         }
         return null;
+      }
+      var FORCE_AVAILABLE_ACTION_NAMES = [
+        "流出液體",
+        "流出液体",
+        "失禁",
+        "鑽進懷裡",
+        "钻进怀里",
+        "抱入懷中",
+        "抱入怀中",
+        "躺上去"
+      ];
+      function isForceAvailableActivity(activityName, displayName) {
+        try {
+          var cands = [];
+          if (displayName) cands.push(String(displayName));
+          var ca = caFindByActivityName(activityName);
+          if (ca && ca.name) cands.push(String(ca.name));
+          if (typeof getActivityLabelFallback === "function" && activityName) {
+            var lbl = getActivityLabelFallback(activityName, "");
+            if (lbl) cands.push(String(lbl));
+          }
+          if (activityName) cands.push(String(activityName));
+          for (var c = 0; c < cands.length; c++) {
+            var disp = cands[c].trim();
+            if (!disp) continue;
+            for (var i = 0; i < FORCE_AVAILABLE_ACTION_NAMES.length; i++) {
+              if (disp.indexOf(FORCE_AVAILABLE_ACTION_NAMES[i]) !== -1) return true;
+            }
+          }
+          return false;
+        } catch (e) {
+          return false;
+        }
       }
       function caDetectSource(name) {
         if (!name || typeof name !== "string") return null;

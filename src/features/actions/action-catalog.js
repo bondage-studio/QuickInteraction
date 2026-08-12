@@ -54,6 +54,28 @@
             });
         }
 
+        // 强制可用白名单注入：命中的动作（echo 原始 或 已导入的 QiAct_ 副本）无视 BC 可用性判定，
+        // 按当前部位 + 自我/对他方向直接注入候选——否则若 ActivityAllowedForGroup 把它挡在源头，
+        // 方案 A 非空导致 B/C 不执行，这些动作根本进不了候选、下面的过滤器也就看不到它们。
+        if (typeof caRawAllActivities === 'function' && typeof isForceAvailableActivity === 'function') {
+            var _toSelf = !!(targetChar && targetChar.IsPlayer && targetChar.IsPlayer());
+            var _rawAll = caRawAllActivities((typeof Player !== 'undefined' && Player && Player.AssetFamily) || 'Female3DCG');
+            if (Array.isArray(_rawAll)) {
+                _rawAll.forEach(function(a) {
+                    if (!a || !a.Name) return;
+                    // 方向：对自己看 TargetSelf（布尔 true 表示同 Target），对他人看 Target
+                    var g = _toSelf ? (a.TargetSelf === true ? a.Target : a.TargetSelf) : a.Target;
+                    g = Array.isArray(g) ? g : (g ? [g] : []);
+                    var hit = g.find(function(x) { return groupCandidates.indexOf(x) !== -1; });
+                    if (!hit) return;
+                    var disp = (caFindByActivityName(a.Name) || {}).name || getActivityLabelFallback(a.Name, hit);
+                    if (!isForceAvailableActivity(a.Name, disp)) return;
+                    if (actions.some(function(x) { return x.Name === a.Name; })) return;
+                    actions.push({ Name: a.Name, Group: hit, translatedName: disp, Item: null });
+                });
+            }
+        }
+
         // 去重 + 过滤无效条目 + 过滤真实部位无翻译的（避免聊天消息乱码）
         var seen = {};
         // 与执行端同源的权威白名单：execution 用 resolveAllowedActivity → ActivityAllowedForGroup 判定「能否执行」，
@@ -95,8 +117,9 @@
                                       a.translatedName.indexOf('MISSING TEXT IN') !== -1 ||
                                       a.translatedName.indexOf('MISSING ACTIVITY') !== -1))) return false;
             if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
-            // 与执行端一致：不在 BC 权威可用列表里的一律不显示（束缚/权限/方向/道具缺失等都在此判定）
-            if (!actionExecutable(a.Name, a.Group || partGroup)) return false;
+            // 与执行端一致：不在 BC 权威可用列表里的一律不显示（束缚/权限/方向/道具缺失等都在此判定）。
+            // 例外：强制可用白名单动作始终显示（执行端亦强制放行，保持一致）。
+            if (!isForceAvailableActivity(a.Name, a.translatedName) && !actionExecutable(a.Name, a.Group || partGroup)) return false;
             // 屏蔽已导入的 echo 原始动作名（双重兜底：ActivityAllowedForGroup hook 已过滤，
             // 但 fallback 数据源和旧数据可能绕过 hook，这里再强制过滤一次）
             if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;

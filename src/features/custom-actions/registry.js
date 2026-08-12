@@ -161,6 +161,38 @@
         }
         return null;
     }
+    // 强制可用动作白名单（用户指定）：这些 echo 动作无视 BC 可用性/前置条件判定，始终显示且强制执行。
+    // 收录简繁两种写法，按动作显示名精确匹配（显示名缺失时回退查自定义动作的 name）。
+    var FORCE_AVAILABLE_ACTION_NAMES = [
+        '流出液體', '流出液体',
+        '失禁',
+        '鑽進懷裡', '钻进怀里',
+        '抱入懷中', '抱入怀中',
+        '躺上去'
+    ];
+    function isForceAvailableActivity(activityName, displayName) {
+        try {
+            // 多来源解析显示名：传入的 displayName、已导入自定义动作名、字典标签、原始活动名（可能内嵌中文）。
+            // echo/sugarch 原始动作名（如「躺上去」或带前后缀）无 QiAct_ 记录，靠标签与原始名兜底。
+            var cands = [];
+            if (displayName) cands.push(String(displayName));
+            var ca = caFindByActivityName(activityName);
+            if (ca && ca.name) cands.push(String(ca.name));
+            if (typeof getActivityLabelFallback === 'function' && activityName) {
+                var lbl = getActivityLabelFallback(activityName, '');
+                if (lbl) cands.push(String(lbl));
+            }
+            if (activityName) cands.push(String(activityName));
+            for (var c = 0; c < cands.length; c++) {
+                var disp = cands[c].trim();
+                if (!disp) continue;
+                for (var i = 0; i < FORCE_AVAILABLE_ACTION_NAMES.length; i++) {
+                    if (disp.indexOf(FORCE_AVAILABLE_ACTION_NAMES[i]) !== -1) return true; // 命中即强制可用
+                }
+            }
+            return false;
+        } catch (e) { return false; }
+    }
     /**
      * 自动检测动作来源（用于动作列表的来源水印标注 + LSCG/Liko 点击后自动刷新）。
      * 返回：'LSCG' | 'LIKO' | 'XIAOSU' | 'ECHO' | 'CUSTOM' | null（null = BC 原版，不标注）。

@@ -226,13 +226,16 @@
         if (!name || !group) return false;
 
         try {
-            // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）
+            // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）。
+            // 强制可用白名单动作跳过校验、按当前部位强制执行（与显示端一致）。
             var resolved = resolveAllowedActivity(charObj, group, name);
             if (!resolved) {
-                toast(QiActT('toast.unavailable'), '#FF5C5C'); return false;
+                var _disp = (typeof getActivityLabelFallback === 'function') ? getActivityLabelFallback(name, group) : '';
+                if (!isForceAvailableActivity(name, _disp)) { toast(QiActT('toast.unavailable'), '#FF5C5C'); return false; }
+            } else {
+                group = resolved.group;
+                activityItem = activityItem || (resolved.activity && resolved.activity.Item) || null;
             }
-            group = resolved.group;
-            activityItem = activityItem || (resolved.activity && resolved.activity.Item) || null;
             var packet = makeActivityPacket(charObj, group, name, activityItem);
             if (!packet) { toast(QiActT('toast.need_item'), '#FF5C5C'); return false; }
 

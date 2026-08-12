@@ -246,7 +246,7 @@ A：收藏、组合、主题等设置会写入游戏账号并同步到服务器�
 ### v0.7.0
 - 设置写入游戏账号并跨设备同步
 
-更早版本见 [docs/review.md](docs/review.md)。
+更早版本见 [WIKI/releases/](WIKI/releases/)。
 
 ---
 
@@ -259,8 +259,7 @@ A：收藏、组合、主题等设置会写入游戏账号并同步到服务器�
 - 功能源码按 `core / features / ui / integrations / services / data / i18n / platform` 分组；相容核心的加载顺序集中定义在 `scripts/source-bundle.mjs`，不再依赖数字文件名前缀。
 - `ui/styles.js` 是唯一超过 600 行的文件；它只负责一份具顺序性的 CSS cascade，因此保留为单一资源，而不做无语义切割。
 - 开发沙盒停止脚本时会透过 `__bcSandboxOnClear` 调用 `window.__QiAct.dispose()`；手动热移除也可直接调用此 API。
-- 代码规范：[docs/code-standards.md](docs/code-standards.md)
-- 质量审查：[docs/review.md](docs/review.md)
+- 文档与常见问题：[WIKI/](WIKI/)（代码规范、动作可用性、按钮显隐、echo 整合等）
 - 欢迎提 Issue 与 Pull Request
 
 ## 致谢
