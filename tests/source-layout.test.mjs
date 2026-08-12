@@ -82,6 +82,9 @@ test('body overlays use shared geometry and event-driven room updates', () => {
     const styles = fs.readFileSync(path.join(root, 'src/ui/styles.js'), 'utf8');
     assert.match(styles, /z-index:100100/);
     assert.match(styles, /z-index:80000;pointer-events:none/);
+    const picker = fs.readFileSync(path.join(root, 'src/ui/target-picker.js'), 'utf8');
+    assert.doesNotMatch(picker, /updatePartFamilySelection[\s\S]{0,200}closeCharPopover\(\)[\s\S]{0,200}setPanelMode\('part'\)/);
+    assert.match(styles, /\.xsact-char-popover\{[\s\S]*contain:layout paint style/);
 });
 
 test('part availability reuses the initial BC filtering result', () => {
