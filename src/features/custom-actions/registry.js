@@ -168,7 +168,8 @@
         '失禁',
         '鑽進懷裡', '钻进怀里',
         '抱入懷中', '抱入怀中',
-        '躺上去'
+        '躺上去',
+        '拉上床', '拉到床上'
     ];
     function isForceAvailableActivity(activityName, displayName) {
         try {

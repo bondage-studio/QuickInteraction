@@ -59,3 +59,8 @@ test('docked toggle delegates collapse visibility to BC ChatRoomButtons', () => 
     assert.equal(toggle.includes('collapse: false'), false);
     assert.equal(toggle.includes('ensureDockedToggleVisible'), false);
 });
+
+test('ECHO bed actions are included in the force-available allowlist', () => {
+    const registry = fs.readFileSync(path.join(root, 'src/features/custom-actions/registry.js'), 'utf8');
+    for (const name of ['躺上去', '拉上床', '拉到床上']) assert.ok(registry.includes(`'${name}'`), name);
+});

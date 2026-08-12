@@ -1593,7 +1593,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
         "钻进怀里",
         "抱入懷中",
         "抱入怀中",
-        "躺上去"
+        "躺上去",
+        "拉上床",
+        "拉到床上"
       ];
       function isForceAvailableActivity(activityName, displayName) {
         try {
