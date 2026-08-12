@@ -173,10 +173,11 @@
         }
     }
     function startVisibilityGuard() {
+        if (state.screenLifecycleHooked) return;
         if (window.__QiAct_VisGuard) { try { clearInterval(window.__QiAct_VisGuard); } catch (_) { /* 忽略：清理旧定时器失败无影响 */ } }
         window.__QiAct_VisGuard = runtime && runtime.interval
-            ? runtime.interval(guardToggleVisibility, 500)
-            : setInterval(guardToggleVisibility, 500);
+            ? runtime.interval(guardToggleVisibility, 2000)
+            : setInterval(guardToggleVisibility, 2000);
     }
 
     // ════════════════════════════════════════════════════════════════════════

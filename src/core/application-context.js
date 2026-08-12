@@ -139,6 +139,10 @@
         ,charPopoverRight: false
         ,actionDelay: 500
         ,actionSkipMembers: []
+        ,gridOverlapShifts: new Map()
+        ,visibleGridMembers: new Set()
+        ,screenLifecycleHooked: false
+        ,bodyGridTopology: ''
     };
 
     function normalizeActionDelay(value) {
@@ -212,6 +216,13 @@
         if (family.indexOf(canonical) < 0) family.unshift(canonical);
         return family;
     }
+    // Linked zones are a visual/favorite identity, not a request to run BC's expensive
+    // availability resolver once for every physical slot. Handheld is the sole deliberate
+    // exception because ItemHands also exposes a few distinct handheld activities.
+    function getPartActionGroups(group) {
+        var canonical = canonicalPartGroup(group);
+        return canonical === 'ItemHands' ? ['ItemHands', 'ItemHandheld'] : [canonical];
+    }
     function isSamePartFamily(a, b) { return canonicalPartGroup(a) === canonicalPartGroup(b); }
     function updatePartFamilySelection(container, selectedGroup, selector) {
         if (!container) return;
@@ -261,6 +272,47 @@
         }
         _zoneCache[key] = zones;
         return zones;
+    }
+
+    // 所有部位选择 UI 共用同一份几何资料；视觉层仅分为 DOM 直角热区与 SVG 圆角热区。
+    var _bodyGeometryCache = {};
+    function getBodyZoneGeometry(C) {
+        var family = (C && C.AssetFamily) || (typeof Player !== 'undefined' && Player.AssetFamily) || 'Female3DCG';
+        if (_bodyGeometryCache[family]) return _bodyGeometryCache[family];
+        var geometry = [];
+        BODY_PARTS.forEach(function(part) {
+            var canonical = canonicalPartGroup(part.group);
+            // Keep every physical BC zone, but expose aliases as one logical/canonical group.
+            // Thus Mouth1-3 remain visible while all three select ItemMouth and share actions.
+            getPartZones(C, part.group).forEach(function(zone) {
+                geometry.push({ group: canonical, label: QiActT('part.' + canonical), x: zone[0], y: zone[1], width: zone[2], height: zone[3] });
+            });
+        });
+        _bodyGeometryCache[family] = geometry;
+        return geometry;
+    }
+    function buildBodyZoneSvg(C, selectedGroup, svgClass, radiusLimit, radiusScale) {
+        var rects = getBodyZoneGeometry(C).map(function(zone) {
+            var rx = Math.min(radiusLimit || 16, Math.min(zone.width, zone.height) * (radiusScale || 0.4));
+            var selected = isSamePartFamily(selectedGroup, zone.group) ? ' selected' : '';
+            return '<rect class="xsact-body-part-zone' + selected + '" data-group="' + zone.group +
+                '" x="' + zone.x.toFixed(1) + '" y="' + zone.y.toFixed(1) + '" width="' + zone.width.toFixed(1) +
+                '" height="' + zone.height.toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT('part.' + zone.group)) + '"/>';
+        }).join('');
+        return '<svg class="' + svgClass + '" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg>';
+    }
+    var _bodyGridMarkupCache = {};
+    function buildBodyGridMarkup(C) {
+        var family = (C && C.AssetFamily) || 'Female3DCG';
+        var language = (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : 'default';
+        var cacheKey = family + '|' + language;
+        if (_bodyGridMarkupCache[cacheKey]) return _bodyGridMarkupCache[cacheKey];
+        _bodyGridMarkupCache[cacheKey] = getBodyZoneGeometry(C).map(function(zone) {
+            return '<button type="button" class="xsact-part-btn" data-group="' + zone.group + '" style="left:' +
+                (zone.x / 5) + '%;top:' + (zone.y / 10) + '%;width:' + (zone.width / 5) + '%;height:' +
+                (zone.height / 10) + '%" title="' + escapeHtml(QiActT('part.' + zone.group) + '（' + zone.group + '）') + '"></button>';
+        }).join('');
+        return _bodyGridMarkupCache[cacheKey];
     }
 
     // ════════════════════════════════════════════════════════════════════════

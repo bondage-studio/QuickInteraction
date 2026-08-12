@@ -2,7 +2,8 @@
     function getActionsForPart(partGroup, targetChar) {
         targetChar = targetChar || state.selectedTarget;
         var actions = [];
-        var groupCandidates = getPartGroupFamily(partGroup);
+        var groupCandidates = getPartActionGroups(partGroup);
+        var allowedCache = {};
 
         // ── 方案 A（推荐）：BC 原生实时可用列表 ──
         if (targetChar && typeof ActivityAllowedForGroup === 'function') {
@@ -10,11 +11,16 @@
                 groupCandidates.forEach(function(candidateGroup) {
                     var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
                     if (!Array.isArray(allowed)) return;
+                    var allowedSet = {};
                     allowed.forEach(function(a) {
                         if (!a) return;
                         var name = a.Activity ? (a.Activity.Name || '') : (a.Name || '');
-                        if (name) actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                        if (name) {
+                            allowedSet[name] = true;
+                            actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                        }
                     });
+                    allowedCache[candidateGroup] = allowedSet;
                 });
             } catch (e) {
                 console.warn('[QiAct] ActivityAllowedForGroup 失败，改用全量列表:', e.message);
@@ -82,7 +88,6 @@
         // 显示端必须同源，否则会出现「显示了、点了却报不可用」。ActivityAllowedForGroup 已内含
         // 前置条件(束缚)、权限、自我/对他方向、Needs-道具展开、源头封锁等全部判定，无需再各自复刻。
         // 按候选部位组缓存其权威可用名集合，避免逐动作重复调用。
-        var allowedCache = {}; // group -> {name:true} | null（null 表示 BC 无法权威判定，放行）
         function allowedNamesFor(g) {
             if (g in allowedCache) return allowedCache[g];
             var set = null;
@@ -101,7 +106,7 @@
         // 动作只要在其部位族任一候选组的权威白名单中即可执行；候选组都能权威判定却都不含它 → 隐藏（点了必然不可用）。
         // 完全无法权威判定（旧版 BC 无此函数/自定义组解析不出）→ 放行，退回原有数据源行为，避免整块空白。
         function actionExecutable(name, group) {
-            var fam = getPartGroupFamily(group);
+            var fam = getPartActionGroups(group);
             var sawAuthoritative = false;
             for (var i = 0; i < fam.length; i++) {
                 var set = allowedNamesFor(fam[i]);
@@ -157,6 +162,27 @@
         return false;
     }
 
+    var _activityDictionaryIndex = null;
+    var _activityDictionarySource = null;
+    var _activityDictionaryLength = -1;
+    function activityDictionaryFallback(key) {
+        var source = window.ActivityDictionary;
+        if (!Array.isArray(source)) return null;
+        if (_activityDictionarySource !== source || _activityDictionaryLength !== source.length) {
+            var index = Object.create(null);
+            for (var i = 0; i < source.length; i++) {
+                var entry = source[i];
+                if (Array.isArray(entry) && typeof entry[0] === 'string' && typeof entry[1] === 'string' && !isMissingLabel(entry[1])) {
+                    index[entry[0]] = entry[1];
+                }
+            }
+            _activityDictionarySource = source;
+            _activityDictionaryLength = source.length;
+            _activityDictionaryIndex = index;
+        }
+        return _activityDictionaryIndex[key] || null;
+    }
+
     /**
      * 修补 ActivityDictionaryText：本 BC 版本（R130+）该函数只读 ActivityDictionaryLoad()
      * 返回的 cache 实例，而 LSCG 等 mod 把对话文本写进了全局 ActivityDictionary 数组
@@ -180,13 +206,8 @@
                 if (r && !isMissingLabel(r)) return r;
                 var key = args[0];
                 if (typeof key === 'string') {
-                    var arr = window.ActivityDictionary;
-                    for (var i = 0; i < arr.length; i++) {
-                        var e = arr[i];
-                        if (Array.isArray(e) && e[0] === key && typeof e[1] === 'string' && !isMissingLabel(e[1])) {
-                            return e[1];
-                        }
-                    }
+                    var fallback = activityDictionaryFallback(key);
+                    if (fallback) return fallback;
                 }
                 return r;
             });
@@ -202,13 +223,8 @@
             var r = _orig.apply(this, arguments);
             if (r && !isMissingLabel(r)) return r;
             if (typeof key === 'string') {
-                var arr = window.ActivityDictionary;
-                for (var i = 0; i < arr.length; i++) {
-                    var e = arr[i];
-                    if (Array.isArray(e) && e[0] === key && typeof e[1] === 'string' && !isMissingLabel(e[1])) {
-                        return e[1];
-                    }
-                }
+                var fallback = activityDictionaryFallback(key);
+                if (fallback) return fallback;
             }
             return r;
         };

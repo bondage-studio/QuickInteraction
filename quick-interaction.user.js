@@ -382,12 +382,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function logD() {
         return;
       }
-      const _hookErrSeen = {};
-      function reportHookError(name, e) {
-        if (_hookErrSeen[name] >= 3) return;
-        _hookErrSeen[name] = (_hookErrSeen[name] || 0) + 1;
-        console.warn("[QiAct] hook『" + name + "』异常（已忽略，最多报 3 次）:", e && e.message);
-      }
       let _serverSyncWarned = false;
       function warnServerSync(e) {
         console.warn("[QiAct] 服务器设置同步失败，已回退本地存储:", e);
@@ -511,7 +505,11 @@ One of mods you are using is using an old version of SDK. It will work for now b
         interactionGridActive: true,
         charPopoverRight: false,
         actionDelay: 500,
-        actionSkipMembers: []
+        actionSkipMembers: [],
+        gridOverlapShifts: /* @__PURE__ */ new Map(),
+        visibleGridMembers: /* @__PURE__ */ new Set(),
+        screenLifecycleHooked: false,
+        bodyGridTopology: ""
       };
       function normalizeActionDelay(value) {
         var parsed = parseInt(value, 10);
@@ -581,6 +579,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
         if (family.indexOf(canonical) < 0) family.unshift(canonical);
         return family;
       }
+      function getPartActionGroups(group) {
+        var canonical = canonicalPartGroup(group);
+        return canonical === "ItemHands" ? ["ItemHands", "ItemHandheld"] : [canonical];
+      }
       function isSamePartFamily(a, b) {
         return canonicalPartGroup(a) === canonicalPartGroup(b);
       }
@@ -629,6 +631,39 @@ One of mods you are using is using an old version of SDK. It will work for now b
         }
         _zoneCache[key] = zones;
         return zones;
+      }
+      var _bodyGeometryCache = {};
+      function getBodyZoneGeometry(C) {
+        var family = C && C.AssetFamily || typeof Player !== "undefined" && Player.AssetFamily || "Female3DCG";
+        if (_bodyGeometryCache[family]) return _bodyGeometryCache[family];
+        var geometry = [];
+        BODY_PARTS.forEach(function(part) {
+          var canonical = canonicalPartGroup(part.group);
+          getPartZones(C, part.group).forEach(function(zone) {
+            geometry.push({ group: canonical, label: QiActT("part." + canonical), x: zone[0], y: zone[1], width: zone[2], height: zone[3] });
+          });
+        });
+        _bodyGeometryCache[family] = geometry;
+        return geometry;
+      }
+      function buildBodyZoneSvg(C, selectedGroup, svgClass, radiusLimit, radiusScale) {
+        var rects = getBodyZoneGeometry(C).map(function(zone) {
+          var rx = Math.min(radiusLimit || 16, Math.min(zone.width, zone.height) * (radiusScale || 0.4));
+          var selected = isSamePartFamily(selectedGroup, zone.group) ? " selected" : "";
+          return '<rect class="xsact-body-part-zone' + selected + '" data-group="' + zone.group + '" x="' + zone.x.toFixed(1) + '" y="' + zone.y.toFixed(1) + '" width="' + zone.width.toFixed(1) + '" height="' + zone.height.toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT("part." + zone.group)) + '"/>';
+        }).join("");
+        return '<svg class="' + svgClass + '" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + "</svg>";
+      }
+      var _bodyGridMarkupCache = {};
+      function buildBodyGridMarkup(C) {
+        var family = C && C.AssetFamily || "Female3DCG";
+        var language = typeof QiActI18n !== "undefined" && QiActI18n.getCurrentLang ? QiActI18n.getCurrentLang() : "default";
+        var cacheKey = family + "|" + language;
+        if (_bodyGridMarkupCache[cacheKey]) return _bodyGridMarkupCache[cacheKey];
+        _bodyGridMarkupCache[cacheKey] = getBodyZoneGeometry(C).map(function(zone) {
+          return '<button type="button" class="xsact-part-btn" data-group="' + zone.group + '" style="left:' + zone.x / 5 + "%;top:" + zone.y / 10 + "%;width:" + zone.width / 5 + "%;height:" + zone.height / 10 + '%" title="' + escapeHtml(QiActT("part." + zone.group) + "（" + zone.group + "）") + '"></button>';
+        }).join("");
+        return _bodyGridMarkupCache[cacheKey];
       }
       function waitFor(fn, timeout) {
         timeout = timeout || 12e4;
@@ -810,17 +845,23 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function getActionsForPart(partGroup, targetChar) {
         targetChar = targetChar || state.selectedTarget;
         var actions = [];
-        var groupCandidates = getPartGroupFamily(partGroup);
+        var groupCandidates = getPartActionGroups(partGroup);
+        var allowedCache = {};
         if (targetChar && typeof ActivityAllowedForGroup === "function") {
           try {
             groupCandidates.forEach(function(candidateGroup) {
               var allowed = ActivityAllowedForGroup(targetChar, candidateGroup);
               if (!Array.isArray(allowed)) return;
+              var allowedSet = {};
               allowed.forEach(function(a) {
                 if (!a) return;
                 var name = a.Activity ? a.Activity.Name || "" : a.Name || "";
-                if (name) actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                if (name) {
+                  allowedSet[name] = true;
+                  actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                }
               });
+              allowedCache[candidateGroup] = allowedSet;
             });
           } catch (e) {
             console.warn("[QiAct] ActivityAllowedForGroup 失败，改用全量列表:", e.message);
@@ -883,7 +924,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           }
         }
         var seen = {};
-        var allowedCache = {};
         function allowedNamesFor(g) {
           if (g in allowedCache) return allowedCache[g];
           var set = null;
@@ -905,7 +945,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           return set;
         }
         function actionExecutable(name, group) {
-          var fam = getPartGroupFamily(group);
+          var fam = getPartActionGroups(group);
           var sawAuthoritative = false;
           for (var i = 0; i < fam.length; i++) {
             var set = allowedNamesFor(fam[i]);
@@ -941,6 +981,26 @@ One of mods you are using is using an old version of SDK. It will work for now b
         if (t.indexOf("MISSING TEXT IN") !== -1) return true;
         return false;
       }
+      var _activityDictionaryIndex = null;
+      var _activityDictionarySource = null;
+      var _activityDictionaryLength = -1;
+      function activityDictionaryFallback(key) {
+        var source = window.ActivityDictionary;
+        if (!Array.isArray(source)) return null;
+        if (_activityDictionarySource !== source || _activityDictionaryLength !== source.length) {
+          var index = /* @__PURE__ */ Object.create(null);
+          for (var i = 0; i < source.length; i++) {
+            var entry = source[i];
+            if (Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "string" && !isMissingLabel(entry[1])) {
+              index[entry[0]] = entry[1];
+            }
+          }
+          _activityDictionarySource = source;
+          _activityDictionaryLength = source.length;
+          _activityDictionaryIndex = index;
+        }
+        return _activityDictionaryIndex[key] || null;
+      }
       function patchActivityDictionaryText() {
         if (window.__QiAct_ADT_PATCHED) return;
         if (typeof window.ActivityDictionaryText !== "function" || !Array.isArray(window.ActivityDictionary)) return;
@@ -950,13 +1010,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
             if (r && !isMissingLabel(r)) return r;
             var key = args[0];
             if (typeof key === "string") {
-              var arr = window.ActivityDictionary;
-              for (var i = 0; i < arr.length; i++) {
-                var e = arr[i];
-                if (Array.isArray(e) && e[0] === key && typeof e[1] === "string" && !isMissingLabel(e[1])) {
-                  return e[1];
-                }
-              }
+              var fallback = activityDictionaryFallback(key);
+              if (fallback) return fallback;
             }
             return r;
           });
@@ -970,13 +1025,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
           var r = _orig.apply(this, arguments);
           if (r && !isMissingLabel(r)) return r;
           if (typeof key === "string") {
-            var arr = window.ActivityDictionary;
-            for (var i = 0; i < arr.length; i++) {
-              var e = arr[i];
-              if (Array.isArray(e) && e[0] === key && typeof e[1] === "string" && !isMissingLabel(e[1])) {
-                return e[1];
-              }
-            }
+            var fallback = activityDictionaryFallback(key);
+            if (fallback) return fallback;
           }
           return r;
         };
@@ -2414,16 +2464,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         return closest.el;
       }
       function renderBodyMapMini(container, selectedGroup, onSelect) {
-        var rects = "";
-        BODY_PARTS.forEach(function(part) {
-          var zones = getPartZones(Player, part.group);
-          zones.forEach(function(z) {
-            var rx = Math.min(14, Math.min(z[2], z[3]) * 0.35);
-            var sel = isSamePartFamily(selectedGroup, part.group) ? " selected" : "";
-            rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group + '" x="' + z[0].toFixed(1) + '" y="' + z[1].toFixed(1) + '" width="' + z[2].toFixed(1) + '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT("part." + part.group)) + '"/>';
-          });
-        });
-        var svg = '<svg class="xsact-body-mini-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + "</svg>";
+        var svg = buildBodyZoneSvg(Player, selectedGroup, "xsact-body-mini-svg", 14, 0.35);
         container.innerHTML = '<div class="xsact-body-mini-hint">' + QiActT("editor.pick_part_hint") + "</div>" + svg;
         var hint = container.querySelector(".xsact-body-mini-hint");
         container.querySelectorAll(".xsact-body-part-zone").forEach(function(zone) {
@@ -3303,13 +3344,14 @@ One of mods you are using is using an old version of SDK. It will work for now b
         }
       }
       function startVisibilityGuard() {
+        if (state.screenLifecycleHooked) return;
         if (window.__QiAct_VisGuard) {
           try {
             clearInterval(window.__QiAct_VisGuard);
           } catch (_) {
           }
         }
-        window.__QiAct_VisGuard = runtime && runtime.interval ? runtime.interval(guardToggleVisibility, 500) : setInterval(guardToggleVisibility, 500);
+        window.__QiAct_VisGuard = runtime && runtime.interval ? runtime.interval(guardToggleVisibility, 2e3) : setInterval(guardToggleVisibility, 2e3);
       }
       function toggleActionMode() {
         state.isActive = !state.isActive;
@@ -3497,35 +3539,23 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var grid = document.createElement("div");
         grid.className = "xsact-body-grid" + (charObj.IsPlayer && charObj.IsPlayer() ? " self" : "");
         grid.dataset.mn = charObj.MemberNumber;
-        BODY_PARTS.forEach(function(part) {
-          var zones = getPartZones(charObj, part.group);
-          zones.forEach(function(z) {
-            var btn = document.createElement("button");
-            btn.className = "xsact-part-btn";
-            if (state.selectedTarget && state.selectedTarget.MemberNumber === charObj.MemberNumber && isSamePartFamily(state.selectedPart, part.group)) {
-              btn.classList.add("active");
-            }
-            btn.dataset.group = part.group;
-            btn.dataset.targetMn = charObj.MemberNumber;
-            btn.style.left = z[0] / 500 * 100 + "%";
-            btn.style.top = z[1] / 1e3 * 100 + "%";
-            btn.style.width = z[2] / 500 * 100 + "%";
-            btn.style.height = z[3] / 1e3 * 100 + "%";
-            btn.title = part.label + "（" + part.group + "）";
-            btn.addEventListener("click", function(e) {
-              e.stopPropagation();
-              selectTargetAndPart(charObj, part.group);
-              bringGridToFront(grid);
-            });
-            grid.appendChild(btn);
-          });
+        grid.innerHTML = buildBodyGridMarkup(charObj);
+        Array.prototype.forEach.call(grid.querySelectorAll(".xsact-part-btn"), function(btn) {
+          btn.dataset.targetMn = charObj.MemberNumber;
+          if (state.selectedTarget && state.selectedTarget.MemberNumber === charObj.MemberNumber) {
+            btn.classList.toggle("active", isSamePartFamily(state.selectedPart, btn.dataset.group));
+          }
         });
         grid.addEventListener("click", function(e) {
-          if (e.target === grid) bringGridToFront(grid);
+          var btn = e.target && e.target.closest ? e.target.closest(".xsact-part-btn") : null;
+          if (btn && grid.contains(btn)) {
+            e.stopPropagation();
+            selectTargetAndPart(charObj, btn.dataset.group);
+            bringGridToFront(grid);
+          } else if (e.target === grid) bringGridToFront(grid);
         });
         document.body.appendChild(grid);
         state.bodyGrids.set(charObj, grid);
-        refreshCanvasCache();
         positionGrid(grid, entry);
         return grid;
       }
@@ -3546,6 +3576,11 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function positionGrid(grid, entry) {
         var rect = getGridScreenRect(entry);
         var shift = entry.overlapShift || 0;
+        var signature = [rect.width, rect.height, rect.left + shift, rect.top].map(function(n) {
+          return Math.round(n * 10) / 10;
+        }).join("|");
+        if (grid._xsactGeometrySignature === signature) return;
+        grid._xsactGeometrySignature = signature;
         grid.style.width = rect.width + "px";
         grid.style.height = rect.height + "px";
         grid.style.left = rect.left + shift + "px";
@@ -3558,19 +3593,31 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function bringGridToFront(grid) {
         if (!grid) return;
-        grid.style.zIndex = "89999";
+        grid.style.zIndex = "80001";
         state.bodyGrids.forEach(function(g) {
-          g.style.zIndex = "89999";
+          if (g !== grid) g.style.zIndex = "80000";
         });
       }
-      function refreshBodyGrids() {
+      function bodyGridTopologySignature(layout) {
+        return (layout || []).filter(function(entry) {
+          var isPlayer = entry.char && entry.char.IsPlayer && entry.char.IsPlayer();
+          return !isPlayer || state.selfModeActive;
+        }).map(function(entry) {
+          return String(entry.char.MemberNumber);
+        }).sort().join("|");
+      }
+      function refreshBodyGrids(precomputedLayout) {
         clearBodyGrids();
         if (!state.interactionGridActive) {
+          state.bodyGridTopology = "";
           renderCharList();
           return;
         }
-        var layout = getCharLayout();
+        refreshCanvasCache();
+        var layout = precomputedLayout || getCharLayout();
+        state.bodyGridTopology = bodyGridTopologySignature(layout);
         var shifts = computeOverlapShifts(layout);
+        state.gridOverlapShifts = shifts;
         layout.forEach(function(entry) {
           var isPlayer = entry.char.IsPlayer && entry.char.IsPlayer();
           if (isPlayer && !state.selfModeActive) return;
@@ -3578,6 +3625,44 @@ One of mods you are using is using an old version of SDK. It will work for now b
           createBodyGrid(entry);
         });
         renderCharList();
+      }
+      function findBodyGridByMemberNumber(memberNumber) {
+        var found = null;
+        state.bodyGrids.forEach(function(grid) {
+          if (!found && String(grid.dataset.mn) === String(memberNumber)) found = grid;
+        });
+        return found;
+      }
+      function syncBodyGridForCharacter(charObj, x, y, zoom) {
+        if (!charObj || charObj.MemberNumber == null || typeof x !== "number" || typeof y !== "number") return;
+        var isPlayer = charObj.IsPlayer && charObj.IsPlayer();
+        if (isPlayer && !state.selfModeActive) return;
+        var grid = state.bodyGrids.get(charObj) || findBodyGridByMemberNumber(charObj.MemberNumber);
+        var entry = {
+          char: charObj,
+          x,
+          y,
+          zoom: typeof zoom === "number" ? zoom : 1,
+          overlapShift: state.gridOverlapShifts.get(charObj.MemberNumber) || 0
+        };
+        if (!grid) {
+          if (!state.cachedRect) refreshCanvasCache();
+          grid = createBodyGrid(entry);
+        } else {
+          positionGrid(grid, entry);
+        }
+      }
+      function scheduleBodyGridRefresh(force) {
+        if (!state.isActive || state._gridRefreshScheduled) return;
+        state._gridRefreshScheduled = true;
+        var defer = runtime && runtime.timeout ? runtime.timeout : setTimeout;
+        defer(function() {
+          state._gridRefreshScheduled = false;
+          if (!state.isActive || !state.interactionGridActive) return;
+          var layout = getCharLayout();
+          var topology = bodyGridTopologySignature(layout);
+          if (force || topology !== state.bodyGridTopology) refreshBodyGrids(layout);
+        }, 0);
       }
       function computeOverlapShifts(layout) {
         var shifts = /* @__PURE__ */ new Map();
@@ -3629,6 +3714,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           if (grid && grid.parentNode) grid.parentNode.removeChild(grid);
         });
         state.bodyGrids.clear();
+        state.bodyGridTopology = "";
       }
       function selectTargetAndPart(charObj, partGroup) {
         state.selectedTarget = charObj;
@@ -3702,17 +3788,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function renderPopoverParts(charObj) {
         var bodyEl = state.actionPanelEl && state.actionPanelEl.querySelector("#xsact-char-popover-body");
         if (!bodyEl) return;
-        var rects = "";
-        BODY_PARTS.forEach(function(part) {
-          var zones = getPartZones(charObj, part.group);
-          zones.forEach(function(z) {
-            var x = z[0], y = z[1], w = z[2], h = z[3];
-            var rx = Math.min(16, Math.min(w, h) * 0.4);
-            var sel = isSamePartFamily(state.selectedPart, part.group) ? " selected" : "";
-            rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + part.label + '"/>';
-          });
-        });
-        var svg = '<svg class="xsact-body-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg><div class="xsact-body-part-hint">' + QiActT("target.pick_part") + "</div>";
+        var svg = buildBodyZoneSvg(charObj, state.selectedPart, "xsact-body-svg", 16, 0.4) + '<div class="xsact-body-part-hint">' + QiActT("target.pick_part") + "</div>";
         bodyEl.innerHTML = '<div class="xsact-body-select">' + svg + "</div>";
         var hint = bodyEl.querySelector(".xsact-body-part-hint");
         bodyEl.querySelectorAll(".xsact-body-part-zone").forEach(function(zone) {
@@ -4071,7 +4147,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           var isEditing = !!state.editingComboId;
           actions.forEach(function(act) {
             if (!act || !act.Name) return;
-            var lbl = getActivityLabel(act.Name, act.Group || partGroup);
+            var lbl = getActivityLabel(act, act.Group || partGroup);
             var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + "|" + act.Name) !== -1;
             html += '<div class="xsact-action-row' + (isEditing ? " editing" : "") + '" data-name="' + escapeHtml(act.Name) + '"><button class="xsact-action-btn' + (isFav ? " fav" : "") + '" data-name="' + escapeHtml(act.Name) + '" title="' + escapeHtml(act.Name) + '"><span class="xsact-action-label">' + escapeHtml(lbl) + "</span>" + (isFav ? '<span class="xsact-action-star">' + svgIcon("starFill", 13) + "</span>" : "") + "</button>";
             if (isEditing) {
@@ -4620,7 +4696,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}",
           /* ===== 右侧面板（暗色战术操作台） ===== */
           "#xsact-qa-panel{",
-          "  position:fixed;top:min(48px,4vh);right:12px;width:min(380px,92vw);height:min(680px,88vh);z-index:90000;",
+          "  position:fixed;top:min(48px,4vh);right:12px;width:min(380px,92vw);height:min(680px,88vh);z-index:100100;",
           "  background:var(--xs-panel-bg);border-radius:14px;",
           "  border:1px solid var(--xs-border);",
           "  display:flex;flex-direction:column;box-sizing:border-box;",
@@ -4920,11 +4996,11 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-ca-part-label{font-size:13px;color:var(--xs-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}",
           ".xsact-ca-part-change{font-size:11px;color:var(--xs-text-dim);white-space:nowrap;flex-shrink:0;}",
           ".xsact-ca-part-map{height:min(240px,42vh);min-height:160px;max-height:300px;border-radius:10px;border:1px solid var(--xs-border);background:var(--xs-panel-bg-2);padding:10px;display:flex;flex-direction:column;align-items:stretch;gap:6px;overflow:hidden;box-sizing:border-box;}",
-          ".xsact-body-mini-svg{flex:1;min-height:0;width:100%;height:100%;overflow:visible;filter:var(--xs-zone-filter);}",
+          ".xsact-body-mini-svg{flex:1;min-height:0;width:100%;height:100%;overflow:visible;}",
           ".xsact-body-mini-hint{font-size:11px;color:var(--xs-text-dim);text-align:center;padding:5px 8px;border-radius:6px;background:var(--xs-panel-bg);border:1px solid var(--xs-border);white-space:nowrap;flex-shrink:0;}",
           ".xsact-ca-part-map .xsact-body-part-zone{fill:var(--xs-zone-fill);stroke:var(--xs-zone-stroke);stroke-width:1.2;cursor:pointer;transition:fill .12s,stroke .12s,stroke-width .12s,filter .12s;pointer-events:all;vector-effect:non-scaling-stroke;}",
-          ".xsact-ca-part-map .xsact-body-part-zone:hover,.xsact-ca-part-map .xsact-body-part-zone.hover{fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(var(--xs-accent-rgb), 0.6));}",
-          ".xsact-ca-part-map .xsact-body-part-zone.selected{fill:var(--xs-zone-fill-selected);stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;filter:drop-shadow(0 0 10px rgba(var(--xs-accent-rgb), 0.55));}",
+          ".xsact-ca-part-map .xsact-body-part-zone:hover,.xsact-ca-part-map .xsact-body-part-zone.hover{fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;}",
+          ".xsact-ca-part-map .xsact-body-part-zone.selected{fill:var(--xs-zone-fill-selected);stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;}",
           ".xsact-ca-part-picker{position:fixed;inset:0;z-index:100004;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;}",
           ".xsact-ca-part-picker.hidden{display:none;}",
           ".xsact-ca-part-picker-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}",
@@ -5191,7 +5267,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-body-svg{",
           "  flex:1;min-height:0;width:100%;height:100%;",
           "  align-self:center;overflow:visible;",
-          "  filter:var(--xs-zone-filter);",
           "}",
           /* 矩形热区：主题感知描边；light 下深灰/玫红，dark 下保持白色霓虹 */
           ".xsact-body-part-zone{",
@@ -5202,12 +5277,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "}",
           ".xsact-body-part-zone:hover,.xsact-body-part-zone.hover{",
           "  fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;",
-          "  filter:drop-shadow(0 0 8px rgba(var(--xs-accent-rgb), 0.6));",
           "}",
           ".xsact-body-part-zone.selected{",
           "  fill:var(--xs-zone-fill-selected);",
           "  stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;",
-          "  filter:drop-shadow(0 0 10px rgba(var(--xs-accent-rgb), 0.55));",
           "}",
           ".xsact-body-part-hint{",
           "  font-size:12px;color:var(--xs-text-dim);text-align:center;",
@@ -5230,7 +5303,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-resize-handle .xsact-ico{width:14px;height:14px;}",
           /* ===== 浮动身体网格（霓虹线框，按 BC 原生 Zone 定位） ===== */
           ".xsact-body-grid{",
-          "  position:absolute;z-index:89999;pointer-events:none;",
+          "  position:absolute;z-index:80000;pointer-events:none;",
           "  background:transparent !important;",
           "}",
           ".xsact-part-btn{",
@@ -5572,44 +5645,25 @@ One of mods you are using is using an old version of SDK. It will work for now b
           console.warn("[QiAct] AssetAllActivities hook 失败:", e.message);
         }
         try {
-          state.modApi.hookFunction("DrawCharacter", 1, function(args, next) {
-            var r = next(args);
-            try {
-              var C = args[0], X = args[1], Y = args[2], Zoom = args[3];
-              if (C && C.MemberNumber != null && typeof X === "number" && typeof CurrentScreen !== "undefined" && CurrentScreen === "ChatRoom") {
-                state.charAnchor[C.MemberNumber] = { x: X, y: Y, zoom: Zoom, t: Date.now() };
-              }
-            } catch (e) {
-              reportHookError("DrawCharacter锚点", e);
-            }
-            return r;
+          state.modApi.hookFunction("ChatRoomCharacterViewDrawOverlay", 1, function(args, next) {
+            var result = next(args);
+            if (state.isActive && state.interactionGridActive) syncBodyGridForCharacter(args[0], args[1], args[2], args[3]);
+            return result;
           });
         } catch (e) {
-          console.warn("[QiAct] DrawCharacter 锚点 hook 失败:", e.message);
+          console.warn("[QiAct] character overlay hook failed:", e.message);
         }
-        state.modApi.hookFunction("DrawProcess", 4, function(args, next) {
-          var result = next(args);
-          try {
-            if (typeof CurrentScreen !== "undefined") {
-              if (CurrentScreen === "ChatRoom") {
-                drawToggleButton();
-              } else if (state.toggleBtnEl && !state.chatButtonDocked) {
-                state.toggleBtnEl.style.display = "none";
-              }
-            }
-          } catch (e) {
-            reportHookError("DrawProcess", e);
-          }
-          return result;
-        });
         try {
           addRuntimeListener(window, "resize", function() {
             refreshCanvasCache();
+            if (state.isActive) updateGridPositions();
           });
         } catch (_) {
         }
         state.modApi.hookFunction("ChatRoomClick", 4, function(args, next) {
-          return next(args);
+          var result = next(args);
+          scheduleBodyGridRefresh();
+          return result;
         });
         state.modApi.hookFunction("ActivityRun", 0, function(args, next) {
           try {
@@ -5632,11 +5686,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           }
           next(args);
         });
-        state.modApi.hookFunction("ChatRoomMenuDraw", 0, function(args, next) {
-          var result = next(args);
-          if (state.isActive) updateGridPositions();
-          return result;
-        });
         addRuntimeListener(document, "keydown", function(e) {
           if (e.key === "Escape" && state.isActive) {
             e.preventDefault();
@@ -5644,29 +5693,26 @@ One of mods you are using is using an old version of SDK. It will work for now b
             toggleActionMode();
           }
         });
-        function startRefreshTimer() {
-          stopRefreshTimer();
-          state.refreshInterval = runtime && runtime.interval ? runtime.interval(function() {
-            if (state.isActive) updateGridPositions();
-          }, 3e3) : setInterval(function() {
-            if (state.isActive) updateGridPositions();
-          }, 3e3);
-        }
-        function stopRefreshTimer() {
-          if (state.refreshInterval) {
-            clearInterval(state.refreshInterval);
-            state.refreshInterval = null;
+        ["ChatRoomSyncMemberJoin", "ChatRoomSyncMemberLeave"].forEach(function(hookName) {
+          try {
+            state.modApi.hookFunction(hookName, 1, function(args, next) {
+              var result = next(args);
+              scheduleBodyGridRefresh(true);
+              return result;
+            });
+          } catch (_) {
           }
-        }
-        state.modApi.hookFunction("ServerSend", 0, function(args, next) {
-          var data = args[0];
-          if (data && (data.Type === "Action" || data.Type === "Activity")) {
-            setTimeout(function() {
-              if (state.isActive) refreshBodyGrids();
-            }, 500);
-          }
-          return next(args);
         });
+        try {
+          state.modApi.hookFunction("ChatRoomLeave", 1, function(args, next) {
+            var result = next(args);
+            clearBodyGrids();
+            if (state.toggleBtnEl && !state.chatButtonDocked) state.toggleBtnEl.style.display = "none";
+            return result;
+          });
+        } catch (_) {
+        }
+        state.screenLifecycleHooked = false;
         try {
           state.modApi.hookFunction("ActivityRun", -100, function(args, next) {
             try {
@@ -5720,16 +5766,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
         } catch (e) {
           console.warn("[QiAct] ElementButton 图标 hook 失败:", e.message);
         }
-        var _baseEnter = enterActionMode;
-        enterActionMode = function() {
-          _baseEnter();
-          startRefreshTimer();
-        };
-        var _baseExit = exitActionMode;
-        exitActionMode = function() {
-          _baseExit();
-          stopRefreshTimer();
-        };
       }
       function updateGridPositions() {
         refreshCanvasCache();

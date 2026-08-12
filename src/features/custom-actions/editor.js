@@ -15,18 +15,7 @@
     /** 渲染一个迷你身体部位选择 SVG（用于自定义动作编辑器内）。
      *  复用 BC 原生 Zone 矩形，尺寸自适应容器。 */
     function renderBodyMapMini(container, selectedGroup, onSelect) {
-        var rects = '';
-        BODY_PARTS.forEach(function(part) {
-            var zones = getPartZones(Player, part.group);
-            zones.forEach(function(z) {
-                var rx = Math.min(14, Math.min(z[2], z[3]) * 0.35);
-                var sel = isSamePartFamily(selectedGroup, part.group) ? ' selected' : '';
-                rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group +
-                    '" x="' + z[0].toFixed(1) + '" y="' + z[1].toFixed(1) + '" width="' + z[2].toFixed(1) +
-                    '" height="' + z[3].toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + escapeHtml(QiActT('part.' + part.group)) + '"/>';
-            });
-        });
-        var svg = '<svg class="xsact-body-mini-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + rects + '</svg>';
+        var svg = buildBodyZoneSvg(Player, selectedGroup, 'xsact-body-mini-svg', 14, 0.35);
         container.innerHTML = '<div class="xsact-body-mini-hint">' + QiActT('editor.pick_part_hint') + '</div>' + svg;
         var hint = container.querySelector('.xsact-body-mini-hint');
         container.querySelectorAll('.xsact-body-part-zone').forEach(function(zone) {

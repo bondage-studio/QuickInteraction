@@ -60,6 +60,47 @@ test('docked toggle delegates collapse visibility to BC ChatRoomButtons', () => 
     assert.equal(toggle.includes('ensureDockedToggleVisible'), false);
 });
 
+test('body overlays use shared geometry and event-driven room updates', () => {
+    const context = fs.readFileSync(path.join(root, 'src/core/application-context.js'), 'utf8');
+    const grid = fs.readFileSync(path.join(root, 'src/ui/body-grid.js'), 'utf8');
+    const hooks = fs.readFileSync(path.join(root, 'src/integrations/bc-hooks.js'), 'utf8');
+    assert.match(context, /function getBodyZoneGeometry/);
+    assert.match(context, /function buildBodyZoneSvg/);
+    assert.match(grid, /grid\.innerHTML = buildBodyGridMarkup/);
+    assert.match(grid, /btn\.dataset\.targetMn = charObj\.MemberNumber/);
+    assert.match(grid, /grid = createBodyGrid\(entry\)/);
+    assert.match(grid, /_xsactGeometrySignature/);
+    assert.match(hooks, /ChatRoomCharacterViewDrawOverlay/);
+    assert.match(hooks, /ChatRoomSyncMemberJoin/);
+    assert.match(hooks, /ChatRoomSyncMemberLeave/);
+    assert.equal(hooks.includes("hookFunction('DrawProcess'"), false);
+    assert.equal(hooks.includes("hookFunction('ChatRoomMenuDraw'"), false);
+    assert.equal(hooks.includes("hookFunction('ChatRoomRun'"), false);
+    assert.equal(hooks.includes("'ChatRoomSync',"), false);
+    assert.equal(hooks.includes("'ChatRoomSyncCharacter'"), false);
+    assert.equal(hooks.includes('startRefreshTimer'), false);
+    const styles = fs.readFileSync(path.join(root, 'src/ui/styles.js'), 'utf8');
+    assert.match(styles, /z-index:100100/);
+    assert.match(styles, /z-index:80000;pointer-events:none/);
+});
+
+test('part availability reuses the initial BC filtering result', () => {
+    const context = fs.readFileSync(path.join(root, 'src/core/application-context.js'), 'utf8');
+    const catalog = fs.readFileSync(path.join(root, 'src/features/actions/action-catalog.js'), 'utf8');
+    const renderer = fs.readFileSync(path.join(root, 'src/ui/render/action-renderers.js'), 'utf8');
+    assert.match(context, /function getPartActionGroups/);
+    assert.match(context, /getPartZones\(C, part\.group\)/);
+    assert.match(context, /group: canonical/);
+    assert.match(context, /canonical === 'ItemHands' \? \['ItemHands', 'ItemHandheld'\] : \[canonical\]/);
+    assert.match(catalog, /getPartActionGroups\(partGroup\)/);
+    assert.equal(catalog.includes('getPartGroupFamily(partGroup)'), false);
+    assert.match(catalog, /allowedCache\[candidateGroup\] = allowedSet/);
+    assert.equal((catalog.match(/var allowedCache = \{\}/g) || []).length, 1);
+    assert.match(renderer, /getActivityLabel\(act, act\.Group \|\| partGroup\)/);
+    assert.match(catalog, /function activityDictionaryFallback/);
+    assert.equal(catalog.includes('for (var i = 0; i < arr.length; i++)'), false);
+});
+
 test('ECHO bed actions are included in the force-available allowlist', () => {
     const registry = fs.readFileSync(path.join(root, 'src/features/custom-actions/registry.js'), 'utf8');
     for (const name of ['躺上去', '拉上床', '拉到床上']) assert.ok(registry.includes(`'${name}'`), name);

@@ -97,7 +97,7 @@
             var isEditing = !!state.editingComboId;
             actions.forEach(function(act) {
                 if (!act || !act.Name) return;
-                var lbl = getActivityLabel(act.Name, act.Group || partGroup);
+                var lbl = getActivityLabel(act, act.Group || partGroup);
                 var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + '|' + act.Name) !== -1;
                 // 来源水印功能已暂停（按需求优先修复动作显示功能）。
                 // 下方点击处理器仍用 caDetectSource 判断 LSCG/Liko 以触发自动刷新。

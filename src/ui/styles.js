@@ -51,7 +51,7 @@
 
             /* ===== 右侧面板（暗色战术操作台） ===== */
             '#xsact-qa-panel{',
-            '  position:fixed;top:min(48px,4vh);right:12px;width:min(380px,92vw);height:min(680px,88vh);z-index:90000;',
+            '  position:fixed;top:min(48px,4vh);right:12px;width:min(380px,92vw);height:min(680px,88vh);z-index:100100;',
             '  background:var(--xs-panel-bg);border-radius:14px;',
             '  border:1px solid var(--xs-border);',
             '  display:flex;flex-direction:column;box-sizing:border-box;',
@@ -368,11 +368,11 @@
             '.xsact-ca-part-label{font-size:13px;color:var(--xs-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
             '.xsact-ca-part-change{font-size:11px;color:var(--xs-text-dim);white-space:nowrap;flex-shrink:0;}',
             '.xsact-ca-part-map{height:min(240px,42vh);min-height:160px;max-height:300px;border-radius:10px;border:1px solid var(--xs-border);background:var(--xs-panel-bg-2);padding:10px;display:flex;flex-direction:column;align-items:stretch;gap:6px;overflow:hidden;box-sizing:border-box;}',
-            '.xsact-body-mini-svg{flex:1;min-height:0;width:100%;height:100%;overflow:visible;filter:var(--xs-zone-filter);}',
+            '.xsact-body-mini-svg{flex:1;min-height:0;width:100%;height:100%;overflow:visible;}',
             '.xsact-body-mini-hint{font-size:11px;color:var(--xs-text-dim);text-align:center;padding:5px 8px;border-radius:6px;background:var(--xs-panel-bg);border:1px solid var(--xs-border);white-space:nowrap;flex-shrink:0;}',
             '.xsact-ca-part-map .xsact-body-part-zone{fill:var(--xs-zone-fill);stroke:var(--xs-zone-stroke);stroke-width:1.2;cursor:pointer;transition:fill .12s,stroke .12s,stroke-width .12s,filter .12s;pointer-events:all;vector-effect:non-scaling-stroke;}',
-            '.xsact-ca-part-map .xsact-body-part-zone:hover,.xsact-ca-part-map .xsact-body-part-zone.hover{fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;filter:drop-shadow(0 0 8px rgba(var(--xs-accent-rgb), 0.6));}',
-            '.xsact-ca-part-map .xsact-body-part-zone.selected{fill:var(--xs-zone-fill-selected);stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;filter:drop-shadow(0 0 10px rgba(var(--xs-accent-rgb), 0.55));}',
+            '.xsact-ca-part-map .xsact-body-part-zone:hover,.xsact-ca-part-map .xsact-body-part-zone.hover{fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;}',
+            '.xsact-ca-part-map .xsact-body-part-zone.selected{fill:var(--xs-zone-fill-selected);stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;}',
             '.xsact-ca-part-picker{position:fixed;inset:0;z-index:100004;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;}',
             '.xsact-ca-part-picker.hidden{display:none;}',
             '.xsact-ca-part-picker-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}',
@@ -646,7 +646,6 @@
             '.xsact-body-svg{',
             '  flex:1;min-height:0;width:100%;height:100%;',
             '  align-self:center;overflow:visible;',
-            '  filter:var(--xs-zone-filter);',
             '}',
             /* 矩形热区：主题感知描边；light 下深灰/玫红，dark 下保持白色霓虹 */
             '.xsact-body-part-zone{',
@@ -657,12 +656,10 @@
             '}',
             '.xsact-body-part-zone:hover,.xsact-body-part-zone.hover{',
             '  fill:var(--xs-zone-fill-hover);stroke:var(--xs-zone-stroke-hover);stroke-width:2.5;',
-            '  filter:drop-shadow(0 0 8px rgba(var(--xs-accent-rgb), 0.6));',
             '}',
             '.xsact-body-part-zone.selected{',
             '  fill:var(--xs-zone-fill-selected);',
             '  stroke:var(--xs-zone-stroke-selected);stroke-width:2.5;',
-            '  filter:drop-shadow(0 0 10px rgba(var(--xs-accent-rgb), 0.55));',
             '}',
             '.xsact-body-part-hint{',
             '  font-size:12px;color:var(--xs-text-dim);text-align:center;',
@@ -687,7 +684,7 @@
 
             /* ===== 浮动身体网格（霓虹线框，按 BC 原生 Zone 定位） ===== */
             '.xsact-body-grid{',
-            '  position:absolute;z-index:89999;pointer-events:none;',
+            '  position:absolute;z-index:80000;pointer-events:none;',
             '  background:transparent !important;',
             '}',
             '.xsact-part-btn{',

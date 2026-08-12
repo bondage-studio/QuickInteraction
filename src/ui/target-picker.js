@@ -91,22 +91,7 @@
 
         // 用 BC 原生 AssetGroup[].Zone 矩形（500x1000 资产空间）逐个部位生成可点击热区。
         // 矩形本身即身体轮廓，不需要额外人物贴图——这正是 BC 原版「点矩形选部位」的方式。
-        var rects = '';
-        BODY_PARTS.forEach(function(part) {
-            var zones = getPartZones(charObj, part.group);
-            zones.forEach(function(z) {
-                var x = z[0], y = z[1], w = z[2], h = z[3];
-                var rx = Math.min(16, Math.min(w, h) * 0.4);
-                var sel = isSamePartFamily(state.selectedPart, part.group) ? ' selected' : '';
-                rects += '<rect class="xsact-body-part-zone' + sel + '" data-group="' + part.group +
-                    '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) +
-                    '" height="' + h.toFixed(1) + '" rx="' + rx.toFixed(1) + '" data-label="' + part.label + '"/>';
-            });
-        });
-
-        var svg = '<svg class="xsact-body-svg" viewBox="0 0 500 1000" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' +
-            rects +
-            '</svg>' +
+        var svg = buildBodyZoneSvg(charObj, state.selectedPart, 'xsact-body-svg', 16, 0.4) +
             '<div class="xsact-body-part-hint">' + QiActT('target.pick_part') + '</div>';
         bodyEl.innerHTML = '<div class="xsact-body-select">' + svg + '</div>';
 

@@ -113,40 +113,28 @@
         grid.dataset.mn = charObj.MemberNumber;
 
         // 每个部位 + 每个 Zone 生成一个绝对定位热区（百分比摆放，分辨率无关）
-        BODY_PARTS.forEach(function(part) {
-            var zones = getPartZones(charObj, part.group);
-            zones.forEach(function(z) {
-                var btn = document.createElement('button');
-                btn.className = 'xsact-part-btn';
-                if (state.selectedTarget && state.selectedTarget.MemberNumber === charObj.MemberNumber && isSamePartFamily(state.selectedPart, part.group)) {
-                    btn.classList.add('active');
-                }
-                btn.dataset.group = part.group;
-                btn.dataset.targetMn = charObj.MemberNumber;
-                // 在容器(0-500 × 0-1000)内的百分比定位
-                btn.style.left   = (z[0] / 500 * 100) + '%';
-                btn.style.top    = (z[1] / 1000 * 100) + '%';
-                btn.style.width  = (z[2] / 500 * 100) + '%';
-                btn.style.height = (z[3] / 1000 * 100) + '%';
-                btn.title = part.label + '（' + part.group + '）';
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    selectTargetAndPart(charObj, part.group);
-                    bringGridToFront(grid);
-                });
-                grid.appendChild(btn);
-            });
+        grid.innerHTML = buildBodyGridMarkup(charObj);
+        Array.prototype.forEach.call(grid.querySelectorAll('.xsact-part-btn'), function(btn) {
+            // The geometry is shared, but the target identity belongs to this cloned grid.
+            btn.dataset.targetMn = charObj.MemberNumber;
+            if (state.selectedTarget && state.selectedTarget.MemberNumber === charObj.MemberNumber) {
+                btn.classList.toggle('active', isSamePartFamily(state.selectedPart, btn.dataset.group));
+            }
         });
 
         // 点击网格空白区域也提升层级
         grid.addEventListener('click', function(e) {
-            if (e.target === grid) bringGridToFront(grid);
+            var btn = e.target && e.target.closest ? e.target.closest('.xsact-part-btn') : null;
+            if (btn && grid.contains(btn)) {
+                e.stopPropagation();
+                selectTargetAndPart(charObj, btn.dataset.group);
+                bringGridToFront(grid);
+            } else if (e.target === grid) bringGridToFront(grid);
         });
 
         document.body.appendChild(grid);
         state.bodyGrids.set(charObj, grid);
 
-        refreshCanvasCache();
         positionGrid(grid, entry);
         return grid;
     }
@@ -183,6 +171,9 @@
     function positionGrid(grid, entry) {
         var rect = getGridScreenRect(entry);
         var shift = entry.overlapShift || 0;
+        var signature = [rect.width, rect.height, rect.left + shift, rect.top].map(function(n) { return Math.round(n * 10) / 10; }).join('|');
+        if (grid._xsactGeometrySignature === signature) return;
+        grid._xsactGeometrySignature = signature;
         grid.style.width = rect.width + 'px';
         grid.style.height = rect.height + 'px';
         grid.style.left = (rect.left + shift) + 'px';
@@ -199,19 +190,29 @@
     /** 将指定网格提升到最前（解决人物重叠时的选择问题） */
     function bringGridToFront(grid) {
         if (!grid) return;
-        grid.style.zIndex = '89999';
-        // 同时降低其他网格
+        // Body hit-zones must always stay below the panel and character popover.
+        grid.style.zIndex = '80001';
         state.bodyGrids.forEach(function(g) {
-            g.style.zIndex = '89999';
+            if (g !== grid) g.style.zIndex = '80000';
         });
     }
 
     /** 更新所有角色的身体网格 */
-    function refreshBodyGrids() {
+    function bodyGridTopologySignature(layout) {
+        return (layout || []).filter(function(entry) {
+            var isPlayer = entry.char && entry.char.IsPlayer && entry.char.IsPlayer();
+            return !isPlayer || state.selfModeActive;
+        }).map(function(entry) { return String(entry.char.MemberNumber); }).sort().join('|');
+    }
+
+    function refreshBodyGrids(precomputedLayout) {
         clearBodyGrids();
-        if (!state.interactionGridActive) { renderCharList(); return; }
-        var layout = getCharLayout();
+        if (!state.interactionGridActive) { state.bodyGridTopology = ''; renderCharList(); return; }
+        refreshCanvasCache();
+        var layout = precomputedLayout || getCharLayout();
+        state.bodyGridTopology = bodyGridTopologySignature(layout);
         var shifts = computeOverlapShifts(layout);
+        state.gridOverlapShifts = shifts;
         layout.forEach(function(entry) {
             var isPlayer = entry.char.IsPlayer && entry.char.IsPlayer();
             if (isPlayer && !state.selfModeActive) return; // 未开启自己模式时跳过自己
@@ -221,9 +222,52 @@
         renderCharList();
     }
 
+    function findBodyGridByMemberNumber(memberNumber) {
+        var found = null;
+        state.bodyGrids.forEach(function(grid) {
+            if (!found && String(grid.dataset.mn) === String(memberNumber)) found = grid;
+        });
+        return found;
+    }
+
+    function syncBodyGridForCharacter(charObj, x, y, zoom) {
+        if (!charObj || charObj.MemberNumber == null || typeof x !== 'number' || typeof y !== 'number') return;
+        var isPlayer = charObj.IsPlayer && charObj.IsPlayer();
+        if (isPlayer && !state.selfModeActive) return;
+        var grid = state.bodyGrids.get(charObj) || findBodyGridByMemberNumber(charObj.MemberNumber);
+        var entry = {
+            char: charObj,
+            x: x,
+            y: y,
+            zoom: typeof zoom === 'number' ? zoom : 1,
+            overlapShift: state.gridOverlapShifts.get(charObj.MemberNumber) || 0
+        };
+        // On initial injection BC may not have populated CharacterViewLoop yet. Create the
+        // grid from the first real overlay callback instead of waiting for another room event.
+        if (!grid) {
+            if (!state.cachedRect) refreshCanvasCache();
+            grid = createBodyGrid(entry);
+        } else {
+            positionGrid(grid, entry);
+        }
+    }
+
+    function scheduleBodyGridRefresh(force) {
+        if (!state.isActive || state._gridRefreshScheduled) return;
+        state._gridRefreshScheduled = true;
+        var defer = runtime && runtime.timeout ? runtime.timeout : setTimeout;
+        defer(function() {
+            state._gridRefreshScheduled = false;
+            if (!state.isActive || !state.interactionGridActive) return;
+            var layout = getCharLayout();
+            var topology = bodyGridTopologySignature(layout);
+            if (force || topology !== state.bodyGridTopology) refreshBodyGrids(layout);
+        }, 0);
+    }
+
     /** 当两个角色拥抱/位置严重重叠时，给被遮挡的网格加一个水平偏移，避免线框完全糊在一起。
      *  规则：只处理真正大面积重叠（>50%），忽略正常并肩站位；最大偏移约一个角色宽度，
-     *  确保拥抱者能完整错开；每帧重算，玩家自己也参与避让。 */
+     *  确保拥抱者能完整错开；房间成员或页面布局变化时重算，玩家自己也参与避让。 */
     function computeOverlapShifts(layout) {
         var shifts = new Map();
         if (!layout || layout.length < 2) return shifts;
@@ -282,6 +326,7 @@
             if (grid && grid.parentNode) grid.parentNode.removeChild(grid);
         });
         state.bodyGrids.clear();
+        state.bodyGridTopology = '';
     }
 
     /** 选中目标和部位 */

@@ -150,52 +150,31 @@
             console.warn('[QiAct] AssetAllActivities hook 失败:', e.message);
         }
 
-        // DrawCharacter(Character, X, Y, Zoom, ...) 的 X/Y/Zoom 是角色最终画上去的位置，
-        // 含 ECHO 贴贴等活动的 X 位移，比 ChatRoomCharacterViewLoopCharacters 更准。
-        // 这是线框能精确贴合人物模型的关键。
+        // The overlay hook exposes the final character geometry. Only changed geometry
+        // reaches the DOM; the shared body template itself is never rebuilt per frame.
         try {
-            state.modApi.hookFunction('DrawCharacter', 1, function(args, next) {
-                var r = next(args);
-                try {
-                    var C = args[0], X = args[1], Y = args[2], Zoom = args[3];
-                    if (C && C.MemberNumber != null && typeof X === 'number' &&
-                        typeof CurrentScreen !== 'undefined' && CurrentScreen === 'ChatRoom') {
-                        state.charAnchor[C.MemberNumber] = { x: X, y: Y, zoom: Zoom, t: Date.now() };
-                    }
-                } catch (e) { reportHookError('DrawCharacter锚点', e); }
-                return r;
+            state.modApi.hookFunction('ChatRoomCharacterViewDrawOverlay', 1, function(args, next) {
+                var result = next(args);
+                if (state.isActive && state.interactionGridActive) syncBodyGridForCharacter(args[0], args[1], args[2], args[3]);
+                return result;
             });
         } catch (e) {
-            console.warn('[QiAct] DrawCharacter 锚点 hook 失败:', e.message);
+            console.warn('[QiAct] character overlay hook failed:', e.message);
         }
-
-        // Hook: DrawProcess — 每帧在主聊天界面确保切换按钮常驻
-        state.modApi.hookFunction('DrawProcess', 4, function(args, next) {
-            var result = next(args);
-            try {
-                if (typeof CurrentScreen !== 'undefined') {
-                    if (CurrentScreen === 'ChatRoom') {
-                        drawToggleButton();
-                    } else if (state.toggleBtnEl && !state.chatButtonDocked) {
-                        // 仅浮动按钮离开聊天室时隐藏；收纳（docked）按钮的显隐完全交给
-                        // BC_ChatRoomButtons 协调器管理。这里若给 docked 按钮盖上 inline
-                        // display:none，离开→重进聊天室后 docked 分支不会清除它，按钮会卡在隐藏。
-                        state.toggleBtnEl.style.display = 'none';
-                    }
-                }
-            } catch (e) { reportHookError('DrawProcess', e); }
-            return result;
-        });
 
         // 窗口尺寸变化 → 刷新画布矩形缓存
         try {
-            addRuntimeListener(window, 'resize', function() { refreshCanvasCache(); });
+            addRuntimeListener(window, 'resize', function() {
+                refreshCanvasCache();
+                if (state.isActive) updateGridPositions();
+            });
         } catch (_) { /* 忽略：注册 resize 监听失败无影响 */ }
 
         // Hook: ChatRoomClick — 按钮已改为 DOM 元素，此处仅保留扩展点
         state.modApi.hookFunction('ChatRoomClick', 4, function(args, next) {
-            // DOM 按钮(#xsact-toggle-btn) 自行处理点击事件，无需在此拦截
-            return next(args);
+            var result = next(args);
+            scheduleBodyGridRefresh();
+            return result;
         });
 
         // Hook: ActivityRun — 记录每次执行的上下文
@@ -219,13 +198,6 @@
             next(args);
         });
 
-        // Hook: ChatRoomMenuDraw — 动作模式下同步更新浮动网格位置（跟随角色）
-        state.modApi.hookFunction('ChatRoomMenuDraw', 0, function(args, next) {
-            var result = next(args);
-            if (state.isActive) updateGridPositions();
-            return result;
-        });
-
         // 全局键盘: Esc 退出
         addRuntimeListener(document, 'keydown', function(e) {
             if (e.key === 'Escape' && state.isActive) {
@@ -235,34 +207,25 @@
             }
         });
 
-        // 定时刷新：检测新进入房间的角色（每 3 秒）
-        function startRefreshTimer() {
-            stopRefreshTimer();
-            // 仅做兜底刷新：每帧 ChatRoomMenuDraw 已调用 updateGridPositions（其内部用
-            // state.lastLayoutCount 正确判断人数变化并重建）。这里不能再用自己的
-            // bodyGrids.size 与 layout.length 比较来触发 refreshBodyGrids，否则 selfMode
-            // 关闭时玩家网格不计入 bodyGrids.size，导致 6 !== 7 永远成立，每 3 秒强制重建
-            // 一次、线框瞬间跳动。
-            state.refreshInterval = runtime && runtime.interval ? runtime.interval(function() {
-                if (state.isActive) updateGridPositions();
-            }, 3000) : setInterval(function() {
-                if (state.isActive) updateGridPositions();
-            }, 3000);
-        }
-        function stopRefreshTimer() {
-            if (state.refreshInterval) { clearInterval(state.refreshInterval); state.refreshInterval = null; }
-        }
-
-        // Hook ServerSend: 监听房间进出事件
-        state.modApi.hookFunction('ServerSend', 0, function(args, next) {
-            var data = args[0];
-            if (data && (data.Type === 'Action' || data.Type === 'Activity')) {
-                setTimeout(function() {
-                    if (state.isActive) refreshBodyGrids();
-                }, 500);
-            }
-            return next(args);
+        ['ChatRoomSyncMemberJoin', 'ChatRoomSyncMemberLeave'].forEach(function(hookName) {
+            try {
+                state.modApi.hookFunction(hookName, 1, function(args, next) {
+                    var result = next(args);
+                    scheduleBodyGridRefresh(true);
+                    return result;
+                });
+            } catch (_) { /* Not every BC build exposes every granular sync hook. */ }
         });
+
+        try {
+            state.modApi.hookFunction('ChatRoomLeave', 1, function(args, next) {
+                var result = next(args);
+                clearBodyGrids();
+                if (state.toggleBtnEl && !state.chatButtonDocked) state.toggleBtnEl.style.display = 'none';
+                return result;
+            });
+        } catch (_) { /* fallback visibility guard handles older BC builds */ }
+        state.screenLifecycleHooked = false;
 
         // ── Hook: ActivityRun（优先级 -100，先于记录 hook 拦截）──
         // 原生动作界面点击我们的自定义动作时，BC 原生 ActivityRun 会按「当前菜单部位组」
@@ -322,11 +285,6 @@
             console.warn('[QiAct] ElementButton 图标 hook 失败:', e.message);
         }
 
-        // 将定时器控制绑定到 enter/exit
-        var _baseEnter = enterActionMode;
-        enterActionMode = function() { _baseEnter(); startRefreshTimer(); };
-        var _baseExit = exitActionMode;
-        exitActionMode = function() { _baseExit(); stopRefreshTimer(); };
     }
 
     /** 更新浮动网格位置（跟随角色移动/人数变化） */
