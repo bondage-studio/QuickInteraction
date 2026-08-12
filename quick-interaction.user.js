@@ -862,9 +862,42 @@ One of mods you are using is using an old version of SDK. It will work for now b
           });
         }
         var seen = {};
+        var allowedCache = {};
+        function allowedNamesFor(g) {
+          if (g in allowedCache) return allowedCache[g];
+          var set = null;
+          if (targetChar && typeof ActivityAllowedForGroup === "function") {
+            try {
+              var list = ActivityAllowedForGroup(targetChar, g);
+              if (Array.isArray(list)) {
+                set = {};
+                list.forEach(function(x) {
+                  var n = x && (x.Activity ? x.Activity.Name : x.Name);
+                  if (n) set[n] = true;
+                });
+              }
+            } catch (e) {
+              set = null;
+            }
+          }
+          allowedCache[g] = set;
+          return set;
+        }
+        function actionExecutable(name, group) {
+          var fam = getPartGroupFamily(group);
+          var sawAuthoritative = false;
+          for (var i = 0; i < fam.length; i++) {
+            var set = allowedNamesFor(fam[i]);
+            if (set === null) continue;
+            sawAuthoritative = true;
+            if (set[name]) return true;
+          }
+          return !sawAuthoritative;
+        }
         return actions.filter(function(a) {
           if (!a.Name || a.Name.indexOf("MISSING") !== -1 || a.translatedName && (a.translatedName.indexOf("[STRING_RETRIEVAL_FAILED]") !== -1 || a.translatedName.indexOf("MISSING TEXT IN") !== -1 || a.translatedName.indexOf("MISSING ACTIVITY") !== -1)) return false;
           if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
+          if (!actionExecutable(a.Name, a.Group || partGroup)) return false;
           if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;
           if (a.Name.indexOf(CA_PREFIX) === 0) {
             var ca = caFindByActivityName(a.Name);
@@ -1392,7 +1425,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
           Name: actName,
           ActivityID: actId,
           MaxProgress: 0,
-          Prerequisite: [],
+          // 有指定就沿用（echo 导入会带回原生 UseHands/UseMouth/UseFeet 等束缚前置条件），
+          // 否则空数组＝不受限（小酥表情动作、用户自建动作默认无束缚门槛）。
+          Prerequisite: Array.isArray(act.prerequisite) ? act.prerequisite.slice() : [],
           Target: isSelfOnly ? [] : [act.group],
           TargetSelf: isOtherOnly ? [] : [act.group]
         };
@@ -1783,6 +1818,20 @@ One of mods you are using is using an old version of SDK. It will work for now b
           console.warn("[QiAct] 扫描 echo 原始动作名失败:", e.message);
         }
         return names;
+      }
+      function caResolveEchoPrerequisite(item, rawNames) {
+        if (item && Array.isArray(item.Prerequisite)) return item.Prerequisite.slice();
+        try {
+          var acts = caRawAllActivities(Player && Player.AssetFamily || "Female3DCG");
+          if (Array.isArray(acts) && rawNames && rawNames.size) {
+            for (var i = 0; i < acts.length; i++) {
+              var a = acts[i];
+              if (a && rawNames.has(a.Name) && Array.isArray(a.Prerequisite)) return a.Prerequisite.slice();
+            }
+          }
+        } catch (e) {
+        }
+        return [];
       }
       function caRawAllActivities(fam) {
         try {
@@ -2627,6 +2676,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
             if (caLooksLikeRawActivityName(rawName)) foundRawNames.add(rawName);
             if (caLooksLikeRawActivityName(k) && k !== rawName) foundRawNames.add(k);
             var primaryEchoName = foundRawNames.values().next().value || rawName;
+            var prerequisite = caResolveEchoPrerequisite(item, foundRawNames);
             var existing = state.customActions.find(function(a) {
               return a.name === displayName && a.group === group;
             });
@@ -2638,6 +2688,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
               existing.source = "echo";
               existing.echoName = primaryEchoName;
               existing.echoNames = Array.from(foundRawNames);
+              existing.prerequisite = prerequisite;
               if (typeof existing.visible !== "boolean") existing.visible = true;
               upsertCustom(existing);
             } else {
@@ -2651,6 +2702,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
                 createdAt: Date.now(),
                 source: "echo",
                 visible: true,
+                prerequisite,
+                // 原生束缚前置条件，供 caBuildActivityDef 还原限制
                 echoName: primaryEchoName,
                 // 记录真实 echo 注册名，用于后续启动时重新屏蔽
                 echoNames: Array.from(foundRawNames)
@@ -3530,13 +3583,13 @@ One of mods you are using is using an old version of SDK. It will work for now b
         renderCharList();
         setPanelMode("part");
       }
-      function getRoomCharacters() {
+      function getRoomCharacters(includeSelf) {
         var arr = [];
         if (typeof ChatRoomCharacter !== "undefined" && Array.isArray(ChatRoomCharacter)) {
           ChatRoomCharacter.forEach(function(c) {
             if (!c || !c.MemberNumber) return;
             var isSelf = c.IsPlayer && c.IsPlayer();
-            if (isSelf && !state.selfModeActive) return;
+            if (isSelf && !includeSelf && !state.selfModeActive) return;
             arr.push(c);
           });
         }
@@ -3560,7 +3613,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function renderCharList() {
         var bodyEl = state.actionPanelEl && state.actionPanelEl.querySelector("#xsact-char-popover-body");
         if (!bodyEl) return;
-        var chars = getRoomCharacters();
+        var chars = getRoomCharacters(true);
         var html = "";
         if (chars.length === 0) {
           html = '<div class="xsact-char-popover-empty">' + QiActT("target.empty") + "</div>";
@@ -5480,7 +5533,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
             if (typeof CurrentScreen !== "undefined") {
               if (CurrentScreen === "ChatRoom") {
                 drawToggleButton();
-              } else if (state.toggleBtnEl) {
+              } else if (state.toggleBtnEl && !state.chatButtonDocked) {
                 state.toggleBtnEl.style.display = "none";
               }
             }

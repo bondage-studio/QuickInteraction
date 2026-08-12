@@ -56,12 +56,47 @@
 
         // 去重 + 过滤无效条目 + 过滤真实部位无翻译的（避免聊天消息乱码）
         var seen = {};
+        // 与执行端同源的权威白名单：execution 用 resolveAllowedActivity → ActivityAllowedForGroup 判定「能否执行」，
+        // 显示端必须同源，否则会出现「显示了、点了却报不可用」。ActivityAllowedForGroup 已内含
+        // 前置条件(束缚)、权限、自我/对他方向、Needs-道具展开、源头封锁等全部判定，无需再各自复刻。
+        // 按候选部位组缓存其权威可用名集合，避免逐动作重复调用。
+        var allowedCache = {}; // group -> {name:true} | null（null 表示 BC 无法权威判定，放行）
+        function allowedNamesFor(g) {
+            if (g in allowedCache) return allowedCache[g];
+            var set = null;
+            if (targetChar && typeof ActivityAllowedForGroup === 'function') {
+                try {
+                    var list = ActivityAllowedForGroup(targetChar, g);
+                    if (Array.isArray(list)) {
+                        set = {};
+                        list.forEach(function(x) { var n = x && (x.Activity ? x.Activity.Name : x.Name); if (n) set[n] = true; });
+                    }
+                } catch (e) { set = null; }
+            }
+            allowedCache[g] = set;
+            return set;
+        }
+        // 动作只要在其部位族任一候选组的权威白名单中即可执行；候选组都能权威判定却都不含它 → 隐藏（点了必然不可用）。
+        // 完全无法权威判定（旧版 BC 无此函数/自定义组解析不出）→ 放行，退回原有数据源行为，避免整块空白。
+        function actionExecutable(name, group) {
+            var fam = getPartGroupFamily(group);
+            var sawAuthoritative = false;
+            for (var i = 0; i < fam.length; i++) {
+                var set = allowedNamesFor(fam[i]);
+                if (set === null) continue;
+                sawAuthoritative = true;
+                if (set[name]) return true;
+            }
+            return !sawAuthoritative;
+        }
         return actions.filter(function(a) {
             if (!a.Name || a.Name.indexOf('MISSING') !== -1 ||
                 (a.translatedName && (a.translatedName.indexOf('[STRING_RETRIEVAL_FAILED]') !== -1 ||
                                       a.translatedName.indexOf('MISSING TEXT IN') !== -1 ||
                                       a.translatedName.indexOf('MISSING ACTIVITY') !== -1))) return false;
             if (!shouldKeepAction(a.Name, a.Group || partGroup)) return false;
+            // 与执行端一致：不在 BC 权威可用列表里的一律不显示（束缚/权限/方向/道具缺失等都在此判定）
+            if (!actionExecutable(a.Name, a.Group || partGroup)) return false;
             // 屏蔽已导入的 echo 原始动作名（双重兜底：ActivityAllowedForGroup hook 已过滤，
             // 但 fallback 数据源和旧数据可能绕过 hook，这里再强制过滤一次）
             if (state.echoSuppressed && caIsEchoSuppressed(a.Name)) return false;

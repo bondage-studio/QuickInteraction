@@ -41,6 +41,9 @@
                 if (caLooksLikeRawActivityName(rawName)) foundRawNames.add(rawName);
                 if (caLooksLikeRawActivityName(k) && k !== rawName) foundRawNames.add(k);
                 var primaryEchoName = foundRawNames.values().next().value || rawName;
+                // 保留原生束缚前置条件（UseHands/UseMouth/UseFeet 等），否则被束缚时该露出限制的动作照样显示。
+                // 优先取 echo 存档里的 Prerequisite；缺失则从现存活动定义按真实名查回。
+                var prerequisite = caResolveEchoPrerequisite(item, foundRawNames);
 
                 // 去重：同名同部位已存在则更新，避免重复导入导致屏蔽集合/注册表混乱
                 var existing = state.customActions.find(function(a) { return a.name === displayName && a.group === group; });
@@ -52,6 +55,7 @@
                     existing.source = 'echo';
                     existing.echoName = primaryEchoName;
                     existing.echoNames = Array.from(foundRawNames);
+                    existing.prerequisite = prerequisite;
                     if (typeof existing.visible !== 'boolean') existing.visible = true;
                     upsertCustom(existing);
                 } else {
@@ -65,6 +69,7 @@
                         createdAt: Date.now(),
                         source: 'echo',
                         visible: true,
+                        prerequisite: prerequisite, // 原生束缚前置条件，供 caBuildActivityDef 还原限制
                         echoName: primaryEchoName, // 记录真实 echo 注册名，用于后续启动时重新屏蔽
                         echoNames: Array.from(foundRawNames) // 记录所有可能的原始名，防止漏网
                     };

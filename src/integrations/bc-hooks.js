@@ -176,7 +176,10 @@
                 if (typeof CurrentScreen !== 'undefined') {
                     if (CurrentScreen === 'ChatRoom') {
                         drawToggleButton();
-                    } else if (state.toggleBtnEl) {
+                    } else if (state.toggleBtnEl && !state.chatButtonDocked) {
+                        // 仅浮动按钮离开聊天室时隐藏；收纳（docked）按钮的显隐完全交给
+                        // BC_ChatRoomButtons 协调器管理。这里若给 docked 按钮盖上 inline
+                        // display:none，离开→重进聊天室后 docked 分支不会清除它，按钮会卡在隐藏。
                         state.toggleBtnEl.style.display = 'none';
                     }
                 }

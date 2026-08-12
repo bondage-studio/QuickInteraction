@@ -17,14 +17,16 @@
         setPanelMode('part');
     }
 
-    /** 获取当前房间内有效成员（自己受 selfMode 控制） */
-    function getRoomCharacters() {
+    /** 获取当前房间内有效成员。
+     *  includeSelf=true 时无条件包含自己（人物列表弹层用——「自己」作为目标始终可选，
+     *  与「互動格」的 selfMode 解耦）；否则自己仍受 selfMode 控制（全員广播/组合动作用）。 */
+    function getRoomCharacters(includeSelf) {
         var arr = [];
         if (typeof ChatRoomCharacter !== 'undefined' && Array.isArray(ChatRoomCharacter)) {
             ChatRoomCharacter.forEach(function(c) {
                 if (!c || !c.MemberNumber) return;
                 var isSelf = c.IsPlayer && c.IsPlayer();
-                if (isSelf && !state.selfModeActive) return;
+                if (isSelf && !includeSelf && !state.selfModeActive) return;
                 arr.push(c);
             });
         }
@@ -53,7 +55,7 @@
     function renderCharList() {
         var bodyEl = state.actionPanelEl && state.actionPanelEl.querySelector('#xsact-char-popover-body');
         if (!bodyEl) return;
-        var chars = getRoomCharacters();
+        var chars = getRoomCharacters(true); // 人物列表始终列出「自己」，不受 selfMode 影响
         var html = '';
         if (chars.length === 0) {
             html = '<div class="xsact-char-popover-empty">' + QiActT('target.empty') + '</div>';

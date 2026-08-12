@@ -24,7 +24,9 @@
             Name: actName,
             ActivityID: actId,
             MaxProgress: 0,
-            Prerequisite: [],
+            // 有指定就沿用（echo 导入会带回原生 UseHands/UseMouth/UseFeet 等束缚前置条件），
+            // 否则空数组＝不受限（小酥表情动作、用户自建动作默认无束缚门槛）。
+            Prerequisite: Array.isArray(act.prerequisite) ? act.prerequisite.slice() : [],
             Target: isSelfOnly ? [] : [act.group],
             TargetSelf: isOtherOnly ? [] : [act.group]
         };
@@ -423,6 +425,21 @@
             });
         } catch (e) { console.warn('[QiAct] 扫描 echo 原始动作名失败:', e.message); }
         return names;
+    }
+    /** 还原 echo 动作的束缚前置条件：优先取 echo 存档里的 Prerequisite，
+     *  缺失则按真实注册名从现存活动定义查回。找不到就返回空数组（不限制）。 */
+    function caResolveEchoPrerequisite(item, rawNames) {
+        if (item && Array.isArray(item.Prerequisite)) return item.Prerequisite.slice();
+        try {
+            var acts = caRawAllActivities((Player && Player.AssetFamily) || 'Female3DCG');
+            if (Array.isArray(acts) && rawNames && rawNames.size) {
+                for (var i = 0; i < acts.length; i++) {
+                    var a = acts[i];
+                    if (a && rawNames.has(a.Name) && Array.isArray(a.Prerequisite)) return a.Prerequisite.slice();
+                }
+            }
+        } catch (e) { silent(e, 'caResolveEchoPrerequisite'); }
+        return [];
     }
     /** 读取 BC 原生活动数组（绕过本插件对 AssetAllActivities 的 hook，拿到未过滤的原始数组）。
      *  本插件内部需要枚举/改写活动注册表时（注册自定义动作、扫描 echo 原始名、物理移除屏蔽项）
