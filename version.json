@@ -1,19 +1,16 @@
 {
-  "version": "1.4.1",
-  "date": "2026-08-11",
-  "severity": "important",
+  "version": "1.4.2",
+  "date": "2026-08-12",
+  "severity": "normal",
   "summary": [
-    "全語言支援：新增日文、韓文、越南文與西班牙文，現在支援 11 種語言與自動偵測",
-    "翻譯引擎升級：翻譯改為 Translation 目錄下每個語系一份 JSON，缺漏內容會安全回退英文",
-    "功能完善：新增收藏分頁、全員動作延遲與會員略過名單，並完善人物、部位與我的動作操作流程",
-    "說明：新增語系為 Google Translate 初稿，歡迎母語使用者透過獨立翻譯檔協助校對"
+    "修复「我的动作」列表卡片：左侧文字未设置最小宽度导致不收缩，挤压右侧操作按钮（执行/编辑/删除）被截断在卡片外"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.1",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.2",
   "announcement": {
-    "id": "2026-08-11-polish-v1.4.1",
-    "title": "QiAct v1.4.1 · 多語言與功能完善",
-    "severity": "important",
-    "message": "本次更新（v1.4.1）完成開發階段的整體功能整理：\n\n1. 全語言支援：新增日文、韓文、越南文與西班牙文，連同既有語系共支援 11 種語言及自動偵測。語言設定使用簡潔的原生下拉選單顯示各語系名稱。\n\n2. 翻譯引擎升級：翻譯來源移至根目錄 Translation，每個語系使用一份獨立 JSON。後續可單獨校對或新增語系，缺漏內容則安全回退英文。\n\n3. 新增收藏分頁：可集中管理及使用所有收藏動作，支援指定互動人物與部位篩選；全員模式可直接執行收藏動作。\n\n4. 介面與操作完善：重整我的動作編輯版面、加入手機大型部位選擇視窗，設定頁新增全員動作延遲與會員 ID 略過名單，並整合人物列表方向、互動格、聊天室按鈕收納及小酥動作包控制。\n\n5. 穩定性修正：完善熱移除與熱注入清理，並修正面板溢出、按鈕狀態、聊天室收納按鈕隱藏及停用後無法重新啟用等問題。\n\n⚠️ 日文、韓文、越南文、西班牙文及部分既有語系為機器翻譯初稿，歡迎透過 Translation 目錄協助校對。\n\n刷新頁面即可套用更新。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.1"
+    "id": "2026-08-12-fix-ca-button-truncation",
+    "title": "QiAct v1.4.2 · 修复自定义动作列表按钮截断",
+    "severity": "normal",
+    "message": "本次更新（v1.4.2）修复一个界面显示问题：\n\n「我的动作」列表中的卡片，左侧动作名称/部位标签因未设置最小宽度而不收缩，挤压右侧操作按钮，使「执行 / 编辑 / 删除」三个按钮被截断在卡片之外。\n\n修复后：文本在空间不足时会正确显示省略号，三个操作按钮完整显示在卡片右侧。\n\n重新注入脚本即可生效。",
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.2"
   }
 }

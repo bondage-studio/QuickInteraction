@@ -2,7 +2,7 @@
 // @name         快捷互动 (QiAct)
 // @name:zh      快捷互动
 // @namespace    https://github.com/bondage-studio/QuickInteraction
-// @version      1.4.1
+// @version      1.4.2
 // @description  Bondage Club - 统一动作操作台。一键进入动作模式，在聊天室场景内直接点人物部位选动作，绕过原生5步嵌套菜单。
 // @author       Tao MUSE
 // @homepageURL  https://github.com/bondage-studio/QuickInteraction
@@ -399,7 +399,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function silent(e, ctx) {
         return;
       }
-      const VERSION = "1.4.1";
+      const VERSION = "1.4.2";
       const S_ENABLED = "xsact_qa_enabled";
       const S_FAVS = "xsact_qa_favorites";
       const S_PRESETS = "xsact_qa_presets";
@@ -4676,9 +4676,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-ca-card:hover{border-color:var(--xs-border-strong);background:var(--xs-hover);transform:translateY(-1px);}",
           ".xsact-ca-info{display:flex;flex-direction:column;gap:5px;min-width:0;overflow:hidden;}",
           ".xsact-ca-title{display:flex;align-items:center;gap:8px;min-width:0;}",
-          ".xsact-ca-name{font-size:14px;font-weight:600;color:var(--xs-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
+          ".xsact-ca-name{flex:1 1 auto;min-width:0;font-size:14px;font-weight:600;color:var(--xs-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
           ".xsact-ca-meta{display:flex;align-items:center;gap:8px;min-width:0;}",
-          ".xsact-ca-part{font-size:11px;color:var(--xs-text-dim);opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
+          ".xsact-ca-part{flex:1 1 auto;min-width:0;font-size:11px;color:var(--xs-text-dim);opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
           ".xsact-ca-badge{flex-shrink:0;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;letter-spacing:0.02em;}",
           ".xsact-ca-badge.other{background:rgba(90,160,255,0.16);color:#8FB8FF;}",
           ".xsact-ca-badge.self{background:rgba(70,224,160,0.16);color:#5FE3B0;}",
@@ -4713,7 +4713,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-ca-batch-actions button:disabled{opacity:.45;cursor:not-allowed;}",
           ".xsact-ca-batch-del{background:rgba(255,92,92,0.12);border-color:rgba(255,92,92,0.35);color:#FF9C9C;}",
           ".xsact-ca-batch-del:hover:not(:disabled){background:rgba(255,92,92,0.22);border-color:rgba(255,92,92,0.5);}",
-          ".xsact-ca-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--xs-text-dim);}",
+          ".xsact-ca-toggle{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--xs-text-dim);flex-shrink:0;}",
           ".xsact-ca-toggle input{position:absolute;opacity:0;width:0;height:0;}",
           ".xsact-ca-toggle-track{width:34px;height:18px;border-radius:999px;background:var(--xs-border-strong);position:relative;transition:background .2s;}",
           '.xsact-ca-toggle-track::before{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;}',
