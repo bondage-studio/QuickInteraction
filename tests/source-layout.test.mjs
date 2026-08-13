@@ -53,12 +53,15 @@ test('custom action toolbar is rendered before category chips', () => {
     assert.ok(manager.indexOf('html += toolbarHtml') < manager.indexOf('id="xsact-ca-chips"'));
 });
 
-test('docked toggle delegates collapse visibility to BC ChatRoomButtons', () => {
+test('CRB toggle is permanent and floating button remains optional', () => {
     const toggle = fs.readFileSync(path.join(root, 'src/ui/toggle-button.js'), 'utf8');
     assert.match(toggle, /plain: true/);
     assert.match(toggle, /createButton: createChatRoomToggleButton/);
     assert.match(toggle, /\.setState\('quick-interaction'/);
     assert.match(toggle, /removeAttribute\('title'\)/);
+    assert.match(toggle, /order: 3/);
+    assert.match(toggle, /state\.floatingButtonVisible/);
+    assert.equal(toggle.includes("crb.remove('quick-interaction')"), false);
     assert.equal(toggle.includes('collapse: false'), false);
     assert.equal(toggle.includes('ensureDockedToggleVisible'), false);
 });

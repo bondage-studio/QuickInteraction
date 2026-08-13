@@ -255,7 +255,7 @@
   "settings.theme": "Thème",
   "settings.char_list_right": "Bouton de personnages à droite",
   "settings.auto": "Auto",
-  "settings.chat_button": "Ancrer dans les boutons de chat BC",
+  "settings.chat_button": "Afficher le bouton flottant",
   "settings.enable_xiaosu": "Activer le pack d’actions XiaoSu",
   "editor.preview_label": "Aperçu",
   "render.favorite_title": "Actions favorites",

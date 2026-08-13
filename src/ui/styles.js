@@ -26,7 +26,7 @@
             '.xsact-ico{display:block;flex-shrink:0;}',
 
             /* ===== DOM 切换按钮（固定右下角，永远可见） ===== */
-            '#xsact-toggle-btn{',
+            '#xsact-toggle-btn,#xsact-chat-toggle-btn{',
             '  position:fixed;bottom:72px;right:16px;z-index:100000;',
             '  width:44px;height:44px;border-radius:13px;',
             '  background:rgba(var(--xs-accent-rgb), 0.85);border:2px solid rgba(var(--xs-accent-rgb), 0.5);',
@@ -35,19 +35,19 @@
             '  box-shadow:0 4px 16px var(--xs-shadow),0 0 8px rgba(var(--xs-accent-rgb), 0.2);',
             '  transition:all 0.2s ease;outline:none;',
             '}',
-            '#xsact-toggle-btn:hover{',
+            '#xsact-toggle-btn:hover,#xsact-chat-toggle-btn:hover{',
             '  background:rgba(var(--xs-accent-rgb), 1);border-color:var(--xs-accent);',
             '  box-shadow:0 6px 24px var(--xs-shadow),0 0 16px rgba(var(--xs-accent-rgb), 0.4);',
             '  transform:scale(1.08);',
             '}',
-            '#xsact-toggle-btn.active{',
+            '#xsact-toggle-btn.active,#xsact-chat-toggle-btn.active{',
             '  background:rgba(70,224,160,0.9);border-color:#46E0A0;',
             '  box-shadow:0 4px 16px rgba(70,224,160,0.3),0 0 12px rgba(70,224,160,0.4);',
             '}',
-            '#xsact-toggle-btn.active:hover{',
+            '#xsact-toggle-btn.active:hover,#xsact-chat-toggle-btn.active:hover{',
             '  background:#46E0A0;transform:scale(1.08);',
             '}',
-            '#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}',
+            '#xsact-chat-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}',
 
             /* ===== 右侧面板（暗色战术操作台） ===== */
             '#xsact-qa-panel{',
@@ -756,7 +756,7 @@
             '}',
 
             /* ===== 主题色切换过渡 ===== */
-            '#xsact-qa-panel,#xsact-toggle-btn{',
+            '#xsact-qa-panel,#xsact-toggle-btn,#xsact-chat-toggle-btn{',
             '  transition:background-color .3s ease,border-color .3s ease,color .3s ease,box-shadow .3s ease;',
             '}',
             '#xsact-qa-panel{animation:xsact-pop-in .28s cubic-bezier(.16,1,.3,1);}',

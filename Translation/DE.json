@@ -255,7 +255,7 @@
   "settings.theme": "Thema",
   "settings.char_list_right": "Charakterliste rechts",
   "settings.auto": "Auto",
-  "settings.chat_button": "In der BC-Chat-Schaltflächenleiste andocken",
+  "settings.chat_button": "Schwebende Schaltfläche anzeigen",
   "settings.enable_xiaosu": "XiaoSu-Aktionspaket aktivieren",
   "editor.preview_label": "Vorschau",
   "render.favorite_title": "Favoritenaktionen",

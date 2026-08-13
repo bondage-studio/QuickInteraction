@@ -255,7 +255,7 @@
   "settings.theme": "Tema",
   "settings.char_list_right": "Botón de lista de personajes a la derecha",
   "settings.auto": "Auto",
-  "settings.chat_button": "Acoplar los botones de la sala de chat de BC",
+  "settings.chat_button": "Mostrar botón flotante",
   "settings.enable_xiaosu": "Habilitar el paquete de acciones XiaoSu",
   "editor.preview_label": "Avance",
   "render.favorite_title": "Acciones favoritas",

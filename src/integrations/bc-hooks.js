@@ -221,7 +221,7 @@
             state.modApi.hookFunction('ChatRoomLeave', 1, function(args, next) {
                 var result = next(args);
                 clearBodyGrids();
-                if (state.toggleBtnEl && !state.chatButtonDocked) state.toggleBtnEl.style.display = 'none';
+                if (state.toggleBtnEl) state.toggleBtnEl.style.display = 'none';
                 return result;
             });
         } catch (_) { /* fallback visibility guard handles older BC builds */ }

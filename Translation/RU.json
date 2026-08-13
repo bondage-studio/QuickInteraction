@@ -255,7 +255,7 @@
   "settings.theme": "Тема",
   "settings.char_list_right": "Кнопка списка персонажей справа",
   "settings.auto": "Авто",
-  "settings.chat_button": "Закрепить на панели кнопок BC",
+  "settings.chat_button": "Показывать плавающую кнопку",
   "settings.enable_xiaosu": "Включить набор действий XiaoSu",
   "editor.preview_label": "Предпросмотр",
   "render.favorite_title": "Избранные действия",

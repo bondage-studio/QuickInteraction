@@ -255,7 +255,7 @@
   "settings.theme": "テーマ",
   "settings.char_list_right": "右のキャラクターリストボタン",
   "settings.auto": "自動",
-  "settings.chat_button": "BC チャット ルーム ボタンにドッキングする",
+  "settings.chat_button": "フローティングボタンを表示",
   "settings.enable_xiaosu": "XiaoSu アクション パックを有効にする",
   "editor.preview_label": "プレビュー",
   "render.favorite_title": "好きなアクション",

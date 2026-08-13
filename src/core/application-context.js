@@ -83,7 +83,7 @@
     const S_ECHO_SUPPRESS = 'xsact_qa_echo_suppressed'; // 已导入并屏蔽的 echo 原始动作名
     const S_XIAOSU_PACK = 'xsact_qa_xiaosu_pack'; // 是否启用内置「小酥动作包」（预编译进插件，离线可用）
     const S_CA_FILTER = 'xsact_qa_ca_filter'; // 「我的动作」分类 chip：'all' | 'xiaosu' | 'native' | 'echo'
-    const S_CHAT_BUTTON = 'xsact_qa_chat_button';
+    const S_FLOATING_BUTTON = 'xsact_qa_floating_button';
     const S_INTERACTION_GRID = 'xsact_qa_interaction_grid';
     const S_CHAR_POPOVER_RIGHT = 'xsact_qa_char_popover_right';
     const S_ACTION_DELAY = 'xsact_qa_action_delay';
@@ -128,7 +128,8 @@
         // ── UI / 渲染缓存 ──
         actionPanelEl: null,          // 右侧面板 DOM
         bodyGrids: new Map(),         // Character -> 身体线框元素
-        toggleBtnEl: null,            // 浮动开关 DOM
+        toggleBtnEl: null,            // 浮動氣球 DOM
+        chatToggleBtnEl: null,        // CRB 聊天室按鈕 DOM
         charAnchor: {},               // 角色真实绘制坐标 {MN:{x,y,zoom,t}}
         cachedRect: null,             // 画布屏幕矩形缓存
         cachedScaleX: 1,
@@ -136,7 +137,7 @@
         refreshInterval: null,        // 线框刷新定时器
         lastLayoutCount: 0,           // 上次布局角色数
         toggleDragged: false,         // 本次按下闪电按钮是否已拖动
-        chatButtonDocked: false
+        floatingButtonVisible: true
         ,favoritePartFilter: 'all'
         ,interactionGridActive: true
         ,charPopoverRight: false

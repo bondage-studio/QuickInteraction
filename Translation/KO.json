@@ -255,7 +255,7 @@
   "settings.theme": "주제",
   "settings.char_list_right": "오른쪽의 캐릭터 목록 버튼",
   "settings.auto": "자동",
-  "settings.chat_button": "BC 채팅방 버튼에 도킹",
+  "settings.chat_button": "플로팅 버튼 표시",
   "settings.enable_xiaosu": "XiaoSu 액션 팩 활성화",
   "editor.preview_label": "시사",
   "render.favorite_title": "좋아하는 행동",

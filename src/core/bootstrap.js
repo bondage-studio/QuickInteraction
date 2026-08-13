@@ -43,11 +43,12 @@
             delete window.__QiAct_ADT_PATCHED;
         } catch (_) { silent(_, 'dispose.activityDictionary'); }
 
-        document.querySelectorAll('#xsact-qa-panel, #xsact-qa-overlay, #xsact-toggle-btn, #xsact-qa-styles, .xsact-tooltip, .xsact-update-banner, .xsact-part-btn').forEach(function(element) {
+        document.querySelectorAll('#xsact-qa-panel, #xsact-qa-overlay, #xsact-toggle-btn, #xsact-chat-toggle-btn, #xsact-qa-styles, .xsact-tooltip, .xsact-update-banner, .xsact-part-btn').forEach(function(element) {
             try { element.remove(); } catch (_) { silent(_, 'dispose.dom'); }
         });
         state.actionPanelEl = null;
         state.toggleBtnEl = null;
+        state.chatToggleBtnEl = null;
 
         try { if (runtime && typeof runtime.dispose === 'function') runtime.dispose(); }
         catch (_) { silent(_, 'dispose.runtime'); }
@@ -126,7 +127,7 @@
 
         // 恢复主题设置（优先读游戏账号，回退本地）
         state.theme = loadSetting(S_THEME, 'dark');
-        state.chatButtonDocked = loadSetting(S_CHAT_BUTTON, false) === true;
+        state.floatingButtonVisible = loadSetting(S_FLOATING_BUTTON, true) !== false;
         applyTheme(state.theme);
 
         // 注入样式

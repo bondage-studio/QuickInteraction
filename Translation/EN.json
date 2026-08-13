@@ -255,7 +255,7 @@
   "settings.theme": "Theme",
   "settings.char_list_right": "Character list button on right",
   "settings.auto": "Auto",
-  "settings.chat_button": "Dock in the BC chat-room buttons",
+  "settings.chat_button": "Show floating button",
   "settings.enable_xiaosu": "Enable XiaoSu action pack",
   "editor.preview_label": "Preview",
   "render.favorite_title": "Favorite actions",

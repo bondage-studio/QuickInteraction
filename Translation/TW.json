@@ -255,7 +255,7 @@
   "settings.theme": "主題",
   "settings.char_list_right": "人物列表按鈕置右",
   "settings.auto": "自動",
-  "settings.chat_button": "收納到 BC 聊天室按鈕列",
+  "settings.chat_button": "顯示浮懸氣球",
   "settings.enable_xiaosu": "啟用小酥動作包",
   "editor.preview_label": "效果預覽",
   "render.favorite_title": "收藏動作",
