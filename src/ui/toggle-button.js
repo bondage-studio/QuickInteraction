@@ -38,8 +38,8 @@
         var L = window.Liko = window.Liko || {};
         var spec = {
             id: 'quick-interaction', order: 50, createButton: createChatRoomToggleButton, plain: true,
-            tooltip: QiActT('ui.toggle_on'), background: '#FF5C7A',
-            active: { tooltip: QiActT('ui.toggle_on_active'), background: '#46E0A0', color: '#ffffff' },
+            tooltip: QiActT('ui.toggle_on'), background: '#FF5C7A', border: 'none',
+            active: { tooltip: QiActT('ui.toggle_on_active'), background: '#46E0A0', color: '#ffffff', border: 'none' },
             state: { active: state.isActive }
         };
         if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) {
@@ -138,15 +138,19 @@
     /** 更新按钮外观状态 */
     function updateToggleBtnStyle() {
         if (!state.toggleBtnEl) return;
+        var tooltip = state.isActive ? QiActT('ui.toggle_on_active') : QiActT('ui.toggle_on');
         if (state.isActive) {
             state.toggleBtnEl.classList.add('active');
-            state.toggleBtnEl.title = QiActT('ui.toggle_on_active');
         } else {
             state.toggleBtnEl.classList.remove('active');
-            state.toggleBtnEl.title = QiActT('ui.toggle_on');
         }
         var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
-        if (state.chatButtonDocked && crb && crb.setActive) crb.setActive('quick-interaction', state.isActive);
+        if (state.chatButtonDocked) {
+            state.toggleBtnEl.removeAttribute('title');
+            if (crb && crb.setState) crb.setState('quick-interaction', { active: state.isActive, tooltip: tooltip, border: 'none' });
+        } else {
+            state.toggleBtnEl.title = tooltip;
+        }
     }
 
     /** 兼容旧接口：DrawProcess hook 调用（确保聊天室内闪电图标常驻可见） */

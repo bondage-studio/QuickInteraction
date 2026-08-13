@@ -3278,7 +3278,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
           plain: true,
           tooltip: QiActT("ui.toggle_on"),
           background: "#FF5C7A",
-          active: { tooltip: QiActT("ui.toggle_on_active"), background: "#46E0A0", color: "#ffffff" },
+          border: "none",
+          active: { tooltip: QiActT("ui.toggle_on_active"), background: "#46E0A0", color: "#ffffff", border: "none" },
           state: { active: state.isActive }
         };
         if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) {
@@ -3384,15 +3385,19 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function updateToggleBtnStyle() {
         if (!state.toggleBtnEl) return;
+        var tooltip = state.isActive ? QiActT("ui.toggle_on_active") : QiActT("ui.toggle_on");
         if (state.isActive) {
           state.toggleBtnEl.classList.add("active");
-          state.toggleBtnEl.title = QiActT("ui.toggle_on_active");
         } else {
           state.toggleBtnEl.classList.remove("active");
-          state.toggleBtnEl.title = QiActT("ui.toggle_on");
         }
         var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
-        if (state.chatButtonDocked && crb && crb.setActive) crb.setActive("quick-interaction", state.isActive);
+        if (state.chatButtonDocked) {
+          state.toggleBtnEl.removeAttribute("title");
+          if (crb && crb.setState) crb.setState("quick-interaction", { active: state.isActive, tooltip, border: "none" });
+        } else {
+          state.toggleBtnEl.title = tooltip;
+        }
       }
       function drawToggleButton() {
         if (state.chatButtonDocked) {
@@ -4870,8 +4875,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "#xsact-toggle-btn.active:hover{",
           "  background:#46E0A0;transform:scale(1.08);",
           "}",
-          "#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border:none!important;border-radius:12px;}",
-          "#xsact-toggle-btn.xsact-chat-toggle:hover,#xsact-toggle-btn.xsact-chat-toggle.active{border:none!important;}",
+          "#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}",
           /* ===== 右侧面板（暗色战术操作台） ===== */
           "#xsact-qa-panel{",
           "  position:fixed;top:min(48px,4vh);right:12px;width:min(380px,92vw);height:min(680px,88vh);z-index:100100;",
