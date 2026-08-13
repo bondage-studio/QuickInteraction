@@ -161,8 +161,8 @@
         }
         if (state.toggleBtnEl) {
             state.toggleBtnEl.style.display = state.floatingButtonVisible ? '' : 'none';
-            updateToggleBtnStyle();
         }
+        updateToggleBtnStyle();
     }
 
     /** 可见性守卫：聊天室内确保按钮存在且可见，离开界面则隐藏。

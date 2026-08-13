@@ -3399,8 +3399,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
         }
         if (state.toggleBtnEl) {
           state.toggleBtnEl.style.display = state.floatingButtonVisible ? "" : "none";
-          updateToggleBtnStyle();
         }
+        updateToggleBtnStyle();
       }
       function guardToggleVisibility() {
         if (state.disposed || runtime && runtime.disposed) return;
@@ -3476,6 +3476,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
         toast(QiActT("common.enter_mode"), "#FF5C7A");
       }
       function exitActionMode() {
+        state.isActive = false;
+        persist(S_ENABLED, false);
         if (state.actionPanelEl) {
           state.actionPanelEl.style.display = "none";
         }
@@ -3486,6 +3488,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         state.selectedActionItem = null;
         state.editingComboId = null;
         state.allModeActive = false;
+        updateToggleBtnStyle();
         toast(QiActT("common.exit_mode"), "#888");
       }
       function rebuildPanel() {

@@ -64,6 +64,8 @@
 
     function exitActionMode() {
         logD('退出动作模式');
+        state.isActive = false;
+        persist(S_ENABLED, false);
 
         if (state.actionPanelEl) {
             state.actionPanelEl.style.display = 'none';
@@ -78,6 +80,8 @@
         state.selectedActionItem = null;
         state.editingComboId = null;
         state.allModeActive = false;
+
+        updateToggleBtnStyle();
 
         toast(QiActT('common.exit_mode'), '#888');
     }
