@@ -27,7 +27,7 @@
             if (crb && typeof crb.remove === 'function') crb.remove('quick-interaction');
             var pending = window.Liko && window.Liko.__CRB_pending__;
             if (Array.isArray(pending)) {
-                window.Liko.__CRB_pending__ = pending.filter(function(item) { return !item || item[0] !== 'quick-interaction'; });
+                window.Liko.__CRB_pending__ = pending.filter(function(item) { return !item || item.id !== 'quick-interaction'; });
             }
         } catch (_) { silent(_, 'dispose.chatRoomButton'); }
 

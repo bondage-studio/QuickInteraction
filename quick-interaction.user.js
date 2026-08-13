@@ -3271,16 +3271,25 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function registerChatRoomToggle() {
         var L = window.Liko = window.Liko || {};
-        var spec = ["quick-interaction", 50, createChatRoomToggleButton, { plain: true }];
+        var spec = {
+          id: "quick-interaction",
+          order: 50,
+          createButton: createChatRoomToggleButton,
+          plain: true,
+          tooltip: QiActT("ui.toggle_on"),
+          background: "#FF5C7A",
+          active: { tooltip: QiActT("ui.toggle_on_active"), background: "#46E0A0", color: "#ffffff" },
+          state: { active: state.isActive }
+        };
         if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) {
-          L.__Sys_ChatRoomButtons__.add.apply(L.__Sys_ChatRoomButtons__, spec);
+          L.__Sys_ChatRoomButtons__.add(spec);
         } else {
           L.__CRB_pending__ = L.__CRB_pending__ || [];
           if (!L.__CRB_pending__.some(function(x) {
-            return x && x[0] === spec[0];
+            return x && x.id === spec.id;
           })) L.__CRB_pending__.push(spec);
           if (!L.__QiActCRBLoading) {
-            L.__QiActCRBLoading = fetch("https://cdn.jsdelivr.net/gh/awdrrawd/liko-Plugin-Repository@main/Plugins/expand/BC_ChatRoomButtons.js", { cache: "no-store" }).then(function(r) {
+            L.__QiActCRBLoading = fetch("https://raw.githubusercontent.com/awdrrawd/liko-Plugin-Repository/main/Plugins/expand/BC_ChatRoomButtons.js", { cache: "no-store" }).then(function(r) {
               if (!r.ok) throw new Error("HTTP " + r.status);
               return r.text();
             }).then(function(code) {
@@ -3304,7 +3313,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           if (crb && crb.remove) crb.remove("quick-interaction");
           var q = window.Liko && window.Liko.__CRB_pending__;
           if (Array.isArray(q)) window.Liko.__CRB_pending__ = q.filter(function(x) {
-            return !x || x[0] !== "quick-interaction";
+            return !x || x.id !== "quick-interaction";
           });
           drawToggleButton();
         }
@@ -3382,6 +3391,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
           state.toggleBtnEl.classList.remove("active");
           state.toggleBtnEl.title = QiActT("ui.toggle_on");
         }
+        var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
+        if (state.chatButtonDocked && crb && crb.setActive) crb.setActive("quick-interaction", state.isActive);
       }
       function drawToggleButton() {
         if (state.chatButtonDocked) {
@@ -6271,7 +6282,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           var pending = window.Liko && window.Liko.__CRB_pending__;
           if (Array.isArray(pending)) {
             window.Liko.__CRB_pending__ = pending.filter(function(item) {
-              return !item || item[0] !== "quick-interaction";
+              return !item || item.id !== "quick-interaction";
             });
           }
         } catch (_) {

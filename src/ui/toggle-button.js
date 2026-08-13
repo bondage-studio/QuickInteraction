@@ -36,14 +36,19 @@
     }
     function registerChatRoomToggle() {
         var L = window.Liko = window.Liko || {};
-        var spec = ['quick-interaction', 50, createChatRoomToggleButton, { plain: true }];
+        var spec = {
+            id: 'quick-interaction', order: 50, createButton: createChatRoomToggleButton, plain: true,
+            tooltip: QiActT('ui.toggle_on'), background: '#FF5C7A',
+            active: { tooltip: QiActT('ui.toggle_on_active'), background: '#46E0A0', color: '#ffffff' },
+            state: { active: state.isActive }
+        };
         if (L.__Sys_ChatRoomButtons__ && L.__Sys_ChatRoomButtons__.add) {
-            L.__Sys_ChatRoomButtons__.add.apply(L.__Sys_ChatRoomButtons__, spec);
+            L.__Sys_ChatRoomButtons__.add(spec);
         }
         else {
-            L.__CRB_pending__ = L.__CRB_pending__ || []; if (!L.__CRB_pending__.some(function(x) { return x && x[0] === spec[0]; })) L.__CRB_pending__.push(spec);
+            L.__CRB_pending__ = L.__CRB_pending__ || []; if (!L.__CRB_pending__.some(function(x) { return x && x.id === spec.id; })) L.__CRB_pending__.push(spec);
             if (!L.__QiActCRBLoading) {
-                L.__QiActCRBLoading = fetch('https://cdn.jsdelivr.net/gh/awdrrawd/liko-Plugin-Repository@main/Plugins/expand/BC_ChatRoomButtons.js', { cache:'no-store' }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function(code) { var s = document.createElement('script'); s.textContent = code; document.head.appendChild(s); }).catch(function(e) { console.warn('[QiAct] BC_ChatRoomButtons:', e && e.message); });
+                L.__QiActCRBLoading = fetch('https://raw.githubusercontent.com/awdrrawd/liko-Plugin-Repository/main/Plugins/expand/BC_ChatRoomButtons.js', { cache:'no-store' }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function(code) { var s = document.createElement('script'); s.textContent = code; document.head.appendChild(s); }).catch(function(e) { console.warn('[QiAct] BC_ChatRoomButtons:', e && e.message); });
             }
         }
     }
@@ -53,7 +58,7 @@
         state.toggleBtnEl = null;
         var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
         if (state.chatButtonDocked) registerChatRoomToggle();
-        else { if (crb && crb.remove) crb.remove('quick-interaction'); var q = window.Liko && window.Liko.__CRB_pending__; if (Array.isArray(q)) window.Liko.__CRB_pending__ = q.filter(function(x) { return !x || x[0] !== 'quick-interaction'; }); drawToggleButton(); }
+        else { if (crb && crb.remove) crb.remove('quick-interaction'); var q = window.Liko && window.Liko.__CRB_pending__; if (Array.isArray(q)) window.Liko.__CRB_pending__ = q.filter(function(x) { return !x || x.id !== 'quick-interaction'; }); drawToggleButton(); }
     }
 
     /** 读取并应用保存的闪电按钮位置 */
@@ -140,6 +145,8 @@
             state.toggleBtnEl.classList.remove('active');
             state.toggleBtnEl.title = QiActT('ui.toggle_on');
         }
+        var crb = window.Liko && window.Liko.__Sys_ChatRoomButtons__;
+        if (state.chatButtonDocked && crb && crb.setActive) crb.setActive('quick-interaction', state.isActive);
     }
 
     /** 兼容旧接口：DrawProcess hook 调用（确保聊天室内闪电图标常驻可见） */

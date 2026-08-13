@@ -55,7 +55,9 @@ test('custom action toolbar is rendered before category chips', () => {
 
 test('docked toggle delegates collapse visibility to BC ChatRoomButtons', () => {
     const toggle = fs.readFileSync(path.join(root, 'src/ui/toggle-button.js'), 'utf8');
-    assert.match(toggle, /\{ plain: true \}/);
+    assert.match(toggle, /plain: true/);
+    assert.match(toggle, /createButton: createChatRoomToggleButton/);
+    assert.match(toggle, /\.setActive\('quick-interaction'/);
     assert.equal(toggle.includes('collapse: false'), false);
     assert.equal(toggle.includes('ensureDockedToggleVisible'), false);
 });
