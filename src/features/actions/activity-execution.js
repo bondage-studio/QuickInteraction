@@ -300,7 +300,7 @@
         if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         // 如果当前选中了目标，则把目标排到第一个执行，其余随后
-        var ordered = orderBySelectedTarget(chars).filter(function(c) { return !isActionSkippedCharacter(c); });
+        var ordered = orderBySelectedTarget(filterAllActionTargets(chars));
         if (!ordered.length) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         var name = String(state.selectedAction);

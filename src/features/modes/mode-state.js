@@ -1,7 +1,14 @@
     /* ===== 模式切换（全员 / 收藏 / 自己） ===== */
     function toggleAllMode() {
         state.allModeActive = !state.allModeActive;
+        if (state.allModeActive && state.selfModeActive) {
+            state.selfModeActive = false;
+            persist(S_SELF, false);
+            updateSelfButtonVisual();
+            if (state.isActive) refreshBodyGrids();
+        }
         updateAllButtonVisual();
+        renderPanel();
         toast(state.allModeActive ? QiActT('common.all_on') : QiActT('common.all_off'),
               state.allModeActive ? '#E8B339' : '#888');
     }
@@ -75,9 +82,20 @@
     /** 切换自己模式 */
     function toggleSelfMode() {
         state.selfModeActive = !state.selfModeActive;
+        if (state.selfModeActive) {
+            state.allModeActive = false;
+            updateAllButtonVisual();
+            var selfCharacter = (typeof ChatRoomCharacter !== 'undefined' && ChatRoomCharacter || []).find(function(c) { return c && c.IsPlayer && c.IsPlayer(); });
+            if (selfCharacter) {
+                state.selectedTarget = selfCharacter;
+                state.selectedAction = null;
+                state.selectedActionItem = null;
+            }
+        }
         persist(S_SELF, state.selfModeActive);
         updateSelfButtonVisual();
         if (state.isActive) refreshBodyGrids();
+        renderPanel();
         toast(state.selfModeActive ? QiActT('common.self_on') : QiActT('common.self_off'),
               state.selfModeActive ? '#46E0A0' : '#888');
     }

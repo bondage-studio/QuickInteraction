@@ -263,5 +263,18 @@
   "settings.action_delay_hint": "Espera entre acciones para todos los objetivos (100–9999 ms; 500 ms de forma predeterminada)",
   "settings.action_skip_members": "Lista de exclusión",
   "settings.action_skip_hint": "Las acciones y combos para todos omiten estos ID de miembro; sepáralos con comas, espacios o saltos de línea",
-  "settings.action_skip_placeholder": "p. ej., 12345, 67890"
+  "settings.action_skip_placeholder": "p. ej., 12345, 67890",
+  "settings.all_targets_group": "All-target interactions",
+  "settings.general": "General",
+  "settings.scope_all": "Everyone (with permission)",
+  "settings.scope_allow": "Interaction allowlist",
+  "settings.scope_skip": "Skip excluded players",
+  "settings.action_allow_members": "Interaction allowlist",
+  "settings.action_allow_hint": "Add member IDs or include relationship groups",
+  "settings.allow_owner": "Owner",
+  "settings.allow_lover": "Lover",
+  "settings.allow_sub": "Submissive",
+  "settings.allow_whitelist": "Whitelist",
+  "settings.allow_friend": "Friend",
+  "settings.remove_id": "Click to remove this ID"
 }

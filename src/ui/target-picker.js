@@ -1,5 +1,10 @@
     /* ===== 目标选择与人物浮层 ===== */
     function selectTargetAndPart(charObj, partGroup) {
+        if (state.selfModeActive && !(charObj && charObj.IsPlayer && charObj.IsPlayer())) {
+            state.selfModeActive = false;
+            persist(S_SELF, false);
+            updateSelfButtonVisual();
+        }
         state.selectedTarget = charObj;
         state.selectedPart = partGroup;
 
@@ -35,6 +40,12 @@
 
     /** 从人物列表选中角色：清除已选部位，切换到左侧浮层的部位选择视图 */
     function selectCharacterFromList(charObj) {
+        if (state.selfModeActive) {
+            state.selfModeActive = false;
+            persist(S_SELF, false);
+            updateSelfButtonVisual();
+            if (state.isActive) refreshBodyGrids();
+        }
         state.selectedTarget = charObj;
         state.selectedPart = null;
         state.selectedAction = null;
@@ -56,6 +67,10 @@
         var bodyEl = state.actionPanelEl && state.actionPanelEl.querySelector('#xsact-char-popover-body');
         if (!bodyEl) return;
         var chars = getRoomCharacters(true); // 人物列表始终列出「自己」，不受 selfMode 影响
+        chars.sort(function(a, b) {
+            var aSelf = a.IsPlayer && a.IsPlayer(), bSelf = b.IsPlayer && b.IsPlayer();
+            return aSelf === bSelf ? 0 : (aSelf ? -1 : 1);
+        });
         var html = '';
         if (chars.length === 0) {
             html = '<div class="xsact-char-popover-empty">' + QiActT('target.empty') + '</div>';
@@ -65,7 +80,7 @@
                 var isSelf = c.IsPlayer && c.IsPlayer();
                 var selected = state.selectedTarget && state.selectedTarget.MemberNumber === c.MemberNumber;
                 html += '<div class="xsact-char-popover-item' + (selected ? ' selected' : '') + (isSelf ? ' self' : '') + '" data-mn="' + c.MemberNumber + '">' +
-                    '<span class="xsact-char-popover-name">' + escapeHtml(characterDisplayName(c)) + '</span>' +
+                    '<span class="xsact-char-popover-name">' + escapeHtml(characterDisplayName(c) + ' (' + c.MemberNumber + ')') + '</span>' +
                     (isSelf ? '<span class="xsact-char-popover-self">' + QiActT('common.self') + '</span>' : '') +
                     '</div>';
             });

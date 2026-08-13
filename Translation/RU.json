@@ -263,5 +263,18 @@
   "settings.action_delay_hint": "Пауза между действиями для всех целей (100–9999 мс; по умолчанию 500 мс)",
   "settings.action_skip_members": "Список исключений",
   "settings.action_skip_hint": "Действия и комбинации для всех пропускают эти ID участников; разделяйте их запятыми, пробелами или переносами строк",
-  "settings.action_skip_placeholder": "Например: 12345, 67890"
+  "settings.action_skip_placeholder": "Например: 12345, 67890",
+  "settings.all_targets_group": "All-target interactions",
+  "settings.general": "General",
+  "settings.scope_all": "Everyone (with permission)",
+  "settings.scope_allow": "Interaction allowlist",
+  "settings.scope_skip": "Skip excluded players",
+  "settings.action_allow_members": "Interaction allowlist",
+  "settings.action_allow_hint": "Add member IDs or include relationship groups",
+  "settings.allow_owner": "Owner",
+  "settings.allow_lover": "Lover",
+  "settings.allow_sub": "Submissive",
+  "settings.allow_whitelist": "Whitelist",
+  "settings.allow_friend": "Friend",
+  "settings.remove_id": "Click to remove this ID"
 }

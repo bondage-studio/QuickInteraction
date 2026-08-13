@@ -71,7 +71,7 @@
         if (!combo || !combo.items.length) { toast(QiActT('toast.combo_empty'), '#FF5C5C'); return; }
         var chars = getRoomCharacters();
         if (!Array.isArray(chars) || chars.length === 0) { toast(QiActT('toast.no_others'), '#888'); return; }
-        var ordered = orderBySelectedTarget(chars).filter(function(c) { return !isActionSkippedCharacter(c); });
+        var ordered = orderBySelectedTarget(filterAllActionTargets(chars));
         if (!ordered.length) { toast(QiActT('toast.no_others'), '#888'); return; }
         var ci = 0;
         function nextChar() {

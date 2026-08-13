@@ -4,8 +4,10 @@ import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { build as viteBuild } from 'vite';
 import { readCompatSource } from './scripts/source-bundle.mjs';
+import { syncProjectVersion } from './scripts/sync-version.mjs';
 
 const root = process.cwd();
+const editableVersionInfo = syncProjectVersion(root);
 const source = readCompatSource(root);
 console.log(`🌐 翻译校验通过：${source.translationCount} 键，强制 CN/EN 齐全`);
 
@@ -30,16 +32,13 @@ fs.writeFileSync(userscriptPath, `${header}\n\n${userscriptRuntime}`);
 execFileSync(process.execPath, ['--check', assetPath], { stdio: 'inherit' });
 execFileSync(process.execPath, ['--check', userscriptPath], { stdio: 'inherit' });
 
-const rootVersionPath = path.join(root, 'version.json');
-let base = {};
-try { base = JSON.parse(fs.readFileSync(rootVersionPath, 'utf8')); } catch { /* 使用默认值 */ }
 const versionInfo = {
     version: source.version,
-    date: base.date || new Date().toISOString().slice(0, 10),
-    severity: base.severity || 'normal',
-    summary: base.summary || [],
-    detailsUrl: base.detailsUrl || `https://github.com/bondage-studio/QuickInteraction/releases/tag/v${source.version}`,
-    announcement: base.announcement,
+    date: editableVersionInfo.date || new Date().toISOString().slice(0, 10),
+    severity: editableVersionInfo.severity || 'normal',
+    summary: editableVersionInfo.summary || [],
+    detailsUrl: editableVersionInfo.detailsUrl || `https://github.com/bondage-studio/QuickInteraction/releases/tag/v${source.version}`,
+    announcement: editableVersionInfo.announcement,
 };
 fs.writeFileSync(path.join(root, 'assets', 'version.json'), `${JSON.stringify(versionInfo, null, 2)}\n`);
 fs.rmSync(viteOutDir, { recursive: true, force: true });

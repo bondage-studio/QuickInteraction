@@ -46,6 +46,10 @@
 
         // 恢复自己模式开关状态
         state.selfModeActive = loadSetting(S_SELF, false);
+        if (state.selfModeActive) {
+            var selfCharacter = (typeof ChatRoomCharacter !== 'undefined' && ChatRoomCharacter || []).find(function(c) { return c && c.IsPlayer && c.IsPlayer(); });
+            if (selfCharacter) state.selectedTarget = selfCharacter;
+        }
         updateSelfButtonVisual();
 
 

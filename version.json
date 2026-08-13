@@ -1,16 +1,16 @@
 {
-  "version": "1.4.3",
-  "date": "2026-08-12",
+  "version": "1.4.4",
+  "date": "2026-08-13",
   "severity": "normal",
   "summary": [
-    "「我的动作」列表支持滚轮滚动与鼠标拖曳滚动；卷轴改用粉色主题色；卡片过多时不再被纵向压缩变形"
+    "新增全員互動對象設定、互動白名單與略過名單，並修正自己／全員模式的目標判定與互斥狀態"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.3",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.4",
   "announcement": {
-    "id": "2026-08-12-ca-list-scroll",
-    "title": "QiAct v1.4.3 · 自定义动作列表滚动优化",
+    "id": "2026-08-13-interaction-targets",
+    "title": "QiAct v1.4.4 · 互動對象與名單設定",
     "severity": "normal",
-    "message": "本次更新（v1.4.3）优化「我的动作」列表的滚动体验：\n\n1. 支持滚轮滚动 —— 修复宿主页面拦截滚轮导致列表滚不动的问题。\n2. 支持鼠标拖曳滚动 —— 按住列表空白处拖动即可滚动，鼠标移出列表也会持续，直到松开左键。\n3. 卷轴改用粉色主题色，随主题自动适配。\n4. 卡片过多时不再被纵向压缩变形。\n\n重新注入脚本即可生效。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.3"
+    "message": "本次更新（v1.4.4）完善全員動作與互動對象設定：\n\n1. 新增全員互動範圍：所有人、互動白名單、跳過互動略過名單。\n2. 互動白名單支援會員 ID、主人、戀人、奴隸、BC 白名單與朋友，戀人同時支援 AFC。\n3. 略過名單改為可點擊刪除的 ID 標籤，並自動包含 BC 黑名單與幽靈名單。\n4. 自己與全員模式改為互斥；選擇自己時動作固定以自己為目標，選擇其他人物時自動取消自己模式。\n5. 人物清單固定將自己置頂，並顯示「暱稱（會員 ID）」以區分同名玩家。\n6. 優化設定頁樣式、文字大小、動作延遲說明及提示圖層高度。\n\n重新注入腳本即可生效。",
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.4"
   }
 }

@@ -61,7 +61,7 @@
         }
     }
 
-    const VERSION = '1.4.3';
+    const VERSION = '1.4.4';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -88,6 +88,9 @@
     const S_CHAR_POPOVER_RIGHT = 'xsact_qa_char_popover_right';
     const S_ACTION_DELAY = 'xsact_qa_action_delay';
     const S_ACTION_SKIP_MEMBERS = 'xsact_qa_action_skip_members';
+    const S_ACTION_ALLOW_MEMBERS = 'xsact_qa_action_allow_members';
+    const S_ACTION_ALLOW_GROUPS = 'xsact_qa_action_allow_groups';
+    const S_ALL_TARGET_SCOPE = 'xsact_qa_all_target_scope';
 
     // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
@@ -139,6 +142,9 @@
         ,charPopoverRight: false
         ,actionDelay: 500
         ,actionSkipMembers: []
+        ,actionAllowMembers: []
+        ,actionAllowGroups: []
+        ,allTargetScope: 'all'
         ,gridOverlapShifts: new Map()
         ,visibleGridMembers: new Set()
         ,screenLifecycleHooked: false
@@ -161,7 +167,53 @@
     }
     function isActionSkippedCharacter(character) {
         var id = character && parseInt(character.MemberNumber, 10);
-        return Number.isFinite(id) && state.actionSkipMembers.indexOf(id) >= 0;
+        if (!Number.isFinite(id)) return false;
+        return state.actionSkipMembers.indexOf(id) >= 0 || playerListContains('BlackList', id) || playerListContains('GhostList', id);
+    }
+    function playerListContains(property, id) {
+        var list = typeof Player !== 'undefined' && Player && Player[property];
+        return Array.isArray(list) && list.some(function(entry) {
+            return parseInt(entry && typeof entry === 'object' ? (entry.MemberNumber || entry.Number) : entry, 10) === id;
+        });
+    }
+    function relationshipMatches(character, group) {
+        var id = character && parseInt(character.MemberNumber, 10);
+        if (!Number.isFinite(id)) return false;
+        if (group === 'owner') {
+            var owner = typeof Player !== 'undefined' && Player && Player.Ownership;
+            return parseInt(owner && (owner.MemberNumber || owner.Member), 10) === id;
+        }
+        if (group === 'lover') {
+            var lovers = typeof Player !== 'undefined' && Player && Player.Lovership;
+            if (Array.isArray(lovers) && lovers.some(function(entry) { return parseInt(entry && (entry.MemberNumber || entry.Member), 10) === id; })) return true;
+            try {
+                var afc = window.Liko && window.Liko.AFC;
+                return !!(afc && typeof afc.getLovers === 'function' && afc.getLovers().some(function(entry) { return parseInt(entry && (entry.memberNumber || entry.MemberNumber), 10) === id; }));
+            } catch (e) { return false; }
+        }
+        if (group === 'sub') {
+            var submissives = typeof Player !== 'undefined' && Player && Player.SubmissivesList;
+            var list = Array.isArray(submissives) ? submissives : (submissives instanceof Set ? Array.from(submissives) : []);
+            if (list.some(function(entry) { return parseInt(entry && typeof entry === 'object' ? (entry.MemberNumber || entry.Number) : entry, 10) === id; })) return true;
+            var roomCharacter = typeof ChatRoomCharacter !== 'undefined' && (ChatRoomCharacter || []).find(function(c) { return c && parseInt(c.MemberNumber, 10) === id; });
+            return !!(roomCharacter && roomCharacter.Ownership && parseInt(roomCharacter.Ownership.MemberNumber, 10) === parseInt(Player && Player.MemberNumber, 10));
+        }
+        if (group === 'whitelist') return playerListContains('WhiteList', id);
+        if (group === 'friend') return playerListContains('FriendList', id);
+        return false;
+    }
+    function isActionAllowedCharacter(character) {
+        var id = character && parseInt(character.MemberNumber, 10);
+        if (!Number.isFinite(id)) return false;
+        if (state.actionAllowMembers.indexOf(id) >= 0) return true;
+        return state.actionAllowGroups.some(function(group) { return relationshipMatches(character, group); });
+    }
+    function filterAllActionTargets(characters) {
+        return characters.filter(function(character) {
+            if (state.allTargetScope === 'allow') return isActionAllowedCharacter(character);
+            if (state.allTargetScope === 'skip') return !isActionSkippedCharacter(character);
+            return true;
+        });
     }
 
     // ════════════════════════════════════════════════════════════════════════

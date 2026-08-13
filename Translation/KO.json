@@ -263,5 +263,18 @@
   "settings.action_delay_hint": "전체 대상 동작 사이의 대기 시간(100~9999ms, 기본값 500ms)",
   "settings.action_skip_members": "동작 제외 목록",
   "settings.action_skip_hint": "전체 대상 동작과 콤보에서 제외할 회원 ID입니다. 쉼표, 공백 또는 줄바꿈으로 구분하세요",
-  "settings.action_skip_placeholder": "예: 12345, 67890"
+  "settings.action_skip_placeholder": "예: 12345, 67890",
+  "settings.all_targets_group": "All-target interactions",
+  "settings.general": "General",
+  "settings.scope_all": "Everyone (with permission)",
+  "settings.scope_allow": "Interaction allowlist",
+  "settings.scope_skip": "Skip excluded players",
+  "settings.action_allow_members": "Interaction allowlist",
+  "settings.action_allow_hint": "Add member IDs or include relationship groups",
+  "settings.allow_owner": "Owner",
+  "settings.allow_lover": "Lover",
+  "settings.allow_sub": "Submissive",
+  "settings.allow_whitelist": "Whitelist",
+  "settings.allow_friend": "Friend",
+  "settings.remove_id": "Click to remove this ID"
 }

@@ -95,6 +95,10 @@
         state.charPopoverRight = loadSetting(S_CHAR_POPOVER_RIGHT, false) === true;
         state.actionDelay = normalizeActionDelay(loadSetting(S_ACTION_DELAY, 500));
         state.actionSkipMembers = parseActionSkipMembers(loadSetting(S_ACTION_SKIP_MEMBERS, []));
+        state.actionAllowMembers = parseActionSkipMembers(loadSetting(S_ACTION_ALLOW_MEMBERS, []));
+        state.actionAllowGroups = (loadSetting(S_ACTION_ALLOW_GROUPS, []) || []).filter(function(group) { return ['owner','lover','sub','whitelist','friend'].indexOf(group) >= 0; });
+        var allTargetScope = loadSetting(S_ALL_TARGET_SCOPE, 'all');
+        state.allTargetScope = ['all','allow','skip'].indexOf(allTargetScope) >= 0 ? allTargetScope : 'all';
         state.favorites = loadSetting(S_FAVS, []);
         migrateFavorites(); // 旧版纯动作名 → 部位复合键（一次性迁移）
         state.presets = loadSetting(S_PRESETS, []);

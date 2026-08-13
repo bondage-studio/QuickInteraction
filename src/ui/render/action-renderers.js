@@ -138,13 +138,17 @@
                     listEl.querySelectorAll('.xsact-action-btn').forEach(b => b.classList.remove('sel'));
                     btn.classList.add('sel');
 
+                    if (state.allModeActive) {
+                        executeActionAll();
+                        return;
+                    }
+
                     if (state.favModeActive) {
                         toggleFavoriteAction(partGroup, actName, btn);
                         return;
                     }
 
-                    if (state.allModeActive) executeActionAll();
-                    else {
+                    {
                         var execOk = executeAction(charObj, actName, act.Item || null, act.Group || partGroup);
                         var srcKey = caDetectSource(actName);
                         // 来源为 LSCG / Liko 的动作会改变可用状态/进度（如进食进度、道具附加），
@@ -204,11 +208,11 @@
         listEl.innerHTML = html;
         listEl.querySelectorAll('.xsact-action-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
                 state.selectedPart = btn.dataset.group;
                 state.selectedAction = btn.dataset.name;
                 state.selectedActionItem = null;
                 if (state.allModeActive) { executeActionAll(); return; }
+                if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
                 if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
                 var acts = getActionsForPart(btn.dataset.group, charObj) || [];
                 var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
@@ -238,18 +242,53 @@
         var cur = QiActI18n.getCurrentLang ? QiActI18n.getCurrentLang() : 'auto';
         var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','JA','KO','VI','DE','FR','ES','RU','UA']);
         var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<option value="' + l + '"' + (l === cur ? ' selected' : '') + '>' + escapeHtml(m.native || (l === 'auto' ? QiActT('settings.auto') : l)) + '</option>'; }).join('');
+        function idChips(ids, kind) { return ids.map(function(id) { return '<button type="button" class="xsact-id-chip" data-list="' + kind + '" data-id="' + id + '" title="' + QiActT('settings.remove_id') + '">' + id + ' ×</button>'; }).join(''); }
+        var relationChoices = [['owner','settings.allow_owner'],['lover','settings.allow_lover'],['sub','settings.allow_sub'],['whitelist','settings.allow_whitelist'],['friend','settings.allow_friend']].map(function(choice) {
+            return '<label class="xsact-relation-' + choice[0] + '"><input type="checkbox" data-allow-group="' + choice[0] + '"' + (state.actionAllowGroups.indexOf(choice[0]) >= 0 ? ' checked' : '') + '><span>' + QiActT(choice[1]) + '</span></label>';
+        }).join('');
+        var scopeChoices = [['all','settings.scope_all'],['allow','settings.scope_allow'],['skip','settings.scope_skip']].map(function(choice) {
+            return '<label><input type="radio" name="xsact-all-scope" value="' + choice[0] + '"' + (state.allTargetScope === choice[0] ? ' checked' : '') + '><span>' + QiActT(choice[1]) + '<i></i></span></label>';
+        }).join('');
         listEl.innerHTML = '<div class="xsact-settings">' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
+            '<div class="xsact-settings-group"><span class="xsact-settings-group-title">' + QiActT('settings.all_targets_group') + '</span>' +
+              '<div class="xsact-settings-row xsact-settings-row-stack"><strong>' + QiActT('settings.general') + '</strong><div class="xsact-scope-options">' + scopeChoices + '</div></div>' +
+              '<div class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT('settings.action_allow_members') + '</strong><small>' + QiActT('settings.action_allow_hint') + '</small></span><div class="xsact-relation-options">' + relationChoices + '</div><div class="xsact-id-editor"><input id="xsact-settings-allow-input" inputmode="numeric" placeholder="' + QiActT('settings.action_skip_placeholder') + '"><button type="button" id="xsact-settings-allow-add">+</button></div><div class="xsact-id-chips" id="xsact-settings-allow-chips">' + idChips(state.actionAllowMembers, 'allow') + '</div></div>' +
+              '<div class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT('settings.action_skip_members') + '</strong><small>' + QiActT('settings.action_skip_hint') + '</small></span><div class="xsact-id-editor"><input id="xsact-settings-skip-input" inputmode="numeric" placeholder="' + QiActT('settings.action_skip_placeholder') + '"><button type="button" id="xsact-settings-skip-add">+</button></div><div class="xsact-id-chips" id="xsact-settings-skip-chips">' + idChips(state.actionSkipMembers, 'skip') + '</div></div>' +
+            '</div>' +
             '<label class="xsact-settings-row"><span><strong>' + QiActT('settings.action_delay') + '</strong><small>' + QiActT('settings.action_delay_hint') + '</small></span><span class="xsact-settings-number"><input type="number" id="xsact-settings-delay" min="100" max="9999" step="100" value="' + state.actionDelay + '"><em>ms</em></span></label>' +
-            '<label class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT('settings.action_skip_members') + '</strong><small>' + QiActT('settings.action_skip_hint') + '</small></span><textarea id="xsact-settings-skip" rows="2" inputmode="numeric" placeholder="' + QiActT('settings.action_skip_placeholder') + '">' + escapeHtml(state.actionSkipMembers.join(', ')) + '</textarea></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.char_list_right') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-char-right"' + (state.charPopoverRight ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.chatButtonDocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
         listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
         listEl.querySelector('#xsact-settings-delay').addEventListener('change', function(e) { state.actionDelay = normalizeActionDelay(e.target.value); e.target.value = state.actionDelay; persist(S_ACTION_DELAY, state.actionDelay); });
-        listEl.querySelector('#xsact-settings-skip').addEventListener('change', function(e) { state.actionSkipMembers = parseActionSkipMembers(e.target.value); e.target.value = state.actionSkipMembers.join(', '); persist(S_ACTION_SKIP_MEMBERS, state.actionSkipMembers); });
+        function bindIdEditor(kind) {
+            var input = listEl.querySelector('#xsact-settings-' + kind + '-input');
+            var add = listEl.querySelector('#xsact-settings-' + kind + '-add');
+            function commit() {
+                var current = kind === 'allow' ? state.actionAllowMembers : state.actionSkipMembers;
+                var next = parseActionSkipMembers(current.concat(parseActionSkipMembers(input.value)));
+                if (kind === 'allow') { state.actionAllowMembers = next; persist(S_ACTION_ALLOW_MEMBERS, next); }
+                else { state.actionSkipMembers = next; persist(S_ACTION_SKIP_MEMBERS, next); }
+                updateSettingsPanel();
+            }
+            add.addEventListener('click', commit);
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); commit(); } });
+        }
+        bindIdEditor('allow'); bindIdEditor('skip');
+        listEl.querySelectorAll('.xsact-id-chip').forEach(function(chip) { chip.addEventListener('click', function() {
+            var id = parseInt(chip.dataset.id, 10), kind = chip.dataset.list;
+            if (kind === 'allow') { state.actionAllowMembers = state.actionAllowMembers.filter(function(x) { return x !== id; }); persist(S_ACTION_ALLOW_MEMBERS, state.actionAllowMembers); }
+            else { state.actionSkipMembers = state.actionSkipMembers.filter(function(x) { return x !== id; }); persist(S_ACTION_SKIP_MEMBERS, state.actionSkipMembers); }
+            updateSettingsPanel();
+        }); });
+        listEl.querySelectorAll('[data-allow-group]').forEach(function(box) { box.addEventListener('change', function() {
+            state.actionAllowGroups = Array.from(listEl.querySelectorAll('[data-allow-group]:checked')).map(function(x) { return x.dataset.allowGroup; });
+            persist(S_ACTION_ALLOW_GROUPS, state.actionAllowGroups);
+        }); });
+        listEl.querySelectorAll('input[name="xsact-all-scope"]').forEach(function(radio) { radio.addEventListener('change', function() { if (radio.checked) { state.allTargetScope = radio.value; persist(S_ALL_TARGET_SCOPE, radio.value); } }); });
         listEl.querySelector('#xsact-settings-char-right').addEventListener('change', function(e) { state.charPopoverRight = e.target.checked; persist(S_CHAR_POPOVER_RIGHT, state.charPopoverRight); applyCharPopoverSide(state.actionPanelEl); });
         listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setChatButtonDocked(e.target.checked); });
         listEl.querySelector('#xsact-settings-xiaosu').addEventListener('change', function(e) { setXiaosuPack(e.target.checked); });

@@ -60,6 +60,20 @@ test('docked toggle delegates collapse visibility to BC ChatRoomButtons', () => 
     assert.equal(toggle.includes('ensureDockedToggleVisible'), false);
 });
 
+test('version.json is the canonical project version', () => {
+    const info = JSON.parse(fs.readFileSync(path.join(root, 'version.json'), 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+    const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
+    const context = fs.readFileSync(path.join(root, 'src/core/application-context.js'), 'utf8');
+    const runtime = fs.readFileSync(path.join(root, 'src/platform/userscript-runtime.js'), 'utf8');
+    assert.equal(pkg.version, info.version, 'package.json');
+    assert.equal(lock.version, info.version, 'package-lock.json');
+    assert.equal(lock.packages[''].version, info.version, 'package-lock root package');
+    assert.ok(context.includes(`const VERSION = '${info.version}';`), 'runtime VERSION');
+    const headerVersion = runtime.match(/\/\/ @version\s+(\S+)/);
+    assert.equal(headerVersion && headerVersion[1], info.version, 'userscript @version');
+});
+
 test('body overlays use shared geometry and event-driven room updates', () => {
     const context = fs.readFileSync(path.join(root, 'src/core/application-context.js'), 'utf8');
     const grid = fs.readFileSync(path.join(root, 'src/ui/body-grid.js'), 'utf8');
