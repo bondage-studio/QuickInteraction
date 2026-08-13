@@ -4870,7 +4870,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "#xsact-toggle-btn.active:hover{",
           "  background:#46E0A0;transform:scale(1.08);",
           "}",
-          "#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}",
+          "#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border:none!important;border-radius:12px;}",
+          "#xsact-toggle-btn.xsact-chat-toggle:hover,#xsact-toggle-btn.xsact-chat-toggle.active{border:none!important;}",
           /* ===== 右侧面板（暗色战术操作台） ===== */
           "#xsact-qa-panel{",
           "  position:fixed;top:min(48px,4vh);right:12px;width:min(380px,92vw);height:min(680px,88vh);z-index:100100;",

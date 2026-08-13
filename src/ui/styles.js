@@ -47,7 +47,8 @@
             '#xsact-toggle-btn.active:hover{',
             '  background:#46E0A0;transform:scale(1.08);',
             '}',
-            '#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border-radius:12px;}',
+            '#xsact-toggle-btn.xsact-chat-toggle{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:var(--button-size,40px);height:var(--button-size,40px);margin:0;padding:0;border:none!important;border-radius:12px;}',
+            '#xsact-toggle-btn.xsact-chat-toggle:hover,#xsact-toggle-btn.xsact-chat-toggle.active{border:none!important;}',
 
             /* ===== 右侧面板（暗色战术操作台） ===== */
             '#xsact-qa-panel{',
