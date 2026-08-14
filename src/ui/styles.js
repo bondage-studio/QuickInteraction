@@ -200,7 +200,7 @@
             '}',
             '.xsact-combo-field input:focus{outline:none;border-color:var(--xs-accent);}',
             '.xsact-combo-delay label{display:block;font-size:12px;color:var(--xs-text-dim);margin-bottom:6px;}',
-            '.xsact-combo-delay #xsact-delay-val{color:var(--xs-accent);font-weight:700;}',
+            '.xsact-combo-delay #xsact-delay-label{color:var(--xs-accent);font-weight:700;}',
             '.xsact-combo-delay input[type=range]{width:100%;accent-color:var(--xs-accent);height:4px;cursor:pointer;}',
             '.xsact-combo-items{',
             '  display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;',

@@ -1,16 +1,16 @@
 {
-  "version": "1.4.4",
-  "date": "2026-08-13",
+  "version": "1.4.5",
+  "date": "2026-08-14",
   "severity": "normal",
   "summary": [
-    "新增全員互動對象設定、互動白名單與略過名單，並修正自己／全員模式的目標判定與互斥狀態"
+    "「自己」模式重定义为纯身体线框开关（可记忆，全员模式仅临时抑制并自动恢复）；修复组合编辑保存/取消按钮与部位标签的翻译缺失及滑块延迟数字不实时更新的问题，并同步「自己」按钮的 tooltip／toast 文案"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.4",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.5",
   "announcement": {
-    "id": "2026-08-13-interaction-targets",
-    "title": "QiAct v1.4.4 · 互動對象與名單設定",
+    "id": "2026-08-14-self-wireframe-i18n-fixes",
+    "title": "QiAct v1.4.5 · 自己线框开关与多语言修正",
     "severity": "normal",
-    "message": "本次更新（v1.4.4）完善全員動作與互動對象設定：\n\n1. 新增全員互動範圍：所有人、互動白名單、跳過互動略過名單。\n2. 互動白名單支援會員 ID、主人、戀人、奴隸、BC 白名單與朋友，戀人同時支援 AFC。\n3. 略過名單改為可點擊刪除的 ID 標籤，並自動包含 BC 黑名單與幽靈名單。\n4. 自己與全員模式改為互斥；選擇自己時動作固定以自己為目標，選擇其他人物時自動取消自己模式。\n5. 人物清單固定將自己置頂，並顯示「暱稱（會員 ID）」以區分同名玩家。\n6. 優化設定頁樣式、文字大小、動作延遲說明及提示圖層高度。\n\n重新注入腳本即可生效。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.4"
+    "message": "本次更新（v1.4.5）聚焦「自己」模式与多语言体验：\n\n1. 「自己」按钮重定义为纯身体线框开关：点开即显示自己的线框、关闭即隐藏，状态会被记忆；只有开启「全员」模式时会临时隐藏自己的线框，关闭全员后自动恢复到原本的开关值。\n2. 修复组合编辑界面「保存／取消」按钮显示原始键名的问题（现已正确翻译为各语言）。\n3. 修复组合动作间隔滑块拖动时，上方「动作间隔 Nms」延迟数字不实时更新的问题。\n4. 修复部位标签在中文环境下误显示英文（躯干／口／头套 此前可能显示为 Torso／Mouth／Hood）。\n5. 同步更新「自己」按钮的悬浮提示与开关提示文案，消除与旧「收藏动作对象」语义的混淆。\n\n重新注入脚本即可生效。",
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.5"
   }
 }

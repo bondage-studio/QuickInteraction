@@ -4,7 +4,7 @@
 
 > 为 Bondage Club 设计的即时互动工具：点选角色身体部位，一键触发对应动作。
 
-[![Version](https://img.shields.io/badge/version-1.4.1-FF5C7A)](https://github.com/bondage-studio/QuickInteraction/commits)
+[![Version](https://img.shields.io/badge/version-1.4.5-FF5C7A)](https://github.com/bondage-studio/QuickInteraction/commits)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -97,6 +97,13 @@ A：收藏、组合、主题等设置会写入游戏账号并同步到服务器�
 ---
 
 ## 更新日志
+
+### v1.4.5
+- 【交互重构】「自己」按钮重定义为纯身体线框开关：点开即显示自己的线框、关闭即隐藏，开关状态会被记忆；只有开启「全员」模式时会临时隐藏自己的线框，关闭全员后自动恢复到原本的开关值（不再因选择他人部位而误关、也不再与收藏动作对象语义混淆）
+- 【修复】组合编辑界面「保存／取消」按钮此前显示原始键名（`combo.save`/`combo.cancel`），现已正确翻译为各语言（CN 保存/取消、TW 儲存/取消、EN Save/Cancel）
+- 【修复】组合动作间隔滑块拖动时，上方「动作间隔 Nms」延迟数字不实时更新——改用实时重写整段文案（含当前语言与实时数字），并同步 `combo.delay`
+- 【修复】部位标签在中文环境下误显示英文（躯干／口／头套 此前可能显示为 Torso／Mouth／Hood）：将 `BODY_PARTS` 的 `label` 改为按当前语言惰性求值的 getter，EN 及其他语言取值路径不变
+- 【修复】同步更新「自己」按钮的悬浮提示与开关提示文案，消除与旧「收藏动作对象」语义的混淆（CN／TW／EN 三语均已对齐）
 
 ### v1.4.1
 - 【多語言】新增日文、韓文、越南文與西班牙文，介面現支援 11 種語言與自動偵測

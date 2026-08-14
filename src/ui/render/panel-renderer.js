@@ -99,7 +99,7 @@
             // 动作间隔（延迟）滑块
             var curDelay = comboDelay(combo);
             html += '<div class="xsact-combo-field xsact-combo-delay">' +
-                '<label>' + QiActT('combo.delay_label', { n: curDelay }) + '</label>' +
+                '<label id="xsact-delay-label">' + QiActT('combo.delay_label', { n: curDelay }) + '</label>' +
                 '<input type="range" id="xsact-combo-delay" min="50" max="2000" step="50" value="' + curDelay + '">' +
                 '</div>';
             // 条目列表
@@ -133,10 +133,11 @@
             if (nameInput) nameInput.addEventListener('change', function() { renameCombo(combo.id, nameInput.value); titleEl.textContent = QiActT('combo.edit_title', { name: combo.name }); });
             // 延迟滑块
             var delayInput = listEl.querySelector('#xsact-combo-delay');
-            var delayVal = listEl.querySelector('#xsact-delay-val');
+            var delayLabel = listEl.querySelector('#xsact-delay-label');
             if (delayInput) delayInput.addEventListener('input', function() {
                 var v = parseInt(delayInput.value, 10) || 160;
-                if (delayVal) delayVal.textContent = v;
+                // 实时重写整段延迟文案（含当前语言与实时数字），覆盖所有语言环境
+                if (delayLabel) delayLabel.textContent = QiActT('combo.delay_label', { n: v });
                 combo.delay = v;
                 saveCombos();
             });

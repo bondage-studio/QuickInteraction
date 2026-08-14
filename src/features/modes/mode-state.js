@@ -1,10 +1,25 @@
     /* ===== 模式切换（全员 / 收藏 / 自己） ===== */
     function toggleAllMode() {
         state.allModeActive = !state.allModeActive;
-        if (state.allModeActive && state.selfModeActive) {
-            state.selfModeActive = false;
-            persist(S_SELF, false);
-            updateSelfButtonVisual();
+        if (state.allModeActive) {
+            // 进入全员模式：临时压制「自己」模式（线框 + 开关视觉），
+            // 但**只记录快照、不写记忆**——关闭全员后须恢复原本的值。
+            state._selfModeSnapshot = state.selfModeActive;
+            if (state.selfModeActive) {
+                state.selfModeActive = false;
+                updateSelfButtonVisual();
+                if (state.isActive) refreshBodyGrids();
+            }
+        } else {
+            // 退出全员模式：把「自己」模式恢复到进入前的值（含记忆），
+            // 未开启过则维持关闭，绝不擅自改写。
+            if (state._selfModeSnapshot) {
+                state.selfModeActive = state._selfModeSnapshot;
+                persist(S_SELF, state.selfModeActive);
+                updateSelfButtonVisual();
+                if (state.isActive) refreshBodyGrids();
+            }
+            state._selfModeSnapshot = false;
         }
         updateAllButtonVisual();
         renderPanel();
@@ -78,15 +93,18 @@
         }
     }
 
-    /** 切换自己模式 */
+    /** 切换自己模式（纯开关：仅控制玩家自身线框的显隐，可记忆，不被目标选择改变） */
     function toggleSelfMode() {
         state.selfModeActive = !state.selfModeActive;
         if (state.selfModeActive) {
+            // 开启自己模式时主动退出全员模式（互斥），并作废全员快照
             state.allModeActive = false;
+            state._selfModeSnapshot = false;
             updateAllButtonVisual();
         }
         persist(S_SELF, state.selfModeActive);
         updateSelfButtonVisual();
+        if (state.isActive) refreshBodyGrids(); // 即时显隐玩家自身线框
         if (state.panelMode === 'favorite') renderPanel();
         toast(state.selfModeActive ? QiActT('common.self_on') : QiActT('common.self_off'),
               state.selfModeActive ? '#46E0A0' : '#888');

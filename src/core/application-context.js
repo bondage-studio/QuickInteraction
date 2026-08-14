@@ -61,7 +61,7 @@
         }
     }
 
-    const VERSION = '1.4.4';
+    const VERSION = '1.4.5';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -247,6 +247,19 @@
         { group: 'ItemFeet', label: QiActT('part.ItemFeet'), icon: '👢' },
         { group: 'ItemBoots', label: QiActT('part.ItemBoots'), icon: '🥾' },
     ];
+
+    // 部位 label 改为惰性求值：原始写法在模块求值期就把 QiActT('part.ItemX')
+    // 固化成当时的回退值（字典/语言尚未就绪时多为英文），之后再也不会刷新。
+    // 这里把静态 label 改写成 getter，每次访问都按「当前语言」重新解析，
+    // 保证 CN/TW 环境显示 躯干/口/头套 而非英文回退值；EN 仍走原值，行为不变。
+    BODY_PARTS.forEach(function(part) {
+        var staticLabel = part.label;
+        Object.defineProperty(part, 'label', {
+            configurable: true,
+            enumerable: true,
+            get: function() { return QiActT('part.' + part.group, undefined) || staticLabel; }
+        });
+    });
 
     // 合成子部位 → 字典翻译主部位映射（BC 字典键只以主部位命名，如 ItemMouth2 查 Label-ChatOther-ItemMouth-*）
     const SUBPART_TO_BASE = {
