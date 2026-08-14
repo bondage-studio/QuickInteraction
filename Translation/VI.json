@@ -193,6 +193,8 @@
   "combo.delay_label": "Khoảng thời gian hành động {n}ms",
   "combo.add_hint": "Chuyển đến chế độ Hành động và nhấp vào \"Thêm\" bên cạnh một hành động",
   "combo.edit_title": "Chỉnh sửa: {name}",
+  "combo.save": "Lưu",
+  "combo.cancel": "Hủy",
   "combo.delete_confirm_title": "Xóa kết hợp",
   "combo.delete_confirm_body": "Xóa tổ hợp này?",
   "combo.delete_confirm_btn": "Xóa bỏ",

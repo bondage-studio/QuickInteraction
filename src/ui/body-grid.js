@@ -200,10 +200,11 @@
     /** 更新所有角色的身体网格 */
     function bodyGridTopologySignature(layout) {
         // 自己模式关闭时不把玩家自身纳入拓扑，避免其线框无谓刷新/残留
-        return (layout || []).filter(function(entry) {
+        return (layout || []).map(function(entry) {
             var isPlayer = entry.char && entry.char.IsPlayer && entry.char.IsPlayer();
-            return !isPlayer || state.selfModeActive;
-        }).map(function(entry) { return String(entry.char.MemberNumber); }).sort().join('|');
+            if (isPlayer && !state.drawSelfWireframe) return null;
+            return String(entry.char.MemberNumber);
+        }).filter(function(mn) { return mn != null; }).sort().join('|');
     }
 
     function refreshBodyGrids(precomputedLayout) {
@@ -216,7 +217,7 @@
         state.gridOverlapShifts = shifts;
         layout.forEach(function(entry) {
             var isPlayer = entry.char.IsPlayer && entry.char.IsPlayer();
-            if (isPlayer && !state.selfModeActive) return; // 自己模式关闭时不绘制玩家自身线框
+            if (isPlayer && !state.drawSelfWireframe) return; // 自己模式关闭时不绘制玩家自身线框
             entry.overlapShift = shifts.get(entry.char.MemberNumber) || 0;
             createBodyGrid(entry);
         });
@@ -234,7 +235,7 @@
     function syncBodyGridForCharacter(charObj, x, y, zoom) {
         if (!charObj || charObj.MemberNumber == null || typeof x !== 'number' || typeof y !== 'number') return;
         var isPlayer = charObj.IsPlayer && charObj.IsPlayer();
-        if (isPlayer && !state.selfModeActive) return; // 自己模式关闭时不维护玩家自身线框
+        if (isPlayer && !state.drawSelfWireframe) return; // 自己模式关闭时不维护玩家自身线框
         var grid = state.bodyGrids.get(charObj) || findBodyGridByMemberNumber(charObj.MemberNumber);
         var entry = {
             char: charObj,

@@ -108,6 +108,9 @@
         allModeActive: false,         // 全员范围开关
         favModeActive: false,         // 收藏模式开关
         selfModeActive: false,        // 自己模式开关
+        // 渲染层（body-grid 等）不应直接读取 selfModeActive 原始状态字段，
+        // 统一通过此语义化访问器判断「是否绘制玩家自身线框」，满足架构红线。
+        get drawSelfWireframe() { return this.selfModeActive; },
         combos: [],                   // 自定义组合
         editingComboId: null,         // 正在编辑的组合 id
         customActions: [],            // 自定义动作（QiAct 自包含版，替代 echo/回声）

@@ -193,6 +193,8 @@
   "combo.delay_label": "Интервал действия {n}мс",
   "combo.add_hint": "Перейдите в режим действий и нажмите «Добавить» рядом с действием.",
   "combo.edit_title": "Изменить: {name}",
+  "combo.save": "Сохранить",
+  "combo.cancel": "Отмена",
   "combo.delete_confirm_title": "Удалить комбо",
   "combo.delete_confirm_body": "Удалить это комбо?",
   "combo.delete_confirm_btn": "Удалить",

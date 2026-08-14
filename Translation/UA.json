@@ -193,6 +193,8 @@
   "combo.delay_label": "Інтервал дії {n} мс",
   "combo.add_hint": "Перейдіть у режим дії та натисніть «Додати» біля дії",
   "combo.edit_title": "Редагувати: {name}",
+  "combo.save": "Зберегти",
+  "combo.cancel": "Скасувати",
   "combo.delete_confirm_title": "Видалити комбо",
   "combo.delete_confirm_body": "Видалити цю комбінацію?",
   "combo.delete_confirm_btn": "Видалити",

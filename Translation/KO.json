@@ -193,6 +193,8 @@
   "combo.delay_label": "작업 간격 {n}ms",
   "combo.add_hint": "작업 모드로 이동하여 작업 옆에 있는 \"추가\"를 클릭하세요.",
   "combo.edit_title": "편집: {name}",
+  "combo.save": "저장",
+  "combo.cancel": "취소",
   "combo.delete_confirm_title": "콤보 삭제",
   "combo.delete_confirm_body": "이 콤보를 삭제하시겠습니까?",
   "combo.delete_confirm_btn": "삭제",

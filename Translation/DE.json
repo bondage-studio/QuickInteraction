@@ -193,6 +193,8 @@
   "combo.delay_label": "Aktionsintervall {n}ms",
   "combo.add_hint": "Gehen Sie in den Aktionsmodus und klicken Sie neben einer Aktion auf „Hinzufügen“.",
   "combo.edit_title": "Bearbeiten: {name}",
+  "combo.save": "Speichern",
+  "combo.cancel": "Abbrechen",
   "combo.delete_confirm_title": "Kombination löschen",
   "combo.delete_confirm_body": "Diese Combo löschen?",
   "combo.delete_confirm_btn": "Löschen",

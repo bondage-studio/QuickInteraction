@@ -193,6 +193,8 @@
   "combo.delay_label": "アクション間隔 {n}ms",
   "combo.add_hint": "アクションモードに移動し、アクションの横にある「追加」をクリックします。",
   "combo.edit_title": "編集: {name}",
+  "combo.save": "保存",
+  "combo.cancel": "キャンセル",
   "combo.delete_confirm_title": "コンボの削除",
   "combo.delete_confirm_body": "このコンボを削除しますか?",
   "combo.delete_confirm_btn": "消去",

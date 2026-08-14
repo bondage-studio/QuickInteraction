@@ -193,6 +193,8 @@
   "combo.delay_label": "Intervalle d'action {n} ms",
   "combo.add_hint": "Allez en mode Action et cliquez sur \"Ajouter\" à côté d'une action",
   "combo.edit_title": "Editer : {name}",
+  "combo.save": "Enregistrer",
+  "combo.cancel": "Annuler",
   "combo.delete_confirm_title": "Supprimer la combinaison",
   "combo.delete_confirm_body": "Supprimer cette combinaison ?",
   "combo.delete_confirm_btn": "Supprimer",

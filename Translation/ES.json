@@ -193,6 +193,8 @@
   "combo.delay_label": "Intervalo de acción {n}ms",
   "combo.add_hint": "Vaya al modo Acción y haga clic en \"Agregar\" junto a una acción.",
   "combo.edit_title": "Editar: {name}",
+  "combo.save": "Guardar",
+  "combo.cancel": "Cancelar",
   "combo.delete_confirm_title": "Eliminar combinación",
   "combo.delete_confirm_body": "¿Eliminar esta combinación?",
   "combo.delete_confirm_btn": "Borrar",
