@@ -192,7 +192,11 @@
         var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (!titleEl || !listEl) return;
-        titleEl.textContent = (charObj ? characterDisplayName(charObj) + ' → ' : '') + QiActT('render.favorite_title');
+        var favoriteTarget = charObj;
+        if (state.selfModeActive && typeof ChatRoomCharacter !== 'undefined' && Array.isArray(ChatRoomCharacter)) {
+            favoriteTarget = ChatRoomCharacter.find(function(c) { return c && c.IsPlayer && c.IsPlayer(); }) || favoriteTarget;
+        }
+        titleEl.textContent = (favoriteTarget ? characterDisplayName(favoriteTarget) + ' → ' : '') + QiActT('render.favorite_title');
         renderFavoritePartFilter();
         if (!state.favorites.length) { listEl.innerHTML = '<div class="xsact-qa-empty">' + QiActT('common.no_fav') + '</div>'; return; }
         var html = '';
@@ -216,10 +220,10 @@
                 state.selectedActionItem = null;
                 if (state.allModeActive) { executeActionAll(); return; }
                 if (state.favModeActive) { toggleFavoriteAction(btn.dataset.group, btn.dataset.name, btn); updateFavoritesPanel(charObj); return; }
-                if (!charObj) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
-                var acts = getActionsForPart(btn.dataset.group, charObj) || [];
+                if (!favoriteTarget) { toast(QiActT('render.pick_char_part2'), '#888'); return; }
+                var acts = getActionsForPart(btn.dataset.group, favoriteTarget) || [];
                 var act = acts.find(function(a) { return a && a.Name === btn.dataset.name; });
-                executeAction(charObj, btn.dataset.name, act && act.Item ? act.Item : null, btn.dataset.group);
+                executeAction(favoriteTarget, btn.dataset.name, act && act.Item ? act.Item : null, btn.dataset.group);
             });
         });
     }

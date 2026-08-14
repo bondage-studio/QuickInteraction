@@ -90,6 +90,8 @@ test('body overlays use shared geometry and event-driven room updates', () => {
     assert.match(grid, /btn\.dataset\.targetMn = charObj\.MemberNumber/);
     assert.match(grid, /grid = createBodyGrid\(entry\)/);
     assert.match(grid, /_xsactGeometrySignature/);
+    assert.equal(grid.includes('state.selfModeActive'), false);
+    assert.match(grid, /return \(layout \|\| \[\]\)\.map\(function\(entry\)/);
     assert.match(hooks, /ChatRoomCharacterViewDrawOverlay/);
     assert.match(hooks, /ChatRoomSyncMemberJoin/);
     assert.match(hooks, /ChatRoomSyncMemberLeave/);
@@ -103,6 +105,10 @@ test('body overlays use shared geometry and event-driven room updates', () => {
     assert.match(styles, /z-index:100100/);
     assert.match(styles, /z-index:80000;pointer-events:none/);
     const picker = fs.readFileSync(path.join(root, 'src/ui/target-picker.js'), 'utf8');
+    const renderer = fs.readFileSync(path.join(root, 'src/ui/render/action-renderers.js'), 'utf8');
+    assert.match(renderer, /var favoriteTarget = charObj/);
+    assert.match(renderer, /executeAction\(favoriteTarget/);
+    assert.equal(picker.includes('!includeSelf && !state.selfModeActive'), false);
     assert.doesNotMatch(picker, /updatePartFamilySelection[\s\S]{0,200}closeCharPopover\(\)[\s\S]{0,200}setPanelMode\('part'\)/);
     assert.match(styles, /\.xsact-char-popover\{[\s\S]*contain:layout paint style/);
 });

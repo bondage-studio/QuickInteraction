@@ -1,10 +1,5 @@
     /* ===== 目标选择与人物浮层 ===== */
     function selectTargetAndPart(charObj, partGroup) {
-        if (state.selfModeActive && !(charObj && charObj.IsPlayer && charObj.IsPlayer())) {
-            state.selfModeActive = false;
-            persist(S_SELF, false);
-            updateSelfButtonVisual();
-        }
         state.selectedTarget = charObj;
         state.selectedPart = partGroup;
 
@@ -31,7 +26,7 @@
             ChatRoomCharacter.forEach(function(c) {
                 if (!c || !c.MemberNumber) return;
                 var isSelf = c.IsPlayer && c.IsPlayer();
-                if (isSelf && !includeSelf && !state.selfModeActive) return;
+                if (isSelf && !includeSelf) return;
                 arr.push(c);
             });
         }
@@ -40,12 +35,6 @@
 
     /** 从人物列表选中角色：清除已选部位，切换到左侧浮层的部位选择视图 */
     function selectCharacterFromList(charObj) {
-        if (state.selfModeActive) {
-            state.selfModeActive = false;
-            persist(S_SELF, false);
-            updateSelfButtonVisual();
-            if (state.isActive) refreshBodyGrids();
-        }
         state.selectedTarget = charObj;
         state.selectedPart = null;
         state.selectedAction = null;

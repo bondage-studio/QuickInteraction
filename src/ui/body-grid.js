@@ -199,10 +199,7 @@
 
     /** 更新所有角色的身体网格 */
     function bodyGridTopologySignature(layout) {
-        return (layout || []).filter(function(entry) {
-            var isPlayer = entry.char && entry.char.IsPlayer && entry.char.IsPlayer();
-            return !isPlayer || state.selfModeActive;
-        }).map(function(entry) { return String(entry.char.MemberNumber); }).sort().join('|');
+        return (layout || []).map(function(entry) { return String(entry.char.MemberNumber); }).sort().join('|');
     }
 
     function refreshBodyGrids(precomputedLayout) {
@@ -214,8 +211,6 @@
         var shifts = computeOverlapShifts(layout);
         state.gridOverlapShifts = shifts;
         layout.forEach(function(entry) {
-            var isPlayer = entry.char.IsPlayer && entry.char.IsPlayer();
-            if (isPlayer && !state.selfModeActive) return; // 未开启自己模式时跳过自己
             entry.overlapShift = shifts.get(entry.char.MemberNumber) || 0;
             createBodyGrid(entry);
         });
@@ -232,8 +227,6 @@
 
     function syncBodyGridForCharacter(charObj, x, y, zoom) {
         if (!charObj || charObj.MemberNumber == null || typeof x !== 'number' || typeof y !== 'number') return;
-        var isPlayer = charObj.IsPlayer && charObj.IsPlayer();
-        if (isPlayer && !state.selfModeActive) return;
         var grid = state.bodyGrids.get(charObj) || findBodyGridByMemberNumber(charObj.MemberNumber);
         var entry = {
             char: charObj,
