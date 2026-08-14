@@ -114,10 +114,18 @@ test('part availability trusts the initial BC filtering result', () => {
     assert.match(context, /function getPartActionGroups/);
     assert.match(context, /getPartZones\(C, part\.group\)/);
     assert.match(context, /group: canonical/);
-    assert.match(context, /canonical === 'ItemHands' \? \['ItemHands', 'ItemHandheld'\] : \[canonical\]/);
+    assert.match(context, /canonical === 'ItemHands'[^\n]+\['ItemHands', 'ItemHandheld'\]/);
+    assert.match(context, /function getActivityTextGroup/);
+    assert.match(context, /group === 'ItemVulva'[^\n]+return 'ItemPenis'/);
+    assert.match(context, /group === 'ItemVulvaPiercings'[^\n]+return 'ItemGlans'/);
     assert.match(catalog, /getPartActionGroups\(partGroup\)/);
+    assert.match(catalog, /getActivityLabelFallback\(name, candidateGroup, targetChar\)/);
+    assert.match(catalog, /var textGroup = getActivityTextGroup\(group, targetChar\)/);
     assert.equal(catalog.includes('getPartGroupFamily(partGroup)'), false);
     assert.match(catalog, /hasAuthoritativeResult = true/);
+    assert.match(catalog, /var actionKey = \(a\.Group \|\| partGroup\) \+ '\\|' \+ a\.Name/);
+    assert.match(renderer, /data-group="' \+ escapeHtml\(act\.Group \|\| partGroup\)/);
+    assert.match(renderer, /a\.Name === actName && \(a\.Group \|\| partGroup\) === actGroup/);
     assert.equal(catalog.includes('function actionExecutable'), false);
     assert.equal(catalog.includes('function allowedNamesFor'), false);
     assert.match(renderer, /getActivityLabel\(act, act\.Group \|\| partGroup\)/);
@@ -125,6 +133,12 @@ test('part availability trusts the initial BC filtering result', () => {
     assert.match(renderer, /state\._actionRenderToken/);
     assert.match(catalog, /function activityDictionaryFallback/);
     assert.equal(catalog.includes('for (var i = 0; i < arr.length; i++)'), false);
+});
+
+test('custom action token pills close before editable text resumes', () => {
+    const editor = fs.readFileSync(path.join(root, 'src/features/custom-actions/editor.js'), 'utf8');
+    assert.match(editor, /token_self_pill'\) \+ '<\/span><span class="xsact-zwsp">/);
+    assert.match(editor, /token_other_pill'\) \+ '<\/span><span class="xsact-zwsp">/);
 });
 
 test('ECHO bed actions are included in the force-available allowlist', () => {

@@ -90,8 +90,8 @@
 
         function renderRichText(raw) {
             return escapeHtml(raw)
-                .replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">' + QiActT('editor.token_self_pill') + '<span class="xsact-zwsp">&#8203;</span>')
-                .replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">' + QiActT('editor.token_other_pill') + '<span class="xsact-zwsp">&#8203;</span>');
+                .replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">' + QiActT('editor.token_self_pill') + '</span><span class="xsact-zwsp">&#8203;</span>')
+                .replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">' + QiActT('editor.token_other_pill') + '</span><span class="xsact-zwsp">&#8203;</span>');
         }
         function extractRawFromRich(el) {
             var raw = '';

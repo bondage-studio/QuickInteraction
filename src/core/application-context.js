@@ -274,7 +274,17 @@
     // exception because ItemHands also exposes a few distinct handheld activities.
     function getPartActionGroups(group) {
         var canonical = canonicalPartGroup(group);
-        return canonical === 'ItemHands' ? ['ItemHands', 'ItemHandheld'] : [canonical];
+        if (canonical === 'ItemHands') return ['ItemHands', 'ItemHandheld'];
+        return [canonical];
+    }
+    // Matches BC ActivityBuildChatTag: ItemPenis/ItemGlans are dictionary-only
+    // aliases. ActivityAllowedForGroup still receives the physical female group.
+    function getActivityTextGroup(group, character) {
+        var hasPenis = character && typeof character.HasPenis === 'function' && character.HasPenis();
+        if (!hasPenis) return group;
+        if (group === 'ItemVulva') return 'ItemPenis';
+        if (group === 'ItemVulvaPiercings') return 'ItemGlans';
+        return group;
     }
     // 部位名 → BC AssetGroup 对象（找不到时用最小占位）。
     function resolveFocusGroup(groupName) {

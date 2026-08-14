@@ -115,8 +115,8 @@
                 var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + '|' + act.Name) !== -1;
                 // 来源水印功能已暂停（按需求优先修复动作显示功能）。
                 // 下方点击处理器仍用 caDetectSource 判断 LSCG/Liko 以触发自动刷新。
-                html += '<div class="xsact-action-row' + (isEditing ? ' editing' : '') + '" data-name="' + escapeHtml(act.Name) + '">' +
-                    '<button class="xsact-action-btn' + (isFav ? ' fav' : '') + '" data-name="' + escapeHtml(act.Name) + '" title="' + escapeHtml(act.Name) + '">' +
+                html += '<div class="xsact-action-row' + (isEditing ? ' editing' : '') + '" data-name="' + escapeHtml(act.Name) + '" data-group="' + escapeHtml(act.Group || partGroup) + '">' +
+                    '<button class="xsact-action-btn' + (isFav ? ' fav' : '') + '" data-name="' + escapeHtml(act.Name) + '" data-group="' + escapeHtml(act.Group || partGroup) + '" title="' + escapeHtml(act.Name) + '">' +
                     '<span class="xsact-action-label">' + escapeHtml(lbl) + '</span>' +
                     (isFav ? '<span class="xsact-action-star">' + svgIcon('starFill', 13) + '</span>' : '') +
                     '</button>';
@@ -132,8 +132,10 @@
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation(); // 避免冒泡到面板导致左侧人物浮层关闭
                     var actName = btn.dataset.name;
-                    var act = actions.find(function(a) { return a && a.Name === actName; }) || { Name: actName, Item: null };
+                    var actGroup = btn.dataset.group || partGroup;
+                    var act = actions.find(function(a) { return a && a.Name === actName && (a.Group || partGroup) === actGroup; }) || { Name: actName, Group: actGroup, Item: null };
                     state.selectedAction = actName;
+                    state.selectedActionGroup = actGroup;
                     state.selectedActionItem = act.Item || null;
                     listEl.querySelectorAll('.xsact-action-btn').forEach(b => b.classList.remove('sel'));
                     btn.classList.add('sel');
@@ -168,9 +170,10 @@
                     btn.addEventListener('click', function(e) {
                         e.stopPropagation(); // 避免冒泡到面板导致左侧人物浮层关闭
                         var actName = btn.parentNode.dataset.name;
-                        var act = actions.find(function(a) { return a && a.Name === actName; }) || { Name: actName, Item: null, translatedName: actName };
+                        var actGroup = btn.parentNode.dataset.group || partGroup;
+                        var act = actions.find(function(a) { return a && a.Name === actName && (a.Group || partGroup) === actGroup; }) || { Name: actName, Group: actGroup, Item: null, translatedName: actName };
                         var lbl = act.translatedName || getActivityLabel(act.Name, partGroup);
-                        addComboItem(state.editingComboId, partGroup, act.Name, lbl, act.Item || null);
+                        addComboItem(state.editingComboId, act.Group || partGroup, act.Name, lbl, act.Item || null);
                         toast(QiActT('toast.added_to_combo', { name: getCombo(state.editingComboId).name }), '#46E0A0');
                     });
                 });

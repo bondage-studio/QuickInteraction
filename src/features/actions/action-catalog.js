@@ -18,7 +18,7 @@
                         if (!a) return;
                         var name = a.Activity ? (a.Activity.Name || '') : (a.Name || '');
                         if (name) {
-                            actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                            actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup, targetChar), Item: a.Item || null });
                         }
                     });
                 });
@@ -56,7 +56,7 @@
                     var targets = Array.isArray(a.Target) ? a.Target : [a.Target];
                     return targets.indexOf(group) !== -1;
                 }) || partGroup;
-                return { Name: a.Name || '', Group: actualGroup, translatedName: getActivityLabelFallback(a.Name, actualGroup), Item: null };
+                return { Name: a.Name || '', Group: actualGroup, translatedName: getActivityLabelFallback(a.Name, actualGroup, targetChar), Item: null };
             });
         }
 
@@ -74,7 +74,7 @@
                     g = Array.isArray(g) ? g : (g ? [g] : []);
                     var hit = g.find(function(x) { return groupCandidates.indexOf(x) !== -1; });
                     if (!hit) return;
-                    var disp = (caFindByActivityName(a.Name) || {}).name || getActivityLabelFallback(a.Name, hit);
+                    var disp = (caFindByActivityName(a.Name) || {}).name || getActivityLabelFallback(a.Name, hit, targetChar);
                     if (!isForceAvailableActivity(a.Name, disp)) return;
                     if (actions.some(function(x) { return x.Name === a.Name; })) return;
                     actions.push({ Name: a.Name, Group: hit, translatedName: disp, Item: null });
@@ -103,8 +103,11 @@
                 var ca = caFindByActivityName(a.Name);
                 if (ca && ca.visible === false) return false;
             }
-            if (seen[a.Name]) return false;
-            seen[a.Name] = true;
+            // Shared anatomy groups may use the same activity name with a different
+            // translated label and behavior. Only remove duplicates within one group.
+            var actionKey = (a.Group || partGroup) + '|' + a.Name;
+            if (seen[actionKey]) return false;
+            seen[actionKey] = true;
             return true;
         });
     }
@@ -202,7 +205,7 @@
         logD('[QiAct] 已打 ActivityDictionaryText 直接兜底补丁（SDK 不可用）');
     }
 
-    function getActivityLabelFallback(name, targetGroup) {
+    function getActivityLabelFallback(name, targetGroup, targetChar) {
         if (!name) return '';
         // 自定义动作：直接返回用户定义的名字，避免显示 CA_xxx 内部 ID
         if (name.indexOf(CA_PREFIX) === 0) {
@@ -223,8 +226,13 @@
         function tryGroup(g) {
             return tryKey(g, 'ChatOther') || tryKey(g, 'ChatSelf');
         }
-        var result = tryGroup(targetGroup || '');
+        var textGroup = getActivityTextGroup(targetGroup || '', targetChar);
+        var result = tryGroup(textGroup);
         if (result) return result;
+        if (textGroup !== targetGroup) {
+            result = tryGroup(targetGroup || '');
+            if (result) return result;
+        }
         // 合成子部位 fallback 到主部位字典键（BC 仅在主部位注册翻译）
         if (targetGroup && SUBPART_TO_BASE[targetGroup]) {
             result = tryGroup(SUBPART_TO_BASE[targetGroup]);
@@ -341,7 +349,9 @@
     function resolveContentKey(group, name, targetChar) {
         var isSelf = targetChar && Player && targetChar.MemberNumber === Player.MemberNumber;
         function firstExisting(prefix) {
-            var order = [group];
+            var textGroup = getActivityTextGroup(group, targetChar);
+            var order = [textGroup];
+            if (order.indexOf(group) < 0) order.push(group);
             if (SUBPART_TO_BASE[group]) order.push(SUBPART_TO_BASE[group]);
             if (typeof ActivityDictionaryText !== 'function') return null; // 无法判断，让外层 fallback
             for (var i = 0; i < order.length; i++) {

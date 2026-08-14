@@ -647,7 +647,15 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function getPartActionGroups(group) {
         var canonical = canonicalPartGroup(group);
-        return canonical === "ItemHands" ? ["ItemHands", "ItemHandheld"] : [canonical];
+        if (canonical === "ItemHands") return ["ItemHands", "ItemHandheld"];
+        return [canonical];
+      }
+      function getActivityTextGroup(group, character) {
+        var hasPenis = character && typeof character.HasPenis === "function" && character.HasPenis();
+        if (!hasPenis) return group;
+        if (group === "ItemVulva") return "ItemPenis";
+        if (group === "ItemVulvaPiercings") return "ItemGlans";
+        return group;
       }
       function resolveFocusGroup(groupName) {
         if (typeof AssetGroup !== "undefined" && Array.isArray(AssetGroup)) {
@@ -942,7 +950,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
                 if (!a) return;
                 var name = a.Activity ? a.Activity.Name || "" : a.Name || "";
                 if (name) {
-                  actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup), Item: a.Item || null });
+                  actions.push({ Name: name, Group: candidateGroup, translatedName: getActivityLabelFallback(name, candidateGroup, targetChar), Item: a.Item || null });
                 }
               });
             });
@@ -982,7 +990,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
               var targets = Array.isArray(a.Target) ? a.Target : [a.Target];
               return targets.indexOf(group) !== -1;
             }) || partGroup;
-            return { Name: a.Name || "", Group: actualGroup, translatedName: getActivityLabelFallback(a.Name, actualGroup), Item: null };
+            return { Name: a.Name || "", Group: actualGroup, translatedName: getActivityLabelFallback(a.Name, actualGroup, targetChar), Item: null };
           });
         }
         if (typeof caRawAllActivities === "function" && typeof isForceAvailableActivity === "function") {
@@ -997,7 +1005,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
                 return groupCandidates.indexOf(x) !== -1;
               });
               if (!hit) return;
-              var disp = (caFindByActivityName(a.Name) || {}).name || getActivityLabelFallback(a.Name, hit);
+              var disp = (caFindByActivityName(a.Name) || {}).name || getActivityLabelFallback(a.Name, hit, targetChar);
               if (!isForceAvailableActivity(a.Name, disp)) return;
               if (actions.some(function(x) {
                 return x.Name === a.Name;
@@ -1015,8 +1023,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
             var ca = caFindByActivityName(a.Name);
             if (ca && ca.visible === false) return false;
           }
-          if (seen[a.Name]) return false;
-          seen[a.Name] = true;
+          var actionKey = (a.Group || partGroup) + "|" + a.Name;
+          if (seen[actionKey]) return false;
+          seen[actionKey] = true;
           return true;
         });
       }
@@ -1083,7 +1092,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         };
         window.__QiAct_ADT_PATCHED = true;
       }
-      function getActivityLabelFallback(name, targetGroup) {
+      function getActivityLabelFallback(name, targetGroup, targetChar) {
         if (!name) return "";
         if (name.indexOf(CA_PREFIX) === 0) {
           var ca = caFindByActivityName(name);
@@ -1103,8 +1112,13 @@ One of mods you are using is using an old version of SDK. It will work for now b
         function tryGroup(g) {
           return tryKey(g, "ChatOther") || tryKey(g, "ChatSelf");
         }
-        var result = tryGroup(targetGroup || "");
+        var textGroup = getActivityTextGroup(targetGroup || "", targetChar);
+        var result = tryGroup(textGroup);
         if (result) return result;
+        if (textGroup !== targetGroup) {
+          result = tryGroup(targetGroup || "");
+          if (result) return result;
+        }
         if (targetGroup && SUBPART_TO_BASE[targetGroup]) {
           result = tryGroup(SUBPART_TO_BASE[targetGroup]);
           if (result) return result;
@@ -1163,7 +1177,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function resolveContentKey(group, name, targetChar) {
         var isSelf = targetChar && Player && targetChar.MemberNumber === Player.MemberNumber;
         function firstExisting(prefix) {
-          var order = [group];
+          var textGroup = getActivityTextGroup(group, targetChar);
+          var order = [textGroup];
+          if (order.indexOf(group) < 0) order.push(group);
           if (SUBPART_TO_BASE[group]) order.push(SUBPART_TO_BASE[group]);
           if (typeof ActivityDictionaryText !== "function") return null;
           for (var i = 0; i < order.length; i++) {
@@ -1233,7 +1249,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           if (!contentKeyMissing && contentText) {
             sentence = contentText.replace(/\{SourceCharacter\}/g, actorTag.Tag.Nickname).replace(/\{TargetCharacter\}/g, targetChar && (targetChar.Nickname || targetChar.Name || targetChar.AccountName) || "某人").replace(/SourceCharacter/g, actorTag.Tag.Nickname).replace(/TargetCharacter/g, targetChar && (targetChar.Nickname || targetChar.Name || targetChar.AccountName) || "某人");
           } else {
-            var displayName = getActivityLabelFallback(name, group) || name || "某个动作";
+            var displayName = getActivityLabelFallback(name, group, targetChar) || name || "某个动作";
             if (isTargetSelf) {
               sentence = "做了「" + displayName + "」";
             } else {
@@ -1409,7 +1425,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           return;
         }
         var name = String(state.selectedAction);
-        var group = String(state.selectedPart);
+        var group = String(state.selectedActionGroup || state.selectedPart);
         var delay = normalizeActionDelay(state.actionDelay);
         var index = 0;
         function next() {
@@ -2575,7 +2591,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           });
         });
         function renderRichText(raw) {
-          return escapeHtml(raw).replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">' + QiActT("editor.token_self_pill") + '<span class="xsact-zwsp">&#8203;</span>').replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">' + QiActT("editor.token_other_pill") + '<span class="xsact-zwsp">&#8203;</span>');
+          return escapeHtml(raw).replace(/\{SourceCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{SourceCharacter}">' + QiActT("editor.token_self_pill") + '</span><span class="xsact-zwsp">&#8203;</span>').replace(/\{TargetCharacter\}/g, '<span class="xsact-token-pill" contenteditable="false" data-token="{TargetCharacter}">' + QiActT("editor.token_other_pill") + '</span><span class="xsact-zwsp">&#8203;</span>');
         }
         function extractRawFromRich(el) {
           var raw = "";
@@ -4251,7 +4267,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
             if (!act || !act.Name) return;
             var lbl = getActivityLabel(act, act.Group || partGroup);
             var isFav = state.favorites.indexOf(canonicalPartGroup(partGroup) + "|" + act.Name) !== -1;
-            html += '<div class="xsact-action-row' + (isEditing ? " editing" : "") + '" data-name="' + escapeHtml(act.Name) + '"><button class="xsact-action-btn' + (isFav ? " fav" : "") + '" data-name="' + escapeHtml(act.Name) + '" title="' + escapeHtml(act.Name) + '"><span class="xsact-action-label">' + escapeHtml(lbl) + "</span>" + (isFav ? '<span class="xsact-action-star">' + svgIcon("starFill", 13) + "</span>" : "") + "</button>";
+            html += '<div class="xsact-action-row' + (isEditing ? " editing" : "") + '" data-name="' + escapeHtml(act.Name) + '" data-group="' + escapeHtml(act.Group || partGroup) + '"><button class="xsact-action-btn' + (isFav ? " fav" : "") + '" data-name="' + escapeHtml(act.Name) + '" data-group="' + escapeHtml(act.Group || partGroup) + '" title="' + escapeHtml(act.Name) + '"><span class="xsact-action-label">' + escapeHtml(lbl) + "</span>" + (isFav ? '<span class="xsact-action-star">' + svgIcon("starFill", 13) + "</span>" : "") + "</button>";
             if (isEditing) {
               html += '<button class="xsact-add-to-combo" title="' + QiActT("combo.add_title") + '">' + svgIcon("plus", 16) + "</button>";
             }
@@ -4262,10 +4278,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
             btn.addEventListener("click", function(e) {
               e.stopPropagation();
               var actName = btn.dataset.name;
+              var actGroup = btn.dataset.group || partGroup;
               var act = actions.find(function(a) {
-                return a && a.Name === actName;
-              }) || { Name: actName, Item: null };
+                return a && a.Name === actName && (a.Group || partGroup) === actGroup;
+              }) || { Name: actName, Group: actGroup, Item: null };
               state.selectedAction = actName;
+              state.selectedActionGroup = actGroup;
               state.selectedActionItem = act.Item || null;
               listEl.querySelectorAll(".xsact-action-btn").forEach((b) => b.classList.remove("sel"));
               btn.classList.add("sel");
@@ -4299,11 +4317,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
               btn.addEventListener("click", function(e) {
                 e.stopPropagation();
                 var actName = btn.parentNode.dataset.name;
+                var actGroup = btn.parentNode.dataset.group || partGroup;
                 var act = actions.find(function(a) {
-                  return a && a.Name === actName;
-                }) || { Name: actName, Item: null, translatedName: actName };
+                  return a && a.Name === actName && (a.Group || partGroup) === actGroup;
+                }) || { Name: actName, Group: actGroup, Item: null, translatedName: actName };
                 var lbl = act.translatedName || getActivityLabel(act.Name, partGroup);
-                addComboItem(state.editingComboId, partGroup, act.Name, lbl, act.Item || null);
+                addComboItem(state.editingComboId, act.Group || partGroup, act.Name, lbl, act.Item || null);
                 toast(QiActT("toast.added_to_combo", { name: getCombo(state.editingComboId).name }), "#46E0A0");
               });
             });

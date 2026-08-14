@@ -108,7 +108,7 @@
                     .replace(/SourceCharacter/g, actorTag.Tag.Nickname)
                     .replace(/TargetCharacter/g, targetChar && (targetChar.Nickname || targetChar.Name || targetChar.AccountName) || '某人');
             } else {
-                var displayName = getActivityLabelFallback(name, group) || name || '某个动作';
+                var displayName = getActivityLabelFallback(name, group, targetChar) || name || '某个动作';
                 if (isTargetSelf) {
                     sentence = '做了「' + displayName + '」';
                 } else {
@@ -304,7 +304,7 @@
         if (!ordered.length) { toast(QiActT('toast.no_others'), '#888'); return; }
 
         var name = String(state.selectedAction);
-        var group = String(state.selectedPart);
+        var group = String(state.selectedActionGroup || state.selectedPart);
         var success = 0;
         var delay = normalizeActionDelay(state.actionDelay); // 避免触发服务器/本地 anti-spam
         var index = 0;
