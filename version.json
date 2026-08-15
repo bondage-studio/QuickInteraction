@@ -5,12 +5,12 @@
   "summary": [
     "彻底移除「我的动作」(自定义动作) 模块的全部测试版(Beta)标识：custom 标签角标、面板内开发提示横幅及相关样式均已删除，11 种语言同步去除 beta 措辞，功能现已完善"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.6",
   "announcement": {
     "id": "2026-08-15-remove-beta-badges",
     "title": "QiAct v1.4.6 · 移除「我的动作」测试版标识",
     "severity": "normal",
     "message": "「我的动作」(自定义动作) 功能现已开发完善，本次更新（v1.4.6）彻底移除了该模块内所有测试版(Beta)占位内容：\n\n1. 移除了「我的动作」标签上的「测试版 / Beta」角标。\n2. 移除了面板内「仍在开发中…」的开发提示横幅。\n3. 移除了对应的角标与横幅样式。\n4. 11 种语言同步清理了标题与说明中的 beta 措辞。\n\n界面不再显示任何测试版字样。重新注入脚本即可生效；通过 liko 插件管理器加载的用户会在下次刷新时自动更新。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases"
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.6"
   }
 }
