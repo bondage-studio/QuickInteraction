@@ -45,7 +45,7 @@
         <button class="xsact-mode-tab active" data-mode="part" title="' + QiActT('ui.mode_part_title') + '">' + svgIcon('target', 14) + '<span>' + QiActT('ui.mode_part') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="favorite" title="' + QiActT('ui.mode_favorite_title') + '">' + svgIcon('star', 14) + '<span>' + QiActT('ui.mode_favorite') + '</span></button>\
         <button class="xsact-mode-tab" data-mode="combo" title="' + QiActT('ui.mode_combo_title') + '">' + svgIcon('layers', 14) + '<span>' + QiActT('ui.mode_combo') + '</span></button>\
-        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '"><span class="xsact-custom-tab-main">' + svgIcon('custom', 14) + '<span class="xsact-custom-tab-label">' + QiActT('ui.mode_custom') + '</span></span><span class="xsact-beta-badge">' + QiActT('ui.beta_badge') + '</span></button>\
+        <button class="xsact-mode-tab" data-mode="custom" title="' + QiActT('ui.mode_custom_title') + '"><span class="xsact-custom-tab-main">' + svgIcon('custom', 14) + '<span class="xsact-custom-tab-label">' + QiActT('ui.mode_custom') + '</span></span></button>\
       </div>\
       <div class="xsact-qa-panel-body" id="xsact-action-list">\
         <div class="xsact-qa-empty">' + QiActT('render.pick_char_part2') + '</div>\

@@ -79,8 +79,6 @@
                 '</div></div>';
         }
 
-        html += '<div class="xsact-ca-beta">' + QiActT('custom.beta_banner') + '</div>';
-
         // 迁移提示：原 echo/回声 中仍有动作数据 → 提供一键清理入口
         try {
             var _echoData = caGetEchoData();

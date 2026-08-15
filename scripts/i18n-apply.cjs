@@ -14,7 +14,6 @@ const MAP = {
   ],
 
   '06-custom-b.js': [
-    ["'我的动作（测试版）'", "QiActT('custom.title')"],
     ["placeholder=\"搜索动作...\"", "placeholder=\"' + QiActT('custom.search_placeholder') + '\""],
     ["title=\"新建\"", "title=\"' + QiActT('custom.new') + '\""],
     ["<span>新建</span>", "<span>' + QiActT('custom.new') + '</span>"],
@@ -32,7 +31,6 @@ const MAP = {
     [">已选 0 个</span>", ">' + QiActT('custom.selected_count', { n: 0 }) + '</span>'"],
     [">批量关闭</button>", ">' + QiActT('custom.batch_close') + '</button>'"],
     [">批量删除</button>", ">' + QiActT('custom.batch_delete') + '</button>'"],
-    ["'<div class=\"xsact-ca-beta\">自定义动作功能当前为【测试版(Beta)】，仍在开发中，可能存在不稳定或未完善之处，建议谨慎使用并及时反馈问题。</div>'", "'<div class=\"xsact-ca-beta\">' + QiActT('custom.beta_banner') + '</div>'"],
     ["'<div class=\"xsact-ca-echo-clean-text\">检测到原 echo/回声 中仍有 <b>' + Object.keys(_echoData).length + '</b> 个自定义动作数据。迁移完成后建议清理，避免动作重复显示与使用后乱码。</div>'", "'<div class=\"xsact-ca-echo-clean-text\">' + QiActT('custom.echo_clean_text', { n: Object.keys(_echoData).length }) + '</div>'"],
     ["<button class=\"xsact-ca-echo-clean-btn\" type=\"button\">清理原 echo 数据</button>", "<button class=\"xsact-ca-echo-clean-btn\" type=\"button\">' + QiActT('custom.echo_clean_btn') + '</button>'"],
     ["<span class=\"xsact-ca-xiaosu-label\" title=\"内置小酥动作包（XiaoSuActivity 全部 51 个动作，预编译进插件，离线可用，无需原版插件）\">内置小酥动作包</span>", "<span class=\"xsact-ca-xiaosu-label\" title=\"' + QiActT('custom.xiaosu_pack_title') + '\">' + QiActT('custom.xiaosu_pack_label') + '</span>"],
