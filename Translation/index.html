@@ -164,7 +164,7 @@
     <section class="card loader">
       <div>
         <div class="url-row">
-          <input id="repoUrl" aria-label="GitHub 檔案或資料夾網址" value="https://github.com/awdrrawd/BC-FCM/tree/main/Translation">
+          <input id="repoUrl" aria-label="GitHub 檔案或資料夾網址" value="https://github.com/bondage-studio/QuickInteraction/tree/main/Translation">
           <button id="loadBtn" class="primary" data-ui="loadUrl">載入網址</button>
           <select id="projectSelect" aria-label="預設插件庫">
             <option value="https://github.com/bondage-studio/QuickInteraction/tree/main/Translation">QiAct Translation</option>
@@ -249,7 +249,7 @@
   <script>
     'use strict';
 
-    const DEFAULT_URL = 'https://github.com/awdrrawd/BC-FCM/tree/main/Translation';
+    const DEFAULT_URL = 'https://github.com/bondage-studio/QuickInteraction/tree/main/Translation';
     const RECOMMENDED_LANGS = new Set(['TW', 'CN', 'JA', 'KO', 'DE', 'FR', 'ES', 'PT', 'RU', 'UA', 'VI']);
     const LANGUAGE_CATALOG = [
       ['EN','English'], ['TW','繁體中文'], ['CN','简体中文'], ['JA','日本語'], ['KO','한국어'],
@@ -278,7 +278,7 @@
     };
     const LANG_NAMES = Object.fromEntries(LANGUAGE_CATALOG.map(([code, name]) => [code, `${code} · ${name}`]));
     const LANG_ORDER = new Map(LANGUAGE_CATALOG.map(([code], index) => [code, index]));
-    const state = { namespace: 'FCM', files: [], data: {}, dirty: new Set(), page: 1 };
+    const state = { namespace: 'QiAct', files: [], data: {}, dirty: new Set(), page: 1 };
     const $ = id => document.getElementById(id);
     const els = {
       repoUrl: $('repoUrl'), loadBtn: $('loadBtn'), projectSelect: $('projectSelect'), status: $('status'),
@@ -458,7 +458,7 @@
         if (entries && Object.keys(entries).length) calls.push({ namespace, group, entries });
       }
 
-      // FCM-style compact packs register a generated T variable; V is its source.
+      // QiAct-style compact packs register a generated T variable; V is its source.
       if (!calls.length && variables.V) calls.push({ namespace: state.namespace, group: state.namespace, entries: wrapFlatLanguage(variables.V, code) });
 
       // LCE uses an ES-module default export instead of BC_i18n.register().
