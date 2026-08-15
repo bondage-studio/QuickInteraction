@@ -2,7 +2,7 @@
 // @name         快捷互动 (QiAct)
 // @name:zh      快捷互动
 // @namespace    https://github.com/bondage-studio/QuickInteraction
-// @version      1.4.5
+// @version      1.4.6
 // @description  Bondage Club - 统一动作操作台。一键进入动作模式，在聊天室场景内直接点人物部位选动作，绕过原生5步嵌套菜单。
 // @author       Tao MUSE
 // @homepageURL  https://github.com/bondage-studio/QuickInteraction
@@ -393,7 +393,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function silent(e, ctx) {
         return;
       }
-      const VERSION = "1.4.5";
+      const VERSION = "1.4.6";
       const S_ENABLED = "xsact_qa_enabled";
       const S_FAVS = "xsact_qa_favorites";
       const S_PRESETS = "xsact_qa_presets";

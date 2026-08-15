@@ -1,16 +1,16 @@
 {
-  "version": "1.4.5",
-  "date": "2026-08-14",
+  "version": "1.4.6",
+  "date": "2026-08-15",
   "severity": "normal",
   "summary": [
-    "「自己」模式重定义为纯身体线框开关（可记忆，全员模式仅临时抑制并自动恢复）；修复组合编辑保存/取消按钮与部位标签的翻译缺失及滑块延迟数字不实时更新的问题，并同步「自己」按钮的 tooltip／toast 文案"
+    "彻底移除「我的动作」(自定义动作) 模块的全部测试版(Beta)标识：custom 标签角标、面板内开发提示横幅及相关样式均已删除，11 种语言同步去除 beta 措辞，功能现已完善"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.5",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases",
   "announcement": {
-    "id": "2026-08-14-self-wireframe-i18n-fixes",
-    "title": "QiAct v1.4.5 · 自己线框开关与多语言修正",
+    "id": "2026-08-15-remove-beta-badges",
+    "title": "QiAct v1.4.6 · 移除「我的动作」测试版标识",
     "severity": "normal",
-    "message": "本次更新（v1.4.5）聚焦「自己」模式与多语言体验：\n\n1. 「自己」按钮重定义为纯身体线框开关：点开即显示自己的线框、关闭即隐藏，状态会被记忆；只有开启「全员」模式时会临时隐藏自己的线框，关闭全员后自动恢复到原本的开关值。\n2. 修复组合编辑界面「保存／取消」按钮显示原始键名的问题（现已正确翻译为各语言）。\n3. 修复组合动作间隔滑块拖动时，上方「动作间隔 Nms」延迟数字不实时更新的问题。\n4. 修复部位标签在中文环境下误显示英文（躯干／口／头套 此前可能显示为 Torso／Mouth／Hood）。\n5. 同步更新「自己」按钮的悬浮提示与开关提示文案，消除与旧「收藏动作对象」语义的混淆。\n\n重新注入脚本即可生效。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.5"
+    "message": "「我的动作」(自定义动作) 功能现已开发完善，本次更新（v1.4.6）彻底移除了该模块内所有测试版(Beta)占位内容：\n\n1. 移除了「我的动作」标签上的「测试版 / Beta」角标。\n2. 移除了面板内「仍在开发中…」的开发提示横幅。\n3. 移除了对应的角标与横幅样式。\n4. 11 种语言同步清理了标题与说明中的 beta 措辞。\n\n界面不再显示任何测试版字样。重新注入脚本即可生效；通过 liko 插件管理器加载的用户会在下次刷新时自动更新。",
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases"
   }
 }

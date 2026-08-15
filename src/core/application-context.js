@@ -61,7 +61,7 @@
         }
     }
 
-    const VERSION = '1.4.5';
+    const VERSION = '1.4.6';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
