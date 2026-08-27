@@ -101,6 +101,10 @@
         var allTargetScope = loadSetting(S_ALL_TARGET_SCOPE, 'all');
         state.allTargetScope = ['all','allow','skip'].indexOf(allTargetScope) >= 0 ? allTargetScope : 'all';
         state.favorites = loadSetting(S_FAVS, []);
+        state.blockActionsEnabled = loadSetting(S_BLOCK_ACTIONS_ENABLED, false) === true;
+        state.blockedActions = normalizeBlockedActions(loadSetting(S_BLOCKED_ACTIONS, []));
+        state.blockFilteringEnabled = loadSetting(S_BLOCK_FILTERING, true) !== false;
+        applyBlockedActions();
         migrateFavorites(); // 旧版纯动作名 → 部位复合键（一次性迁移）
         state.presets = loadSetting(S_PRESETS, []);
         state.lastAction = loadStorage(S_LAST, null);

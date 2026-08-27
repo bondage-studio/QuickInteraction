@@ -51,6 +51,134 @@
         var ico = btn.querySelector('.xsact-ico');
         if (ico) ico.outerHTML = svgIcon(state.favModeActive ? 'starFill' : 'star', 14);
     }
+
+    function normalizeBlockedActions(value) {
+        if (!Array.isArray(value)) return [];
+        var seen = {};
+        return value.filter(function(item) {
+            return item && typeof item.name === 'string' && item.name && !seen[item.name] && (seen[item.name] = true);
+        }).map(function(item) {
+            return {
+                name: item.name,
+                group: canonicalPartGroup(item.group || ''),
+                selfBlocked: item.selfBlocked === true,
+                otherBlocked: item.otherBlocked === true,
+                selfPrevious: Number.isInteger(item.selfPrevious) ? item.selfPrevious : 2,
+                otherPrevious: Number.isInteger(item.otherPrevious) ? item.otherPrevious : 2
+            };
+        });
+    }
+    function syncPlayerArousalSettings() {
+        try {
+            if (typeof ServerAccountUpdate !== 'undefined' && ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === 'function') {
+                ServerAccountUpdate.QueueData({ ArousalSettings: Player.ArousalSettings });
+            }
+        } catch (e) { silent(e, 'block.syncArousalSettings'); }
+    }
+    function setBlockedDirection(item, direction, blocked) {
+        if (!item || typeof Player === 'undefined' || typeof PreferenceGetActivityFactor !== 'function' || typeof PreferenceSetActivityFactor !== 'function') return;
+        var self = direction === 'self';
+        var previousKey = self ? 'selfPrevious' : 'otherPrevious';
+        var blockedKey = self ? 'selfBlocked' : 'otherBlocked';
+        if (blocked && !item[blockedKey]) item[previousKey] = PreferenceGetActivityFactor(Player, item.name, self);
+        item[blockedKey] = blocked;
+        if (state.blockFilteringEnabled) PreferenceSetActivityFactor(Player, item.name, self, blocked ? 0 : item[previousKey]);
+        persist(S_BLOCKED_ACTIONS, state.blockedActions);
+        if (state.blockFilteringEnabled) syncPlayerArousalSettings();
+    }
+    function applyBlockedActions() {
+        if (typeof Player === 'undefined' || typeof PreferenceSetActivityFactor !== 'function') return;
+        if (!state.blockFilteringEnabled) return;
+        state.blockedActions.forEach(function(item) {
+            if (item.selfBlocked) PreferenceSetActivityFactor(Player, item.name, true, 0);
+            if (item.otherBlocked) PreferenceSetActivityFactor(Player, item.name, false, 0);
+        });
+    }
+    function setBlockFilteringEnabled(enabled) {
+        state.blockFilteringEnabled = enabled;
+        state.blockedActions.forEach(function(item) {
+            if (item.selfBlocked) PreferenceSetActivityFactor(Player, item.name, true, enabled ? 0 : item.selfPrevious);
+            if (item.otherBlocked) PreferenceSetActivityFactor(Player, item.name, false, enabled ? 0 : item.otherPrevious);
+        });
+        persist(S_BLOCK_FILTERING, enabled);
+        syncPlayerArousalSettings();
+        updateBlockedActionsPanel();
+    }
+    function collectBlockedAction(group, name) {
+        var item = state.blockedActions.find(function(entry) { return entry.name === name; });
+        if (!item) {
+            item = { name: name, group: canonicalPartGroup(group), selfBlocked: false, otherBlocked: false, selfPrevious: 2, otherPrevious: 2 };
+            state.blockedActions.push(item);
+        }
+        setBlockedDirection(item, 'self', true);
+        setBlockedDirection(item, 'other', true);
+        persist(S_BLOCKED_ACTIONS, state.blockedActions);
+        toast(QiActT('block.added', { name: getActivityLabel(name, group) }), '#FF5C7A');
+    }
+    function toggleBlockUi() {
+        if (!state.blockActionsEnabled) return;
+        state.blockUiActive = !state.blockUiActive;
+        if (!state.blockUiActive) {
+            state.blockCaptureActive = false;
+            if (state.panelMode === 'blocked') setPanelMode('part');
+        }
+        updateBlockUiVisual();
+    }
+    function toggleBlockCaptureMode() {
+        state.blockCaptureActive = !state.blockCaptureActive;
+        if (state.blockCaptureActive && state.favModeActive) { state.favModeActive = false; updateFavButtonVisual(); }
+        updateBlockUiVisual();
+        toast(state.blockCaptureActive ? QiActT('block.capture_on') : QiActT('block.capture_off'), state.blockCaptureActive ? '#FF5C7A' : '#888');
+    }
+    function updateBlockUiVisual() {
+        if (!state.actionPanelEl) return;
+        var manager = state.actionPanelEl.querySelector('#xsact-block-manager-btn');
+        if (manager) {
+            manager.style.display = state.blockActionsEnabled ? '' : 'none';
+            manager.classList.toggle('on', state.blockUiActive);
+        }
+        state.actionPanelEl.querySelectorAll('.xsact-block-ui').forEach(function(el) {
+            el.style.display = state.blockActionsEnabled && state.blockUiActive ? '' : 'none';
+        });
+        var capture = state.actionPanelEl.querySelector('#xsact-block-capture-btn');
+        if (capture) capture.classList.toggle('on', state.blockCaptureActive);
+    }
+
+    function updateBlockedActionsPanel() {
+        if (!state.actionPanelEl) return;
+        var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
+        var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
+        if (!listEl) return;
+        if (titleEl) titleEl.textContent = QiActT('block.title');
+        var html = '<label class="xsact-block-master"><span><strong>' + QiActT('block.filtering') + '</strong><small>' + QiActT('block.filtering_hint') + '</small></span><span class="xsact-switch"><input type="checkbox" id="xsact-block-filtering"' + (state.blockFilteringEnabled ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
+            '<div class="xsact-block-table"><div class="xsact-block-head"><span>' + QiActT('block.part') + '</span><span>' + QiActT('block.action_name') + '</span><span>' + QiActT('block.on_self') + '</span><span>' + QiActT('block.on_others') + '</span><span>' + QiActT('block.delete') + '</span></div>';
+        state.blockedActions.forEach(function(item, index) {
+            html += '<div class="xsact-block-row" data-index="' + index + '"><span class="xsact-block-part">' + escapeHtml(QiActT('part.' + item.group)) + '</span><span class="xsact-block-name">' + escapeHtml(getActivityLabel(item.name, item.group)) + '</span>' +
+                '<label class="xsact-switch"><input type="checkbox" data-direction="self"' + (item.selfBlocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></label>' +
+                '<label class="xsact-switch"><input type="checkbox" data-direction="other"' + (item.otherBlocked ? ' checked' : '') + '><span class="xsact-switch-track"></span></label>' +
+                '<button class="xsact-block-delete" title="' + QiActT('block.delete') + '" data-tooltip-type="danger">' + svgIcon('trash', 14) + '</button></div>';
+        });
+        if (!state.blockedActions.length) html += '<div class="xsact-qa-empty">' + QiActT('block.empty') + '</div>';
+        listEl.innerHTML = html + '</div>';
+        listEl.querySelector('#xsact-block-filtering').addEventListener('change', function(e) { setBlockFilteringEnabled(e.target.checked); });
+        listEl.querySelectorAll('.xsact-block-row input').forEach(function(input) {
+            input.addEventListener('change', function() {
+                var item = state.blockedActions[parseInt(input.closest('.xsact-block-row').dataset.index, 10)];
+                setBlockedDirection(item, input.dataset.direction, input.checked);
+            });
+        });
+        listEl.querySelectorAll('.xsact-block-delete').forEach(function(button) {
+            button.addEventListener('click', function() {
+                var index = parseInt(button.closest('.xsact-block-row').dataset.index, 10);
+                var item = state.blockedActions[index];
+                if (item.selfBlocked) setBlockedDirection(item, 'self', false);
+                if (item.otherBlocked) setBlockedDirection(item, 'other', false);
+                state.blockedActions.splice(index, 1);
+                persist(S_BLOCKED_ACTIONS, state.blockedActions);
+                updateBlockedActionsPanel();
+            });
+        });
+    }
     function toggleInteractionGrid() {
         state.interactionGridActive = !state.interactionGridActive;
         persist(S_INTERACTION_GRID, state.interactionGridActive);

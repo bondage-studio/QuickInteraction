@@ -61,7 +61,7 @@
         }
     }
 
-    const VERSION = '1.4.6';
+    const VERSION = '1.4.7';
 
     // ── 存储键 ──
     const S_ENABLED = 'xsact_qa_enabled';
@@ -91,8 +91,9 @@
     const S_ACTION_ALLOW_MEMBERS = 'xsact_qa_action_allow_members';
     const S_ACTION_ALLOW_GROUPS = 'xsact_qa_action_allow_groups';
     const S_ALL_TARGET_SCOPE = 'xsact_qa_all_target_scope';
+    const S_BLOCK_ACTIONS_ENABLED = 'xsact_qa_block_actions_enabled';
+    const S_BLOCKED_ACTIONS = 'xsact_qa_blocked_actions', S_BLOCK_FILTERING = 'xsact_qa_block_filtering';
 
-    // ── 集中状态（单一数据源，消除散落全局变量）──
     const state = {
         disposed: false,              // 热移除后阻止异步续体重新建立 UI / timer
         modApi: null,                 // bcModSdk 注册句柄
@@ -107,6 +108,10 @@
         popoverView: 'chars',         // 人物浮层当前视图：'chars' 人物列表 | 'parts' 部位选择
         allModeActive: false,         // 全员范围开关
         favModeActive: false,         // 收藏模式开关
+        blockActionsEnabled: false,   // 是否启用动作禁止管理功能
+        blockUiActive: false,         // 标题栏禁止按钮：显示禁止分页与收录按钮
+        blockCaptureActive: false,    // 点击动作时收录到禁止列表
+        blockedActions: [], blockFilteringEnabled: true,
         selfModeActive: false,        // 自己模式开关
         // 渲染层（body-grid 等）不应直接读取 selfModeActive 原始状态字段，
         // 统一通过此语义化访问器判断「是否绘制玩家自身线框」，满足架构红线。

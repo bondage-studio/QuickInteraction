@@ -1,16 +1,17 @@
 {
-  "version": "1.4.6",
-  "date": "2026-08-15",
+  "version": "1.4.7",
+  "date": "2026-08-27",
   "severity": "normal",
   "summary": [
-    "彻底移除「我的动作」(自定义动作) 模块的全部测试版(Beta)标识：custom 标签角标、面板内开发提示横幅及相关样式均已删除，11 种语言同步去除 beta 措辞，功能现已完善"
+    "新增「禁用动作」功能：可从动作列表快速收录，并分别控制别人对自己做、自己对别人做两种 BC 原生动作权限",
+    "新增禁用动作管理分页、部位与动作明细、删除操作及「禁用互动」总开关；关闭总开关时保留清单但暂停所有动作过滤"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.6",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.7",
   "announcement": {
-    "id": "2026-08-15-remove-beta-badges",
-    "title": "QiAct v1.4.6 · 移除「我的动作」测试版标识",
+    "id": "2026-08-27-blocked-actions",
+    "title": "QiAct v1.4.7 · 新增禁用动作管理",
     "severity": "normal",
-    "message": "「我的动作」(自定义动作) 功能现已开发完善，本次更新（v1.4.6）彻底移除了该模块内所有测试版(Beta)占位内容：\n\n1. 移除了「我的动作」标签上的「测试版 / Beta」角标。\n2. 移除了面板内「仍在开发中…」的开发提示横幅。\n3. 移除了对应的角标与横幅样式。\n4. 11 种语言同步清理了标题与说明中的 beta 措辞。\n\n界面不再显示任何测试版字样。重新注入脚本即可生效；通过 liko 插件管理器加载的用户会在下次刷新时自动更新。",
-    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.6"
+    "message": "v1.4.7 新增「禁用动作」管理功能：\n\n1. 在设置页启用后，标题按钮列会显示禁止按钮。\n2. 选择人物与部位，开启底部「禁用」模式，再点击动作即可收录。\n3. 禁止分页会显示部位、动作名称、对自己、对他人与删除操作。\n4. 「对自己」控制别人是否能对自己执行该动作；「对他人」控制自己是否能对别人执行该动作。\n5. 新增「禁用互动」总开关：关闭时完整保留清单，但暂时恢复原本 BC 偏好且不过滤动作；重新开启后会再次套用清单。\n6. 解除单项禁止或删除动作时，会恢复加入清单前的原始偏好值。\n\n本功能直接使用并同步 BC 原生动作偏好。通过 liko 插件管理器加载的用户会在下次刷新时自动更新。",
+    "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.4.7"
   }
 }

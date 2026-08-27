@@ -52,6 +52,7 @@
             user:     '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
             'triangle-left': '<path d="M18 5L7 12l11 7z" fill="currentColor" stroke="none"/>',
             settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+            ban: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
             download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
             upload:   '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
             sun:      '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>',
@@ -139,6 +140,12 @@
                     state.selectedActionItem = act.Item || null;
                     listEl.querySelectorAll('.xsact-action-btn').forEach(b => b.classList.remove('sel'));
                     btn.classList.add('sel');
+
+                    if (state.blockCaptureActive) {
+                        collectBlockedAction(actGroup, actName);
+                        updateActionPanel(charObj, partGroup);
+                        return;
+                    }
 
                     if (state.allModeActive) {
                         executeActionAll();
@@ -267,7 +274,8 @@
             '<label class="xsact-settings-row"><span><strong>' + QiActT('settings.action_delay') + '</strong><small>' + QiActT('settings.action_delay_hint') + '</small></span><span class="xsact-settings-number"><input type="number" id="xsact-settings-delay" min="100" max="9999" step="100" value="' + state.actionDelay + '"><em>ms</em></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.char_list_right') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-char-right"' + (state.charPopoverRight ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.floatingButtonVisible ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
-            '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
+            '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
+            '<label class="xsact-settings-row"><span><strong>' + QiActT('settings.enable_block_actions') + '</strong><small>' + QiActT('settings.enable_block_actions_hint') + '</small></span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-block-actions"' + (state.blockActionsEnabled ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
         listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
         listEl.querySelector('#xsact-settings-delay').addEventListener('change', function(e) { state.actionDelay = normalizeActionDelay(e.target.value); e.target.value = state.actionDelay; persist(S_ACTION_DELAY, state.actionDelay); });
@@ -299,6 +307,12 @@
         listEl.querySelector('#xsact-settings-char-right').addEventListener('change', function(e) { state.charPopoverRight = e.target.checked; persist(S_CHAR_POPOVER_RIGHT, state.charPopoverRight); applyCharPopoverSide(state.actionPanelEl); });
         listEl.querySelector('#xsact-settings-chat').addEventListener('change', function(e) { setFloatingButtonVisible(e.target.checked); });
         listEl.querySelector('#xsact-settings-xiaosu').addEventListener('change', function(e) { setXiaosuPack(e.target.checked); });
+        listEl.querySelector('#xsact-settings-block-actions').addEventListener('change', function(e) {
+            state.blockActionsEnabled = e.target.checked;
+            if (!state.blockActionsEnabled) { state.blockUiActive = false; state.blockCaptureActive = false; }
+            persist(S_BLOCK_ACTIONS_ENABLED, state.blockActionsEnabled);
+            rebuildPanel(); setPanelMode('settings');
+        });
     }
 
     // ════════════════════════════════════════════════════════════════════════

@@ -127,6 +127,8 @@
         if (settingsBtn) settingsBtn.addEventListener('click', function() { setPanelMode('settings'); });
         var announcementBtn = panel.querySelector('#xsact-announcement-btn');
         if (announcementBtn) announcementBtn.addEventListener('click', recallAnnouncement);
+        var blockManagerBtn = panel.querySelector('#xsact-block-manager-btn');
+        if (blockManagerBtn) blockManagerBtn.addEventListener('click', toggleBlockUi);
 
         // 语言切换下拉（自定义菜单）：setLang 后重建面板以应用新语言（auto 跟随 BC 游戏语言）
         var langWrap = panel.querySelector('#xsact-lang');
@@ -240,6 +242,8 @@
         // 收藏按钮：切换收藏模式
         var favBtn = panel.querySelector('#xsact-fav-btn');
         if (favBtn) favBtn.addEventListener('click', toggleFavMode);
+        var blockCaptureBtn = panel.querySelector('#xsact-block-capture-btn');
+        if (blockCaptureBtn) blockCaptureBtn.addEventListener('click', toggleBlockCaptureMode);
         var gridBtn = panel.querySelector('#xsact-grid-btn');
         if (gridBtn) gridBtn.addEventListener('click', toggleInteractionGrid);
 

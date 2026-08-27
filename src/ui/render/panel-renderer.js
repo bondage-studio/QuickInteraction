@@ -10,10 +10,12 @@
             listEl.classList.toggle('xsact-custom-mode', state.panelMode === 'custom');
             listEl.classList.toggle('xsact-combo-mode', state.panelMode === 'combo');
             listEl.classList.toggle('xsact-favorite-mode', state.panelMode === 'favorite');
+            listEl.classList.toggle('xsact-blocked-mode', state.panelMode === 'blocked');
         }
         updateAllButtonVisual();
         updateFavButtonVisual();
         updateInteractionGridVisual();
+        updateBlockUiVisual();
 
         // 「我的动作」「组合动作」可独立展开，无需先选中人物或身体部位
         if (state.panelMode === 'custom') {
@@ -25,6 +27,7 @@
             return;
         }
         if (state.panelMode === 'favorite') { updateFavoritesPanel(state.selectedTarget); return; }
+        if (state.panelMode === 'blocked') { updateBlockedActionsPanel(); return; }
         if (state.panelMode === 'settings') { updateSettingsPanel(); return; }
 
         // 「动作」模式：必须先选中人物与身体部位
@@ -43,7 +46,8 @@
 
     /** 切换面板模式（部位 / 自定义组合） */
     function setPanelMode(mode) {
-        if (!/^(part|favorite|combo|custom|settings)$/.test(mode)) return;
+        if (!/^(part|favorite|combo|custom|blocked|settings)$/.test(mode)) return;
+        if (mode === 'blocked' && !state.blockActionsEnabled) return;
         state.panelMode = mode;
         persist(S_MODE, mode);
         if (state.actionPanelEl) {
@@ -60,6 +64,9 @@
         if (state.panelMode === 'custom') {
             updateCustomActionPanel(state.selectedTarget);
             toast(QiActT('toast.refreshed_custom'), '#FF5C7A');
+        } else if (state.panelMode === 'blocked') {
+            updateBlockedActionsPanel();
+            toast(QiActT('block.refreshed'), '#FF5C7A');
         } else if (state.panelMode === 'favorite') {
             updateFavoritesPanel(state.selectedTarget);
             toast(QiActT('toast.refreshed_actions'), '#FF5C7A');

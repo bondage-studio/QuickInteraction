@@ -4,7 +4,7 @@
 
 > 为 Bondage Club 设计的即时互动工具：点选角色身体部位，一键触发对应动作。
 
-[![Version](https://img.shields.io/badge/version-1.4.5-FF5C7A)](https://github.com/bondage-studio/QuickInteraction/commits)
+[![Version](https://img.shields.io/badge/version-1.4.7-FF5C7A)](https://github.com/bondage-studio/QuickInteraction/commits)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -97,6 +97,16 @@ A：收藏、组合、主题等设置会写入游戏账号并同步到服务器�
 ---
 
 ## 更新日志
+
+### v1.4.7
+- 【新增】禁用动作管理：从选定部位的动作列表快速收录，并分别控制「对自己」与「对他人」两项 BC 原生动作权限
+- 【管理】新增禁止分页，集中显示部位、动作名称、两个方向开关与删除操作；解除或删除时恢复动作原本的偏好值
+- 【总开关】新增「禁用互动」开关，默认开启；关闭后保留整份清单但暂停过滤所有动作，重新开启即可恢复套用
+- 【介面】标题按钮列加入禁止入口，底部工具列加入禁用收录模式，并修正禁止清单的完整宽度与栏位外框
+
+### v1.4.6
+- 【介面】彻底移除「我的动作」模块的测试版／Beta 角标、开发提示横幅及相关样式
+- 【多语言】11 种语言同步移除测试版措辞
 
 ### v1.4.5
 - 【交互重构】「自己」按钮重定义为纯身体线框开关：点开即显示自己的线框、关闭即隐藏，开关状态会被记忆；只有开启「全员」模式时会临时隐藏自己的线框，关闭全员后自动恢复到原本的开关值（不再因选择他人部位而误关、也不再与收藏动作对象语义混淆）
