@@ -438,6 +438,10 @@
             '.xsact-switch input:checked+.xsact-switch-track{background:var(--xs-accent);box-shadow:inset 0 0 0 1px var(--xs-accent);}',
             '.xsact-switch input:checked+.xsact-switch-track::after{transform:translateX(18px);}',
             /* 语言切换下拉（自定义菜单，暗色战术台风格） */
+            '.xsact-lang-flag{display:inline-block;width:24px;height:18px;object-fit:contain;flex-shrink:0;vertical-align:middle;border-radius:2px;text-align:center;}',
+            '.xsact-settings-languages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:8px;border:1px solid var(--xs-border);border-radius:8px;}',
+            '.xsact-settings-language{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;min-width:0;}',
+            '.xsact-settings-language span{overflow-wrap:anywhere;}',
             '.xsact-lang{position:relative;flex-shrink:0;}',
             '.xsact-lang-trigger{',
             '  display:flex;align-items:center;gap:5px;',

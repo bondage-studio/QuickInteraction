@@ -60,12 +60,19 @@ export function readCompatSource(root, { validateLocales = true } = {}) {
         translationCount = Object.keys(collected).length;
     }
 
+    const flagCountries = { TW: 'tw', CN: 'cn', EN: 'gb', JA: 'jp', KO: 'kr', VI: 'vn', DE: 'de', FR: 'fr', ES: 'es', RU: 'ru', UA: 'ua' };
+    const flags = Object.fromEntries(TRANSLATION_LANGS.map(lang => {
+        const svg = fs.readFileSync(path.join(srcDir, 'i18n/flags', flagCountries[lang] + '.svg'), 'utf8').trim();
+        if (!svg.startsWith('<svg') || /<script|<foreignObject|\bon\w+\s*=|(?:href|src)\s*=\s*["'](?!#)/i.test(svg)) throw new Error('Unsafe flag: ' + lang);
+        return [lang, 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)];
+    }));
+    const flagSource = 'QiActI18n.FLAGS = ' + JSON.stringify(flags) + ';';
     const localeSource = TRANSLATION_LANGS.map((lang) =>
         `QiActI18n.registerLocale(${JSON.stringify(lang)}, ${JSON.stringify(translations[lang])});`
     ).join('\n');
     const source = COMPAT_SOURCE_FILES.map((file) => {
         const body = fs.readFileSync(path.join(srcDir, file), 'utf8');
-        return `/* === ${file} === */\n${body}${file === 'i18n/runtime.js' ? `\n\n/* === Translation/*.json === */\n${localeSource}` : ''}`;
+        return `/* === ${file} === */\n${body}${file === 'i18n/runtime.js' ? `\n\n/* === Translation/*.json === */\n${localeSource}\n${flagSource}` : ''}`;
     }).join('\n\n');
     const headerMatch = source.match(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==/);
     if (!headerMatch) throw new Error('未找到 UserScript 元数据头');

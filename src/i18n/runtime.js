@@ -122,6 +122,18 @@
 
     // 暴露全局 API
     window.QiActI18n = {
+        // Local SVGs are injected at build time; no LIKO or network dependency.
+        FLAGS: {},
+        flagHTML: function(code) {
+            var flags = window.QiActI18n.FLAGS;
+            return Object.prototype.hasOwnProperty.call(flags, code)
+                ? '<img class="xsact-lang-flag" src="' + flags[code] + '" width="24" height="18" alt="" aria-hidden="true">'
+                : '<span class="xsact-lang-flag" aria-hidden="true">◎</span>';
+        },
+        getSelectedLang: function() {
+            try { var code = localStorage.getItem('QiActLang'); return LANGS.indexOf(code) >= 0 ? code : 'auto'; }
+            catch (e) { return 'auto'; }
+        },
         register: register,
         registerLocale: registerLocale,
         t: QiActT,

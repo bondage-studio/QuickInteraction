@@ -253,9 +253,9 @@
         var titleEl = state.actionPanelEl.querySelector('#xsact-panel-title');
         var listEl = state.actionPanelEl.querySelector('#xsact-action-list');
         if (titleEl) titleEl.textContent = QiActT('settings.title');
-        var cur = QiActI18n.getCurrentLang ? QiActI18n.getCurrentLang() : 'auto';
+        var cur = QiActI18n.getSelectedLang ? QiActI18n.getSelectedLang() : 'auto';
         var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','JA','KO','VI','DE','FR','ES','RU','UA']);
-        var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<option value="' + l + '"' + (l === cur ? ' selected' : '') + '>' + escapeHtml(m.native || (l === 'auto' ? QiActT('settings.auto') : l)) + '</option>'; }).join('');
+        var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<label class="xsact-settings-language"><input type="radio" name="xsact-settings-lang" value="' + l + '"' + (l === cur ? ' checked' : '') + '>' + QiActI18n.flagHTML(l) + '<span>' + escapeHtml(l === 'auto' ? QiActT('settings.auto') : (m.native || l)) + '</span></label>'; }).join('');
         function idChips(ids, kind) { return ids.map(function(id) { return '<button type="button" class="xsact-id-chip" data-list="' + kind + '" data-id="' + id + '" title="' + QiActT('settings.remove_id') + '">' + id + ' ×</button>'; }).join(''); }
         var relationChoices = [['owner','settings.allow_owner'],['lover','settings.allow_lover'],['sub','settings.allow_sub'],['whitelist','settings.allow_whitelist'],['friend','settings.allow_friend']].map(function(choice) {
             return '<label class="xsact-relation-' + choice[0] + '"><input type="checkbox" data-allow-group="' + choice[0] + '"' + (state.actionAllowGroups.indexOf(choice[0]) >= 0 ? ' checked' : '') + '><span>' + QiActT(choice[1]) + '</span></label>';
@@ -264,7 +264,7 @@
             return '<label><input type="radio" name="xsact-all-scope" value="' + choice[0] + '"' + (state.allTargetScope === choice[0] ? ' checked' : '') + '><span>' + QiActT(choice[1]) + '<i></i></span></label>';
         }).join('');
         listEl.innerHTML = '<div class="xsact-settings">' +
-            '<label class="xsact-settings-row"><span>' + QiActT('settings.language') + '</span><select id="xsact-settings-lang">' + opts + '</select></label>' +
+            '<fieldset class="xsact-settings-languages" id="xsact-settings-lang"><legend>' + QiActT('settings.language') + '</legend>' + opts + '</fieldset>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
             '<div class="xsact-settings-group"><span class="xsact-settings-group-title">' + QiActT('settings.all_targets_group') + '</span>' +
               '<div class="xsact-settings-row xsact-settings-row-stack"><strong>' + QiActT('settings.general') + '</strong><div class="xsact-scope-options">' + scopeChoices + '</div></div>' +

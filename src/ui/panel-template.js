@@ -1,7 +1,7 @@
     /* ===== 主面板 UI（HTML 结构） ===== */
-    // 语言切换下拉（自定义菜单）：自动(auto) + 7 语；标记当前语言为选中
+    // 语言切换下拉（自定义菜单）：自动(auto) + 11 语；标记当前语言为选中
     function langMenuHTML() {
-        var cur = (typeof QiActI18n !== 'undefined' && QiActI18n.getCurrentLang) ? QiActI18n.getCurrentLang() : 'auto';
+        var cur = (typeof QiActI18n !== 'undefined' && QiActI18n.getSelectedLang) ? QiActI18n.getSelectedLang() : 'auto';
         var meta = (typeof QiActI18n !== 'undefined' && QiActI18n.LANG_META) ? QiActI18n.LANG_META : {};
         var list = (typeof QiActI18n !== 'undefined' && QiActI18n.LANGS) ? QiActI18n.LANGS : ['TW', 'CN', 'EN', 'JA', 'KO', 'VI', 'DE', 'FR', 'ES', 'RU', 'UA'];
         var order = ['auto'].concat(list);
@@ -12,14 +12,14 @@
             var m = meta[L] || { code: L, native: L };
             var active = (L === cur) ? ' active' : '';
             items += '<button type="button" class="xsact-lang-item' + active + '" data-lang="' + L + '" role="option" aria-selected="' + (L === cur) + '">' +
-                '<span class="xsact-lang-item-code">' + m.code + '</span>' +
+                QiActI18n.flagHTML(L) + '<span class="xsact-lang-item-code">' + m.code + '</span>' +
                 '<span class="xsact-lang-item-native">' + m.native + '</span>' +
                 '<span class="xsact-lang-check">✓</span>' +
                 '</button>';
         }
         return '<div class="xsact-lang' + (cur !== 'auto' ? ' has-lang' : '') + '" id="xsact-lang">' +
             '<button type="button" class="xsact-lang-trigger" id="xsact-lang-trigger" aria-haspopup="listbox" aria-expanded="false" title="' + (typeof QiActT === 'function' ? QiActT('ui.lang_title') : 'Language') + '">' +
-            '<span class="xsact-lang-code" id="xsact-lang-code">' + curCode + '</span>' +
+            QiActI18n.flagHTML(cur === 'auto' ? QiActI18n.getCurrentLang() : cur) + '<span class="xsact-lang-code" id="xsact-lang-code">' + curCode + '</span>' +
             '<span class="xsact-lang-caret">▾</span>' +
             '</button>' +
             '<div class="xsact-lang-menu" id="xsact-lang-menu" role="listbox" aria-label="Language">' + items + '</div>' +
