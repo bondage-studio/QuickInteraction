@@ -5007,7 +5007,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           textFaint: "#5F6672",
           hover: "#232833",
           shadow: "0 14px 44px rgba(0,0,0,0.55)",
-          scroll: "#3A3F49",
           blur: "blur(10px)",
           inputBg: "#10131A",
           btnBg: "rgba(255,255,255,0.05)",
@@ -5023,7 +5022,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           textFaint: "#7B8494",
           hover: "#DCD9E2",
           shadow: "0 14px 40px rgba(60,40,80,0.16)",
-          scroll: "#B8BCC6",
           blur: "blur(14px)",
           inputBg: "#FFFFFF",
           btnBg: "rgba(28,22,32,0.07)",
@@ -5050,12 +5048,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
             filter: "drop-shadow(0 0 6px rgba(" + ACCENT_RGB + ",0.10))"
           }
         };
-        var blocks = [":root{--xs-accent:" + ACCENT + ";--xs-accent-rgb:" + ACCENT_RGB + ";--xs-accent-soft:rgba(" + ACCENT_RGB + ",0.14);--xs-accent-text:#D6336C;--xs-panel-bg:" + DARK.bg + ";--xs-panel-bg-2:" + DARK.bg2 + ";--xs-border:" + DARK.border + ";--xs-border-strong:" + DARK.borderStrong + ";--xs-text:" + DARK.text + ";--xs-text-dim:" + DARK.textDim + ";--xs-text-faint:" + DARK.textFaint + ";--xs-hover:" + DARK.hover + ";--xs-shadow:" + DARK.shadow + ";--xs-scroll:" + DARK.scroll + ";--xs-blur:" + DARK.blur + ";--xs-input-bg:" + DARK.inputBg + ";--xs-btn-bg:" + DARK.btnBg + ";--xs-name-shadow:" + DARK.nameShadow + ";--xs-zone-stroke:" + ZONES.dark.stroke + ";--xs-zone-stroke-hover:" + ZONES.dark.strokeHover + ";--xs-zone-stroke-selected:" + ZONES.dark.strokeSelected + ";--xs-zone-fill:" + ZONES.dark.fill + ";--xs-zone-fill-hover:" + ZONES.dark.fillHover + ";--xs-zone-fill-selected:" + ZONES.dark.fillSelected + ";--xs-zone-filter:" + ZONES.dark.filter + ";}"];
+        var blocks = [":root{--xs-accent:" + ACCENT + ";--xs-accent-rgb:" + ACCENT_RGB + ";--xs-accent-soft:rgba(" + ACCENT_RGB + ",0.14);--xs-accent-text:#D6336C;--xs-panel-bg:" + DARK.bg + ";--xs-panel-bg-2:" + DARK.bg2 + ";--xs-border:" + DARK.border + ";--xs-border-strong:" + DARK.borderStrong + ";--xs-text:" + DARK.text + ";--xs-text-dim:" + DARK.textDim + ";--xs-text-faint:" + DARK.textFaint + ";--xs-hover:" + DARK.hover + ";--xs-shadow:" + DARK.shadow + ";--xs-scroll:var(--xs-accent);--xs-blur:" + DARK.blur + ";--xs-input-bg:" + DARK.inputBg + ";--xs-btn-bg:" + DARK.btnBg + ";--xs-name-shadow:" + DARK.nameShadow + ";--xs-zone-stroke:" + ZONES.dark.stroke + ";--xs-zone-stroke-hover:" + ZONES.dark.strokeHover + ";--xs-zone-stroke-selected:" + ZONES.dark.strokeSelected + ";--xs-zone-fill:" + ZONES.dark.fill + ";--xs-zone-fill-hover:" + ZONES.dark.fillHover + ";--xs-zone-fill-selected:" + ZONES.dark.fillSelected + ";--xs-zone-filter:" + ZONES.dark.filter + ";}"];
         THEMES.forEach(function(t) {
           var p = t.base === "light" ? LIGHT : DARK;
           var z = t.base === "light" ? ZONES.light : ZONES.dark;
           var accentText = t.base === "light" ? "#B02A4E" : "#FFD6DF";
-          blocks.push('[data-xsact-theme="' + t.id + '"]{--xs-accent:' + ACCENT + ";--xs-accent-rgb:" + ACCENT_RGB + ";--xs-accent-soft:rgba(" + ACCENT_RGB + ",0.14);--xs-accent-text:" + accentText + ";--xs-panel-bg:" + p.bg + ";--xs-panel-bg-2:" + p.bg2 + ";--xs-border:" + p.border + ";--xs-border-strong:" + p.borderStrong + ";--xs-text:" + p.text + ";--xs-text-dim:" + p.textDim + ";--xs-text-faint:" + p.textFaint + ";--xs-hover:" + p.hover + ";--xs-shadow:" + p.shadow + ";--xs-scroll:" + p.scroll + ";--xs-blur:" + p.blur + ";--xs-input-bg:" + p.inputBg + ";--xs-btn-bg:" + p.btnBg + ";--xs-name-shadow:" + p.nameShadow + ";--xs-zone-stroke:" + z.stroke + ";--xs-zone-stroke-hover:" + z.strokeHover + ";--xs-zone-stroke-selected:" + z.strokeSelected + ";--xs-zone-fill:" + z.fill + ";--xs-zone-fill-hover:" + z.fillHover + ";--xs-zone-fill-selected:" + z.fillSelected + ";--xs-zone-filter:" + z.filter + ";}");
+          blocks.push('[data-xsact-theme="' + t.id + '"]{--xs-accent:' + ACCENT + ";--xs-accent-rgb:" + ACCENT_RGB + ";--xs-accent-soft:rgba(" + ACCENT_RGB + ",0.14);--xs-accent-text:" + accentText + ";--xs-panel-bg:" + p.bg + ";--xs-panel-bg-2:" + p.bg2 + ";--xs-border:" + p.border + ";--xs-border-strong:" + p.borderStrong + ";--xs-text:" + p.text + ";--xs-text-dim:" + p.textDim + ";--xs-text-faint:" + p.textFaint + ";--xs-hover:" + p.hover + ";--xs-shadow:" + p.shadow + ";--xs-scroll:var(--xs-accent);--xs-blur:" + p.blur + ";--xs-input-bg:" + p.inputBg + ";--xs-btn-bg:" + p.btnBg + ";--xs-name-shadow:" + p.nameShadow + ";--xs-zone-stroke:" + z.stroke + ";--xs-zone-stroke-hover:" + z.strokeHover + ";--xs-zone-stroke-selected:" + z.strokeSelected + ";--xs-zone-fill:" + z.fill + ";--xs-zone-fill-hover:" + z.fillHover + ";--xs-zone-fill-selected:" + z.fillSelected + ";--xs-zone-filter:" + z.filter + ";}");
         });
         return blocks.join("\n");
       }
@@ -5163,7 +5161,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "}",
           ".xsact-qa-panel-body{",
           "  flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 12px;overscroll-behavior:contain;",
-          "  scrollbar-width:thin;scrollbar-color:var(--xs-scroll) transparent;",
           "  display:grid;grid-template-columns:repeat(auto-fill, minmax(108px, 1fr));gap:6px;min-width:0;container-type:inline-size;container-name:xsact-body;",
           "  align-content:start;min-height:0;",
           "}",
@@ -5248,7 +5245,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-combo-delay input[type=range]{width:100%;accent-color:var(--xs-accent);height:4px;cursor:pointer;}",
           ".xsact-combo-items{",
           "  display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;",
-          "  scrollbar-width:thin;scrollbar-color:var(--xs-scroll) transparent;",
           "}",
           ".xsact-combo-item{",
           "  display:flex;align-items:center;gap:7px;padding:8px;",
@@ -5319,11 +5315,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-ca-echo-clean-text b{color:#FF8FA6;font-weight:700;}",
           ".xsact-ca-echo-clean-btn{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,92,122,0.5);background:rgba(255,92,122,0.16);color:#FFB3C6;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}",
           ".xsact-ca-echo-clean-btn:hover{background:rgba(255,92,122,0.28);border-color:#FF5C7A;color:#FFFFFF;}",
-          ".xsact-ca-list{display:flex;flex-direction:column;gap:10px;width:auto;max-width:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1 1 auto!important;scrollbar-width:thin;scrollbar-color:var(--xs-accent) transparent;}",
-          ".xsact-ca-list::-webkit-scrollbar{width:6px;}",
-          ".xsact-ca-list::-webkit-scrollbar-track{background:transparent;}",
-          ".xsact-ca-list::-webkit-scrollbar-thumb{background:var(--xs-accent);border-radius:3px;}",
-          ".xsact-ca-list::-webkit-scrollbar-thumb:hover{background:rgba(var(--xs-accent-rgb),0.8);}",
+          ".xsact-ca-list{display:flex;flex-direction:column;gap:10px;width:auto;max-width:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;flex:1 1 auto!important;}",
           ".xsact-ca-list.is-grabscroll{cursor:grabbing;user-select:none;}",
           ".xsact-ca-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;max-width:100%;padding:12px 14px;border-radius:10px;background:var(--xs-card-bg);border:1px solid var(--xs-border);transition:border-color .15s,background .15s,transform .1s;min-width:0;overflow:hidden;flex-shrink:0;}",
           ".xsact-ca-card:hover{border-color:var(--xs-border-strong);background:var(--xs-hover);transform:translateY(-1px);}",
@@ -5434,7 +5426,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-qa-panel-footer{",
           "  display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:11px 12px;border-top:1px solid var(--xs-border);min-height:0;",
           "}",
-          ".xsact-favorite-part-filter{display:flex;gap:5px;padding:7px 12px;border-top:1px solid var(--xs-border);border-bottom:1px solid var(--xs-border);overflow-x:auto;flex-shrink:0;scrollbar-width:thin;}",
+          ".xsact-favorite-part-filter{display:flex;gap:5px;padding:7px 12px;border-top:1px solid var(--xs-border);border-bottom:1px solid var(--xs-border);overflow-x:auto;flex-shrink:0;}",
           ".xsact-favorite-part-filter button{flex:0 0 auto;padding:5px 9px;border-radius:999px;border:1px solid var(--xs-border);background:var(--xs-btn-bg);color:var(--xs-text-dim);font-size:11px;cursor:pointer;}",
           ".xsact-favorite-part-filter button.active{border-color:var(--xs-accent);background:rgba(var(--xs-accent-rgb),.14);color:var(--xs-accent-text);}",
           ".xsact-qa-mini-btn{",
@@ -5480,11 +5472,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-settings-language summary::-webkit-details-marker{display:none;}",
           '.xsact-settings-language summary::after{content:"▾";margin-left:auto;}',
           "#xsact-settings-lang-value{display:flex;align-items:center;gap:8px;}",
-          '.xsact-settings-language [role="listbox"]{position:absolute;right:0;top:calc(100% + 4px);z-index:120;min-width:100%;max-height:260px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--xs-scroll) var(--xs-panel-bg);background:var(--xs-panel-bg);border:1px solid var(--xs-border);border-radius:7px;padding:4px;box-shadow:0 6px 16px rgba(0,0,0,.25);}',
-          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar{width:6px;}',
-          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar-track{background:var(--xs-panel-bg);}',
-          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar-thumb{background:var(--xs-scroll);border-radius:3px;}',
-          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar-thumb:hover{background:var(--xs-border-strong);}',
+          '.xsact-settings-language [role="listbox"]{position:absolute;right:0;top:calc(100% + 4px);z-index:120;min-width:100%;max-height:260px;overflow-y:auto;overscroll-behavior:contain;background:var(--xs-panel-bg);border:1px solid var(--xs-border);border-radius:7px;padding:4px;box-shadow:0 6px 16px rgba(0,0,0,.25);}',
           ".xsact-settings-language button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;background:var(--xs-panel-bg);color:var(--xs-text);font:inherit;text-align:left;border:0;border-radius:4px;cursor:pointer;white-space:nowrap;}",
           '.xsact-settings-language button:hover,.xsact-settings-language button:focus-visible,.xsact-settings-language button[aria-selected="true"]{background:var(--xs-hover);}',
           ".xsact-lang{position:relative;flex-shrink:0;}",
@@ -5636,19 +5624,13 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "  background:rgba(255,92,92,0.12);border-color:rgba(255,92,92,0.4);color:#FFB3B3;",
           "}",
           ".xsact-char-popover-body{",
-          "  flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--xs-scroll) transparent;overscroll-behavior:contain;",
+          "  flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;",
           "  display:flex;flex-direction:column;min-height:0;",
           "}",
-          ".xsact-char-popover-body::-webkit-scrollbar{width:4px;}",
-          ".xsact-char-popover-body::-webkit-scrollbar-track{background:transparent;}",
-          ".xsact-char-popover-body::-webkit-scrollbar-thumb{background:var(--xs-scroll);border-radius:2px;}",
           ".xsact-char-popover-items{",
-          "  flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--xs-scroll) transparent;",
+          "  flex:1;overflow-y:auto;",
           "  padding:6px;",
           "}",
-          ".xsact-char-popover-items::-webkit-scrollbar{width:4px;}",
-          ".xsact-char-popover-items::-webkit-scrollbar-track{background:transparent;}",
-          ".xsact-char-popover-items::-webkit-scrollbar-thumb{background:var(--xs-scroll);border-radius:2px;}",
           ".xsact-char-popover-empty{",
           "  padding:16px 10px;font-size:12px;color:var(--xs-text-faint);text-align:center;",
           "}",
@@ -5766,10 +5748,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "  box-shadow:inset 0 0 0 3px rgba(70,224,160,1),",
           "             0 0 18px rgba(70,224,160,0.55),0 0 36px rgba(70,224,160,0.25);",
           "}",
-          /* ===== 滚动条 ===== */
-          ".xsact-qa-panel-body::-webkit-scrollbar{width:6px;}",
-          ".xsact-qa-panel-body::-webkit-scrollbar-track{background:transparent;}",
-          ".xsact-qa-panel-body::-webkit-scrollbar-thumb{background:var(--xs-scroll);border-radius:3px;}",
+          /* Shared scrollbar theme for all plugin UI, including nested editors and menus. */
+          ":is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid),:is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid) *{scrollbar-width:thin;scrollbar-color:var(--xs-scroll) transparent;}",
+          ":is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid)::-webkit-scrollbar,:is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid) *::-webkit-scrollbar{width:6px;height:6px;}",
+          ":is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid)::-webkit-scrollbar-track,:is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid) *::-webkit-scrollbar-track{background:transparent;}",
+          ":is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid)::-webkit-scrollbar-thumb,:is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid) *::-webkit-scrollbar-thumb{background:var(--xs-scroll);border-radius:3px;}",
+          ":is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid)::-webkit-scrollbar-corner,:is(#xsact-qa-panel,.xsact-char-popover,.xsact-body-grid) *::-webkit-scrollbar-corner{background:transparent;}",
           /* ===== 容器查询：面板内容按实际宽度自适应 ===== */
           "@container xsact-body (max-width: 180px){",
           ".xsact-qa-panel-body{grid-template-columns:1fr;}",

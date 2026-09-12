@@ -288,14 +288,14 @@
             bg:'rgba(20,23,28,0.98)', bg2:'#1C2027', border:'rgba(255,255,255,0.08)',
             borderStrong:'rgba(255,255,255,0.18)', text:'#E7E9EE', textDim:'#9AA1AD',
             textFaint:'#5F6672', hover:'#232833', shadow:'0 14px 44px rgba(0,0,0,0.55)',
-            scroll:'#3A3F49', blur:'blur(10px)', inputBg:'#10131A',
+            blur:'blur(10px)', inputBg:'#10131A',
             btnBg:'rgba(255,255,255,0.05)', nameShadow:'rgba(255,92,122,0.45)'
         };
         var LIGHT = {
             bg:'rgba(248,245,251,0.97)', bg2:'#E9E6EF', border:'rgba(28,22,32,0.14)',
             borderStrong:'rgba(28,22,32,0.32)', text:'#1E2430', textDim:'#4A5568',
             textFaint:'#7B8494', hover:'#DCD9E2', shadow:'0 14px 40px rgba(60,40,80,0.16)',
-            scroll:'#B8BCC6', blur:'blur(14px)', inputBg:'#FFFFFF',
+            blur:'blur(14px)', inputBg:'#FFFFFF',
             btnBg:'rgba(28,22,32,0.07)', nameShadow:'rgba(255,92,122,0.35)'
         };
         var ACCENT = '#FF5C7A', ACCENT_RGB = '255,92,122';
@@ -317,7 +317,7 @@
             '--xs-accent:' + ACCENT + ';--xs-accent-rgb:' + ACCENT_RGB + ';--xs-accent-soft:rgba(' + ACCENT_RGB + ',0.14);--xs-accent-text:#D6336C;' +
             '--xs-panel-bg:' + DARK.bg + ';--xs-panel-bg-2:' + DARK.bg2 + ';--xs-border:' + DARK.border + ';' +
             '--xs-border-strong:' + DARK.borderStrong + ';--xs-text:' + DARK.text + ';--xs-text-dim:' + DARK.textDim + ';--xs-text-faint:' + DARK.textFaint + ';' +
-            '--xs-hover:' + DARK.hover + ';--xs-shadow:' + DARK.shadow + ';--xs-scroll:' + DARK.scroll + ';--xs-blur:' + DARK.blur + ';' +
+            '--xs-hover:' + DARK.hover + ';--xs-shadow:' + DARK.shadow + ';--xs-scroll:var(--xs-accent);--xs-blur:' + DARK.blur + ';' +
             '--xs-input-bg:' + DARK.inputBg + ';--xs-btn-bg:' + DARK.btnBg + ';--xs-name-shadow:' + DARK.nameShadow + ';' +
             '--xs-zone-stroke:' + ZONES.dark.stroke + ';--xs-zone-stroke-hover:' + ZONES.dark.strokeHover + ';--xs-zone-stroke-selected:' + ZONES.dark.strokeSelected + ';' +
             '--xs-zone-fill:' + ZONES.dark.fill + ';--xs-zone-fill-hover:' + ZONES.dark.fillHover + ';--xs-zone-fill-selected:' + ZONES.dark.fillSelected + ';' +
@@ -341,7 +341,7 @@
                 '--xs-text-faint:' + p.textFaint + ';' +
                 '--xs-hover:' + p.hover + ';' +
                 '--xs-shadow:' + p.shadow + ';' +
-                '--xs-scroll:' + p.scroll + ';' +
+                '--xs-scroll:var(--xs-accent);' +
                 '--xs-blur:' + p.blur + ';' +
                 '--xs-input-bg:' + p.inputBg + ';' +
                 '--xs-btn-bg:' + p.btnBg + ';' +
