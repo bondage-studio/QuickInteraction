@@ -4598,9 +4598,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
         if (titleEl) titleEl.textContent = QiActT("settings.title");
         var cur = QiActI18n.getSelectedLang ? QiActI18n.getSelectedLang() : "auto";
         var langs = ["auto"].concat(QiActI18n.LANGS || ["TW", "CN", "EN", "JA", "KO", "VI", "DE", "FR", "ES", "RU", "UA"]);
-        var opts = langs.map(function(l) {
+        function languageLabel(l) {
           var m = (QiActI18n.LANG_META || {})[l] || {};
-          return '<label class="xsact-settings-language"><input type="radio" name="xsact-settings-lang" value="' + l + '"' + (l === cur ? " checked" : "") + ">" + QiActI18n.flagHTML(l) + "<span>" + escapeHtml(l === "auto" ? QiActT("settings.auto") : m.native || l) + "</span></label>";
+          return QiActI18n.flagHTML(l) + "<span>" + escapeHtml(l === "auto" ? QiActT("settings.auto") : m.native || l) + "</span>";
+        }
+        var opts = langs.map(function(l) {
+          return '<button type="button" role="option" aria-selected="' + (l === cur) + '" data-lang="' + l + '">' + languageLabel(l) + "</button>";
         }).join("");
         function idChips(ids, kind) {
           return ids.map(function(id) {
@@ -4613,11 +4616,34 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var scopeChoices = [["all", "settings.scope_all"], ["allow", "settings.scope_allow"], ["skip", "settings.scope_skip"]].map(function(choice) {
           return '<label><input type="radio" name="xsact-all-scope" value="' + choice[0] + '"' + (state.allTargetScope === choice[0] ? " checked" : "") + "><span>" + QiActT(choice[1]) + "<i></i></span></label>";
         }).join("");
-        listEl.innerHTML = '<div class="xsact-settings"><fieldset class="xsact-settings-languages" id="xsact-settings-lang"><legend>' + QiActT("settings.language") + "</legend>" + opts + '</fieldset><label class="xsact-settings-row"><span>' + QiActT("settings.theme") + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === "dark" ? " selected" : "") + ">" + QiActT("ui.theme_dark") + '</option><option value="light"' + (state.theme === "light" ? " selected" : "") + ">" + QiActT("ui.theme_light") + '</option></select></label><div class="xsact-settings-group"><span class="xsact-settings-group-title">' + QiActT("settings.all_targets_group") + '</span><div class="xsact-settings-row xsact-settings-row-stack"><strong>' + QiActT("settings.general") + '</strong><div class="xsact-scope-options">' + scopeChoices + '</div></div><div class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT("settings.action_allow_members") + "</strong><small>" + QiActT("settings.action_allow_hint") + '</small></span><div class="xsact-relation-options">' + relationChoices + '</div><div class="xsact-id-editor"><input id="xsact-settings-allow-input" inputmode="numeric" placeholder="' + QiActT("settings.action_skip_placeholder") + '"><button type="button" id="xsact-settings-allow-add">+</button></div><div class="xsact-id-chips" id="xsact-settings-allow-chips">' + idChips(state.actionAllowMembers, "allow") + '</div></div><div class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT("settings.action_skip_members") + "</strong><small>" + QiActT("settings.action_skip_hint") + '</small></span><div class="xsact-id-editor"><input id="xsact-settings-skip-input" inputmode="numeric" placeholder="' + QiActT("settings.action_skip_placeholder") + '"><button type="button" id="xsact-settings-skip-add">+</button></div><div class="xsact-id-chips" id="xsact-settings-skip-chips">' + idChips(state.actionSkipMembers, "skip") + '</div></div></div><label class="xsact-settings-row"><span><strong>' + QiActT("settings.action_delay") + "</strong><small>" + QiActT("settings.action_delay_hint") + '</small></span><span class="xsact-settings-number"><input type="number" id="xsact-settings-delay" min="100" max="9999" step="100" value="' + state.actionDelay + '"><em>ms</em></span></label><label class="xsact-settings-row"><span>' + QiActT("settings.char_list_right") + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-char-right"' + (state.charPopoverRight ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label><label class="xsact-settings-row"><span>' + QiActT("settings.chat_button") + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.floatingButtonVisible ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label><label class="xsact-settings-row"><span>' + QiActT("settings.enable_xiaosu") + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label><label class="xsact-settings-row"><span><strong>' + QiActT("settings.enable_block_actions") + "</strong><small>" + QiActT("settings.enable_block_actions_hint") + '</small></span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-block-actions"' + (state.blockActionsEnabled ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label></div>';
-        listEl.querySelector("#xsact-settings-lang").addEventListener("change", function(e) {
-          QiActI18n.setLang(e.target.value);
+        listEl.innerHTML = '<div class="xsact-settings"><div class="xsact-settings-row"><span id="xsact-settings-lang-label">' + QiActT("settings.language") + '</span><details class="xsact-settings-language" id="xsact-settings-lang"><summary aria-labelledby="xsact-settings-lang-label xsact-settings-lang-value" aria-haspopup="listbox"><span id="xsact-settings-lang-value">' + languageLabel(cur) + '</span></summary><div role="listbox" aria-labelledby="xsact-settings-lang-label">' + opts + '</div></details></div><label class="xsact-settings-row"><span>' + QiActT("settings.theme") + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === "dark" ? " selected" : "") + ">" + QiActT("ui.theme_dark") + '</option><option value="light"' + (state.theme === "light" ? " selected" : "") + ">" + QiActT("ui.theme_light") + '</option></select></label><div class="xsact-settings-group"><span class="xsact-settings-group-title">' + QiActT("settings.all_targets_group") + '</span><div class="xsact-settings-row xsact-settings-row-stack"><strong>' + QiActT("settings.general") + '</strong><div class="xsact-scope-options">' + scopeChoices + '</div></div><div class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT("settings.action_allow_members") + "</strong><small>" + QiActT("settings.action_allow_hint") + '</small></span><div class="xsact-relation-options">' + relationChoices + '</div><div class="xsact-id-editor"><input id="xsact-settings-allow-input" inputmode="numeric" placeholder="' + QiActT("settings.action_skip_placeholder") + '"><button type="button" id="xsact-settings-allow-add">+</button></div><div class="xsact-id-chips" id="xsact-settings-allow-chips">' + idChips(state.actionAllowMembers, "allow") + '</div></div><div class="xsact-settings-row xsact-settings-row-stack"><span><strong>' + QiActT("settings.action_skip_members") + "</strong><small>" + QiActT("settings.action_skip_hint") + '</small></span><div class="xsact-id-editor"><input id="xsact-settings-skip-input" inputmode="numeric" placeholder="' + QiActT("settings.action_skip_placeholder") + '"><button type="button" id="xsact-settings-skip-add">+</button></div><div class="xsact-id-chips" id="xsact-settings-skip-chips">' + idChips(state.actionSkipMembers, "skip") + '</div></div></div><label class="xsact-settings-row"><span><strong>' + QiActT("settings.action_delay") + "</strong><small>" + QiActT("settings.action_delay_hint") + '</small></span><span class="xsact-settings-number"><input type="number" id="xsact-settings-delay" min="100" max="9999" step="100" value="' + state.actionDelay + '"><em>ms</em></span></label><label class="xsact-settings-row"><span>' + QiActT("settings.char_list_right") + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-char-right"' + (state.charPopoverRight ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label><label class="xsact-settings-row"><span>' + QiActT("settings.chat_button") + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.floatingButtonVisible ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label><label class="xsact-settings-row"><span>' + QiActT("settings.enable_xiaosu") + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label><label class="xsact-settings-row"><span><strong>' + QiActT("settings.enable_block_actions") + "</strong><small>" + QiActT("settings.enable_block_actions_hint") + '</small></span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-block-actions"' + (state.blockActionsEnabled ? " checked" : "") + '><span class="xsact-switch-track"></span></span></label></div>';
+        var languagePicker = listEl.querySelector("#xsact-settings-lang");
+        var languageTrigger = languagePicker.querySelector("summary");
+        languagePicker.addEventListener("click", function(e) {
+          var option = e.target.closest("button[data-lang]");
+          if (!option) return;
+          QiActI18n.setLang(option.dataset.lang);
           rebuildPanel();
           setPanelMode("settings");
+          var trigger = state.actionPanelEl.querySelector("#xsact-settings-lang summary");
+          if (trigger) trigger.focus();
+        });
+        languagePicker.addEventListener("focusout", function(e) {
+          if (!languagePicker.contains(e.relatedTarget)) languagePicker.open = false;
+        });
+        languagePicker.addEventListener("keydown", function(e) {
+          var options = Array.prototype.slice.call(languagePicker.querySelectorAll("button[data-lang]"));
+          var index = options.indexOf(document.activeElement);
+          if (e.key === "Escape") {
+            e.preventDefault();
+            languagePicker.open = false;
+            languageTrigger.focus();
+          } else if (["ArrowDown", "ArrowUp", "Home", "End"].indexOf(e.key) >= 0) {
+            e.preventDefault();
+            languagePicker.open = true;
+            var next = e.key === "Home" ? 0 : e.key === "End" ? options.length - 1 : index < 0 ? e.key === "ArrowUp" ? options.length - 1 : 0 : (index + (e.key === "ArrowUp" ? -1 : 1) + options.length) % options.length;
+            options[next].focus();
+          }
         });
         listEl.querySelector("#xsact-settings-theme").addEventListener("change", function(e) {
           applyTheme(e.target.value);
@@ -5446,9 +5472,14 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-switch input:checked+.xsact-switch-track::after{transform:translateX(18px);}",
           /* 语言切换下拉（自定义菜单，暗色战术台风格） */
           ".xsact-lang-flag{display:inline-block;width:24px;height:18px;object-fit:contain;flex-shrink:0;vertical-align:middle;border-radius:2px;text-align:center;}",
-          ".xsact-settings-languages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:8px;border:1px solid var(--xs-border);border-radius:8px;}",
-          ".xsact-settings-language{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;min-width:0;}",
-          ".xsact-settings-language span{overflow-wrap:anywhere;}",
+          ".xsact-settings-language{position:relative;min-width:120px;color:var(--xs-text);font-size:calc(12px + 2pt);}",
+          ".xsact-settings-language summary{cursor:pointer;background:var(--xs-panel-bg);color:var(--xs-text);border:1px solid var(--xs-border);border-radius:7px;padding:6px 8px;list-style:none;display:flex;align-items:center;gap:8px;}",
+          ".xsact-settings-language summary::-webkit-details-marker{display:none;}",
+          '.xsact-settings-language summary::after{content:"▾";margin-left:auto;}',
+          "#xsact-settings-lang-value{display:flex;align-items:center;gap:8px;}",
+          '.xsact-settings-language [role="listbox"]{position:absolute;right:0;top:calc(100% + 4px);z-index:120;min-width:100%;max-height:260px;overflow-y:auto;background:var(--xs-panel-bg);border:1px solid var(--xs-border);border-radius:7px;padding:4px;box-shadow:0 6px 16px rgba(0,0,0,.25);}',
+          ".xsact-settings-language button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;background:var(--xs-panel-bg);color:var(--xs-text);font:inherit;text-align:left;border:0;border-radius:4px;cursor:pointer;white-space:nowrap;}",
+          '.xsact-settings-language button:hover,.xsact-settings-language button:focus-visible,.xsact-settings-language button[aria-selected="true"]{background:var(--xs-hover);}',
           ".xsact-lang{position:relative;flex-shrink:0;}",
           ".xsact-lang-trigger{",
           "  display:flex;align-items:center;gap:5px;",

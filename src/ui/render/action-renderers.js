@@ -255,7 +255,8 @@
         if (titleEl) titleEl.textContent = QiActT('settings.title');
         var cur = QiActI18n.getSelectedLang ? QiActI18n.getSelectedLang() : 'auto';
         var langs = ['auto'].concat(QiActI18n.LANGS || ['TW','CN','EN','JA','KO','VI','DE','FR','ES','RU','UA']);
-        var opts = langs.map(function(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return '<label class="xsact-settings-language"><input type="radio" name="xsact-settings-lang" value="' + l + '"' + (l === cur ? ' checked' : '') + '>' + QiActI18n.flagHTML(l) + '<span>' + escapeHtml(l === 'auto' ? QiActT('settings.auto') : (m.native || l)) + '</span></label>'; }).join('');
+        function languageLabel(l) { var m = (QiActI18n.LANG_META || {})[l] || {}; return QiActI18n.flagHTML(l) + '<span>' + escapeHtml(l === 'auto' ? QiActT('settings.auto') : (m.native || l)) + '</span>'; }
+        var opts = langs.map(function(l) { return '<button type="button" role="option" aria-selected="' + (l === cur) + '" data-lang="' + l + '">' + languageLabel(l) + '</button>'; }).join('');
         function idChips(ids, kind) { return ids.map(function(id) { return '<button type="button" class="xsact-id-chip" data-list="' + kind + '" data-id="' + id + '" title="' + QiActT('settings.remove_id') + '">' + id + ' ×</button>'; }).join(''); }
         var relationChoices = [['owner','settings.allow_owner'],['lover','settings.allow_lover'],['sub','settings.allow_sub'],['whitelist','settings.allow_whitelist'],['friend','settings.allow_friend']].map(function(choice) {
             return '<label class="xsact-relation-' + choice[0] + '"><input type="checkbox" data-allow-group="' + choice[0] + '"' + (state.actionAllowGroups.indexOf(choice[0]) >= 0 ? ' checked' : '') + '><span>' + QiActT(choice[1]) + '</span></label>';
@@ -264,7 +265,7 @@
             return '<label><input type="radio" name="xsact-all-scope" value="' + choice[0] + '"' + (state.allTargetScope === choice[0] ? ' checked' : '') + '><span>' + QiActT(choice[1]) + '<i></i></span></label>';
         }).join('');
         listEl.innerHTML = '<div class="xsact-settings">' +
-            '<fieldset class="xsact-settings-languages" id="xsact-settings-lang"><legend>' + QiActT('settings.language') + '</legend>' + opts + '</fieldset>' +
+            '<div class="xsact-settings-row"><span id="xsact-settings-lang-label">' + QiActT('settings.language') + '</span><details class="xsact-settings-language" id="xsact-settings-lang"><summary aria-labelledby="xsact-settings-lang-label xsact-settings-lang-value" aria-haspopup="listbox"><span id="xsact-settings-lang-value">' + languageLabel(cur) + '</span></summary><div role="listbox" aria-labelledby="xsact-settings-lang-label">' + opts + '</div></details></div>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.theme') + '</span><select id="xsact-settings-theme"><option value="dark"' + (state.theme === 'dark' ? ' selected' : '') + '>' + QiActT('ui.theme_dark') + '</option><option value="light"' + (state.theme === 'light' ? ' selected' : '') + '>' + QiActT('ui.theme_light') + '</option></select></label>' +
             '<div class="xsact-settings-group"><span class="xsact-settings-group-title">' + QiActT('settings.all_targets_group') + '</span>' +
               '<div class="xsact-settings-row xsact-settings-row-stack"><strong>' + QiActT('settings.general') + '</strong><div class="xsact-scope-options">' + scopeChoices + '</div></div>' +
@@ -276,7 +277,28 @@
             '<label class="xsact-settings-row"><span>' + QiActT('settings.chat_button') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-chat"' + (state.floatingButtonVisible ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span>' + QiActT('settings.enable_xiaosu') + '</span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-xiaosu"' + (state.xiaosuPack ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label>' +
             '<label class="xsact-settings-row"><span><strong>' + QiActT('settings.enable_block_actions') + '</strong><small>' + QiActT('settings.enable_block_actions_hint') + '</small></span><span class="xsact-switch"><input type="checkbox" id="xsact-settings-block-actions"' + (state.blockActionsEnabled ? ' checked' : '') + '><span class="xsact-switch-track"></span></span></label></div>';
-        listEl.querySelector('#xsact-settings-lang').addEventListener('change', function(e) { QiActI18n.setLang(e.target.value); rebuildPanel(); setPanelMode('settings'); });
+        var languagePicker = listEl.querySelector('#xsact-settings-lang');
+        var languageTrigger = languagePicker.querySelector('summary');
+        languagePicker.addEventListener('click', function(e) {
+            var option = e.target.closest('button[data-lang]');
+            if (!option) return;
+            QiActI18n.setLang(option.dataset.lang); rebuildPanel(); setPanelMode('settings');
+            var trigger = state.actionPanelEl.querySelector('#xsact-settings-lang summary');
+            if (trigger) trigger.focus();
+        });
+        languagePicker.addEventListener('focusout', function(e) {
+            if (!languagePicker.contains(e.relatedTarget)) languagePicker.open = false;
+        });
+        languagePicker.addEventListener('keydown', function(e) {
+            var options = Array.prototype.slice.call(languagePicker.querySelectorAll('button[data-lang]'));
+            var index = options.indexOf(document.activeElement);
+            if (e.key === 'Escape') { e.preventDefault(); languagePicker.open = false; languageTrigger.focus(); }
+            else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(e.key) >= 0) {
+                e.preventDefault(); languagePicker.open = true;
+                var next = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : index < 0 ? (e.key === 'ArrowUp' ? options.length - 1 : 0) : (index + (e.key === 'ArrowUp' ? -1 : 1) + options.length) % options.length;
+                options[next].focus();
+            }
+        });
         listEl.querySelector('#xsact-settings-theme').addEventListener('change', function(e) { applyTheme(e.target.value); persist(S_THEME, e.target.value); });
         listEl.querySelector('#xsact-settings-delay').addEventListener('change', function(e) { state.actionDelay = normalizeActionDelay(e.target.value); e.target.value = state.actionDelay; persist(S_ACTION_DELAY, state.actionDelay); });
         function bindIdEditor(kind) {
