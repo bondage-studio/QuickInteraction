@@ -4966,7 +4966,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
           let onActionListWheel = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            actionList.scrollTop += e.deltaY;
+            var languageMenu = e.target.closest && e.target.closest('.xsact-settings-language [role="listbox"]');
+            var scrollTarget = languageMenu && actionList.contains(languageMenu) ? languageMenu : actionList;
+            var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scrollTarget.clientHeight : 1;
+            scrollTarget.scrollTop += e.deltaY * unit;
           };
           actionList.addEventListener("wheel", onActionListWheel, { passive: false });
           actionList.addEventListener("touchmove", function(e) {
@@ -5477,7 +5480,11 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-settings-language summary::-webkit-details-marker{display:none;}",
           '.xsact-settings-language summary::after{content:"▾";margin-left:auto;}',
           "#xsact-settings-lang-value{display:flex;align-items:center;gap:8px;}",
-          '.xsact-settings-language [role="listbox"]{position:absolute;right:0;top:calc(100% + 4px);z-index:120;min-width:100%;max-height:260px;overflow-y:auto;background:var(--xs-panel-bg);border:1px solid var(--xs-border);border-radius:7px;padding:4px;box-shadow:0 6px 16px rgba(0,0,0,.25);}',
+          '.xsact-settings-language [role="listbox"]{position:absolute;right:0;top:calc(100% + 4px);z-index:120;min-width:100%;max-height:260px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--xs-scroll) var(--xs-panel-bg);background:var(--xs-panel-bg);border:1px solid var(--xs-border);border-radius:7px;padding:4px;box-shadow:0 6px 16px rgba(0,0,0,.25);}',
+          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar{width:6px;}',
+          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar-track{background:var(--xs-panel-bg);}',
+          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar-thumb{background:var(--xs-scroll);border-radius:3px;}',
+          '.xsact-settings-language [role="listbox"]::-webkit-scrollbar-thumb:hover{background:var(--xs-border-strong);}',
           ".xsact-settings-language button{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;background:var(--xs-panel-bg);color:var(--xs-text);font:inherit;text-align:left;border:0;border-radius:4px;cursor:pointer;white-space:nowrap;}",
           '.xsact-settings-language button:hover,.xsact-settings-language button:focus-visible,.xsact-settings-language button[aria-selected="true"]{background:var(--xs-hover);}',
           ".xsact-lang{position:relative;flex-shrink:0;}",

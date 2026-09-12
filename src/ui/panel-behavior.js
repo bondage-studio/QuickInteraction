@@ -224,7 +224,11 @@
             function onActionListWheel(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                actionList.scrollTop += e.deltaY;
+                // Nested language menus own their wheel events, including at either edge.
+                var languageMenu = e.target.closest && e.target.closest('.xsact-settings-language [role="listbox"]');
+                var scrollTarget = languageMenu && actionList.contains(languageMenu) ? languageMenu : actionList;
+                var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scrollTarget.clientHeight : 1;
+                scrollTarget.scrollTop += e.deltaY * unit;
             }
             actionList.addEventListener('wheel', onActionListWheel, { passive: false });
             // 触屏设备：阻止 document 层 touchmove 被 preventDefault，保留容器内自然滚动
