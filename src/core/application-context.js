@@ -443,7 +443,7 @@
         });
     }
 
-    /* ===== 3. 存储层（localStorage + 服务器 OnlineSettings） ===== */
+    /* ===== 3. 存储层（localStorage + 服务器 ExtensionSettings） ===== */
     function loadStorage(key, fallback) {
         try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
         catch (e) { console.error('[QiAct] 读取存储失败 ' + key + ':', e); return fallback; }
@@ -489,16 +489,16 @@
         return THEMES[0];
     }
 
-    // ── 服务器（游戏账号）持久化：写入 Player.OnlineSettings.ExtensionSettings ──
+    // ── 服务器（游戏账号）持久化：写入 Player.ExtensionSettings ──
     // 注意：BC 的 ServerAccountUpdate 是 AccountUpdater 实例，不是函数；
-    // 正确同步方式是 ServerAccountUpdate.QueueData({ OnlineSettings: Player.OnlineSettings })，
-    // 其内部自带 ~2s 防抖合并，且未登录（CharacterID===""）时自动跳过。
+    // 正确同步方式是 ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings })，
     function getServerStore() {
         try {
-            if (typeof Player === 'undefined' || !Player.OnlineSettings) return null;
-            if (!Player.OnlineSettings.ExtensionSettings) Player.OnlineSettings.ExtensionSettings = {};
-            if (!Player.OnlineSettings.ExtensionSettings[MOD_NS]) Player.OnlineSettings.ExtensionSettings[MOD_NS] = {};
-            return Player.OnlineSettings.ExtensionSettings[MOD_NS];
+            if (typeof Player === 'undefined' || !Player) return null;
+            if (!Player.ExtensionSettings) Player.ExtensionSettings = {};
+            migrateLegacyServerSettings();
+            if (!Player.ExtensionSettings[MOD_NS]) Player.ExtensionSettings[MOD_NS] = {};
+            return Player.ExtensionSettings[MOD_NS];
         } catch (e) { return null; }
     }
     function saveToServer(key, val) {
@@ -507,7 +507,7 @@
         store[key] = val;
         try {
             if (typeof ServerAccountUpdate !== 'undefined' && ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === 'function') {
-                ServerAccountUpdate.QueueData({ OnlineSettings: Player.OnlineSettings });
+                ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings });
             }
         } catch (e) { warnServerSync(e); }
     }

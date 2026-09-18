@@ -868,10 +868,11 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function getServerStore() {
         try {
-          if (typeof Player === "undefined" || !Player.OnlineSettings) return null;
-          if (!Player.OnlineSettings.ExtensionSettings) Player.OnlineSettings.ExtensionSettings = {};
-          if (!Player.OnlineSettings.ExtensionSettings[MOD_NS]) Player.OnlineSettings.ExtensionSettings[MOD_NS] = {};
-          return Player.OnlineSettings.ExtensionSettings[MOD_NS];
+          if (typeof Player === "undefined" || !Player) return null;
+          if (!Player.ExtensionSettings) Player.ExtensionSettings = {};
+          migrateLegacyServerSettings();
+          if (!Player.ExtensionSettings[MOD_NS]) Player.ExtensionSettings[MOD_NS] = {};
+          return Player.ExtensionSettings[MOD_NS];
         } catch (e) {
           return null;
         }
@@ -882,7 +883,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         store[key] = val;
         try {
           if (typeof ServerAccountUpdate !== "undefined" && ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === "function") {
-            ServerAccountUpdate.QueueData({ OnlineSettings: Player.OnlineSettings });
+            ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings });
           }
         } catch (e) {
           warnServerSync(e);
@@ -974,6 +975,32 @@ One of mods you are using is using an old version of SDK. It will work for now b
         applyTheme(next);
         persist(S_THEME, next);
         toast(QiActT("ui.theme_switched", { theme: next === "dark" ? QiActT("ui.theme_dark") : QiActT("ui.theme_light") }), accentColor());
+      }
+      function migrateLegacyServerSettings() {
+        var legacy = Player.OnlineSettings && Player.OnlineSettings.ExtensionSettings;
+        if (!legacy || !Object.prototype.hasOwnProperty.call(legacy, MOD_NS)) return;
+        if (typeof ServerAccountUpdate === "undefined" || !ServerAccountUpdate || typeof ServerAccountUpdate.QueueData !== "function") return;
+        try {
+          Object.keys(legacy).forEach(function(namespace) {
+            var previous = legacy[namespace];
+            var current = Player.ExtensionSettings[namespace];
+            if (!Object.prototype.hasOwnProperty.call(Player.ExtensionSettings, namespace)) {
+              Object.defineProperty(Player.ExtensionSettings, namespace, { value: previous, writable: true, enumerable: true, configurable: true });
+            } else if (previous && current && typeof previous === "object" && typeof current === "object" && !Array.isArray(previous) && !Array.isArray(current)) {
+              Player.ExtensionSettings[namespace] = Object.assign({}, previous, current);
+            }
+          });
+          ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings });
+          delete Player.OnlineSettings.ExtensionSettings;
+          try {
+            ServerAccountUpdate.QueueData({ OnlineSettings: Player.OnlineSettings }, true);
+          } catch (e) {
+            Player.OnlineSettings.ExtensionSettings = legacy;
+            throw e;
+          }
+        } catch (e) {
+          warnServerSync(e);
+        }
       }
       function getActionsForPart(partGroup, targetChar) {
         targetChar = targetChar || state.selectedTarget;
