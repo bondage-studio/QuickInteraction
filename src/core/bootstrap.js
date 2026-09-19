@@ -89,6 +89,9 @@
         // 修补 ActivityDictionaryText（LSCG 等 mod 文本解析兜底，详见 patchActivityDictionaryText 注释）
         try { patchActivityDictionaryText(); } catch (e) { console.warn('[QiAct] patchActivityDictionaryText 失败:', e); }
 
+        // Language uses the same account settings as the rest of the UI.
+        window.QiActI18n.readSetting = function() { return loadSetting('QiActLang', 'auto'); };
+        window.QiActI18n.writeSetting = function(code) { persist('QiActLang', code || 'auto'); };
         // 加载存储
         state.isActive = loadSetting(S_ENABLED, false);
         state.selfModeActive = loadSetting(S_SELF, false);
@@ -107,26 +110,14 @@
         applyBlockedActions();
         migrateFavorites(); // 旧版纯动作名 → 部位复合键（一次性迁移）
         state.presets = loadSetting(S_PRESETS, []);
-        state.lastAction = loadStorage(S_LAST, null);
+        state.lastAction = loadSetting(S_LAST, null);
         state.combos = loadSetting(S_COMBOS, []);
         loadCustomActions();
         state.xiaosuPack = loadSetting(S_XIAOSU_PACK, true);
-        // 「我的动作」分类 chip 过滤：caFilter 是受控枚举字符串，
-        // 走通用 loadSetting 会触发 loadStorage 的 JSON.parse（对裸字符串抛 SyntaxError）污染控制台。
-        // 这里直接用白名单 + 静默 try/catch 兜底，避免控制台噪声。
-        (function() {
-            var VALID = { all: 1, xiaosu: 1, native: 1, echo: 1 };
-            var v;
-            try { v = localStorage.getItem(S_CA_FILTER); if (v) v = JSON.parse(v); } catch (e) { v = undefined; }
-            if (typeof v !== 'string' || !VALID[v]) {
-                try {
-                    var sv = loadFromServer(S_CA_FILTER, undefined);
-                    v = (typeof sv === 'string' && VALID[sv]) ? sv : 'all';
-                } catch (e) { v = 'all'; }
-            }
-            state.caFilter = v;
-        })();
+        var savedFilter = loadSetting(S_CA_FILTER, 'all');
+        state.caFilter = ['all', 'xiaosu', 'native', 'echo'].indexOf(savedFilter) >= 0 ? savedFilter : 'all';
         syncXiaosuPack(); // 合并内置「小酥动作包」到 customActions（幂等，默认开启）
+        saveCustomActions(); // Persist the enabled bundled actions in act_xs.
         registerAllCustomActions(); // 重新注册已存自定义动作 + 内置包到 BC，使本会话内可执行
 
         // 恢复主题设置（优先读游戏账号，回退本地）

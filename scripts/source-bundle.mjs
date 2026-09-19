@@ -10,6 +10,7 @@ export const COMPAT_SOURCE_FILES = [
     'i18n/runtime.js',
     'platform/userscript-runtime.js',
     'core/application-context.js',
+    'core/settings-storage.js',
     'core/settings-migration.js',
     'features/actions/action-catalog.js',
     'features/actions/activity-execution.js',

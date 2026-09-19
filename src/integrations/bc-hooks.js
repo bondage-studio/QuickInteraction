@@ -192,7 +192,7 @@
                         part: (group && group.Name) || state.selectedPart || '',
                         time: Date.now()
                     };
-                    saveStorage(S_LAST, state.lastAction);
+                    persist(S_LAST, state.lastAction);
                 }
             } catch (e) { console.warn('[QiAct] ActivityRun hook 记录失败:', e.message); }
             next(args);

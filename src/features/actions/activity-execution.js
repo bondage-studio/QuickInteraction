@@ -173,7 +173,7 @@
     /** 记录上次动作（抽取公共代码） */
     function recordLastAction(name, targetMN, part, dict) {
         state.lastAction = { name: name, targetMN: targetMN, part: part, time: Date.now() };
-        saveStorage(S_LAST, state.lastAction);
+        persist(S_LAST, state.lastAction);
     }
 
     /** 从 ActivityAllowedForGroup 结果中按名字查找动作（统一解析 a.Activity?.Name）

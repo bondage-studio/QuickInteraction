@@ -13,7 +13,7 @@
         try {
             var ext = Player && Player.ExtensionSettings;
             if (!ext) { toast(QiActT('toast.read_ext_failed'), '#FF5C5C'); return; }
-            var echoKey = Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
+            var echoKey = 'ECHO动作拓展';
             if (!echoKey || !ext[echoKey] || !ext[echoKey]['动作数据']) {
                 toast(QiActT('toast.import_echo_notfound'), '#FF5C5C'); return;
             }

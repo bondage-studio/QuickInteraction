@@ -220,18 +220,6 @@
     function loadCustomActions() {
         state.customActions = loadSetting(S_CUSTOM, []);
         if (!Array.isArray(state.customActions)) state.customActions = [];
-        // 迁移旧数据：补 visible/source 字段，并尽量识别是否从 echo/回声 导入
-        var echoNames = new Set();
-        try {
-            var ext = Player && Player.ExtensionSettings;
-            var echoKey = ext && Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
-            var echoData = echoKey && ext[echoKey] && ext[echoKey]['动作数据'];
-            if (echoData) Object.values(echoData).forEach(function(item) { if (item && item.Name) echoNames.add(item.Name); });
-        } catch (e) { console.warn('[QiAct] 读取 echo 动作数据失败（已忽略）:', e && e.message); }
-        state.customActions.forEach(function(a) {
-            if (typeof a.visible !== 'boolean') a.visible = true;
-            if (!a.source) a.source = echoNames.has(a.name) ? 'echo' : 'native';
-        });
         // 同步 echo 屏蔽集合，并立即清理已存在的 echo 原始重复动作
         rebuildEchoSuppressed();
         caRemoveSuppressedEchoActivities();
@@ -372,7 +360,7 @@
     function caGetEchoData() {
         try {
             var ext = Player && Player.ExtensionSettings;
-            var echoKey = ext && Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
+            var echoKey = ext && 'ECHO动作拓展';
             return echoKey && ext[echoKey] && ext[echoKey]['动作数据'];
         } catch (e) { return null; }
     }
@@ -518,7 +506,7 @@
     function caCleanupEchoData() {
         try {
             var ext = Player && Player.ExtensionSettings;
-            var echoKey = ext && Object.keys(ext).find(function(k) { return k.indexOf('ECHO') === 0; });
+            var echoKey = ext && 'ECHO动作拓展';
             if (!echoKey || !ext[echoKey]) { toast(QiActT('toast.echo_notfound'), '#FF5C5C'); return; }
             var echoObj = ext[echoKey];
             var data = echoObj['动作数据'];
@@ -564,17 +552,8 @@
 
             // 持久化回 BC（优先专用 API，回退到整账户保存）
             try {
-                if (typeof PreferenceSetExtensionSettings === 'function') {
-                    PreferenceSetExtensionSettings(echoKey, echoObj);
-                } else if (typeof ServerAccountUpdate === 'function') {
-                    ServerAccountUpdate();
-                } else if (ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === 'function' && typeof ServerAccountUpdate.SyncToServer === 'function') {
-                    // 部分 BC 版本中 ServerAccountUpdate 为 AccountUpdater 实例（非函数），
-                    // 需手动 QueueData + SyncToServer 才能把 ExtensionSettings 落库。
-                    ServerAccountUpdate.QueueData('ExtensionSettings', Player.ExtensionSettings);
-                    ServerAccountUpdate.SyncToServer();
-                }
-            } catch (e) { console.warn('[QiAct] 持久化 echo 设置失败（已忽略）:', e && e.message); }
+                syncExtensionField(echoKey, '动作数据', {});
+            } catch (e) { echoObj['动作数据'] = data; throw e; }
 
             // 清空 echoData 后再次重建屏蔽集合并移除残留；延迟再扫一次防止 echo 异步回写
             rebuildEchoSuppressed();

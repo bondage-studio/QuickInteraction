@@ -130,7 +130,7 @@
         try {
           var ov = null;
           try {
-            ov = localStorage.getItem("QiActLang");
+            ov = window.QiActI18n && window.QiActI18n.readSetting ? window.QiActI18n.readSetting() : localStorage.getItem("QiActLang");
           } catch (e) {
           }
           if (ov && ov !== "auto" && LANGS.indexOf(ov) >= 0) return ov;
@@ -180,6 +180,10 @@
       }
       function setLang(code) {
         try {
+          if (window.QiActI18n.writeSetting) {
+            window.QiActI18n.writeSetting(code || "auto");
+            return;
+          }
           if (!code || code === "auto") {
             try {
               localStorage.removeItem("QiActLang");
@@ -198,7 +202,7 @@
         },
         getSelectedLang: function() {
           try {
-            var code = localStorage.getItem("QiActLang");
+            var code = window.QiActI18n.readSetting ? window.QiActI18n.readSetting() : localStorage.getItem("QiActLang");
             return LANGS.indexOf(code) >= 0 ? code : "auto";
           } catch (e) {
             return "auto";
@@ -815,6 +819,27 @@ One of mods you are using is using an old version of SDK. It will work for now b
           check();
         });
       }
+      const S_THEME = "xsact_qa_theme";
+      const MOD_NS = "QiAct";
+      const THEMES = [
+        { id: "dark", name: QiActT("ui.theme_dark"), base: "dark" },
+        { id: "light", name: QiActT("ui.theme_light"), base: "light" }
+      ];
+      function getTheme(id) {
+        for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
+        return THEMES[0];
+      }
+      function applyTheme(themeId) {
+        var t = getTheme(themeId);
+        state.theme = t.id;
+        document.documentElement.setAttribute("data-xsact-theme", t.id);
+      }
+      function toggleTheme() {
+        var next = state.theme === "dark" ? "light" : "dark";
+        applyTheme(next);
+        persist(S_THEME, next);
+        toast(QiActT("ui.theme_switched", { theme: next === "dark" ? QiActT("ui.theme_dark") : QiActT("ui.theme_light") }), accentColor());
+      }
       function loadStorage(key, fallback) {
         try {
           var v = localStorage.getItem(key);
@@ -823,6 +848,102 @@ One of mods you are using is using an old version of SDK. It will work for now b
           console.error("[QiAct] 读取存储失败 " + key + ":", e);
           return fallback;
         }
+      }
+      function prepareAccountUpdate(data) {
+        var snapshot = JSON.parse(JSON.stringify(data));
+        var bytes = new TextEncoder().encode(JSON.stringify(["AccountUpdate", snapshot])).length;
+        if (bytes > 18e4) throw new Error("AccountUpdate exceeds 180K (" + bytes + " bytes); data retained locally");
+        return snapshot;
+      }
+      function sendAccountUpdate(data) {
+        if (typeof Player === "undefined" || !Player || Player.CharacterID === "") throw new Error("Player is not logged in");
+        if (typeof ServerSend !== "function") throw new Error("AccountUpdate transport is unavailable");
+        ServerSend("AccountUpdate", prepareAccountUpdate(data));
+      }
+      function syncExtensionField(namespace, path, value) {
+        var data = {};
+        data["ExtensionSettings." + namespace + ("." + path)] = value;
+        sendAccountUpdate(data);
+      }
+      function qiStoreUpdates(previous, next) {
+        var updates = [];
+        ["QiSettings", "QiAction"].forEach(function(section) {
+          Object.keys(next[section]).forEach(function(key) {
+            if (key.indexOf(".") !== -1 || key.indexOf("$") !== -1) throw new Error("Invalid settings key: " + key);
+            if (previous && previous[section] && JSON.stringify(previous[section][key]) === JSON.stringify(next[section][key])) return;
+            var data = {};
+            data["ExtensionSettings." + MOD_NS + "." + section + "." + key] = next[section][key];
+            updates.push(prepareAccountUpdate(data));
+          });
+        });
+        return updates;
+      }
+      function decodeQiStore(raw) {
+        if (typeof raw === "string") {
+          try {
+            raw = JSON.parse(raw);
+          } catch (_) {
+            raw = JSON.parse(LZString.decompressFromBase64(raw));
+          }
+        }
+        if (raw == null) return {};
+        if (typeof raw !== "object" || Array.isArray(raw)) throw new Error("Invalid QiAct settings");
+        return raw;
+      }
+      function splitQiActions(actions) {
+        var groups = { act_qi: [], act_echo: [], act_xs: [] };
+        (Array.isArray(actions) ? actions : []).forEach(function(action) {
+          if (!action) return;
+          groups[action.source === "echo" ? "act_echo" : action.source === "xiaosu" ? "act_xs" : "act_qi"].push(action);
+        });
+        return groups;
+      }
+      function getServerStore() {
+        try {
+          if (typeof Player === "undefined" || !Player || Player.CharacterID === "") return null;
+          if (!Player.ExtensionSettings) Player.ExtensionSettings = {};
+          return migrateLegacyServerSettings();
+        } catch (e) {
+          warnServerSync(e);
+          return null;
+        }
+      }
+      function saveToServer(key, val) {
+        var store = getServerStore();
+        if (!store || pendingQiMigrations.has(store)) return;
+        val = JSON.parse(JSON.stringify(val));
+        var next = { QiSettings: Object.assign({}, store.QiSettings), QiAction: Object.assign({}, store.QiAction) };
+        if (key === S_CUSTOM) Object.assign(next.QiAction, splitQiActions(val));
+        else next.QiSettings[key] = val;
+        try {
+          var updates = qiStoreUpdates(store, next);
+          updates.forEach(sendAccountUpdate);
+          Object.assign(store.QiSettings, next.QiSettings);
+          Object.assign(store.QiAction, next.QiAction);
+        } catch (e) {
+          warnServerSync(e);
+        }
+      }
+      function loadFromServer(key, fallback) {
+        var store = getServerStore();
+        if (!store) return fallback;
+        if (key === S_CUSTOM) {
+          return ["act_qi", "act_echo", "act_xs"].flatMap(function(bucket) {
+            var source = bucket === "act_echo" ? "echo" : bucket === "act_xs" ? "xiaosu" : "native";
+            return (store.QiAction[bucket] || []).map(function(action) {
+              return Object.assign(JSON.parse(JSON.stringify(action)), { source });
+            });
+          });
+        }
+        return Object.prototype.hasOwnProperty.call(store.QiSettings, key) ? JSON.parse(JSON.stringify(store.QiSettings[key])) : fallback;
+      }
+      function persist(key, val) {
+        saveStorage(key, val);
+        saveToServer(key, val);
+      }
+      function loadSetting(key, fallback) {
+        var value = loadFromServer(key, void 0);
+        return value === void 0 ? loadStorage(key, fallback) : value;
       }
       function safeStringify(val) {
         var seen = /* @__PURE__ */ new WeakSet();
@@ -856,57 +977,80 @@ One of mods you are using is using an old version of SDK. It will work for now b
           }
         }
       }
-      const S_THEME = "xsact_qa_theme";
-      const MOD_NS = "QiAct";
-      const THEMES = [
-        { id: "dark", name: QiActT("ui.theme_dark"), base: "dark" },
-        { id: "light", name: QiActT("ui.theme_light"), base: "light" }
-      ];
-      function getTheme(id) {
-        for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
-        return THEMES[0];
-      }
-      function getServerStore() {
-        try {
-          if (typeof Player === "undefined" || !Player) return null;
-          if (!Player.ExtensionSettings) Player.ExtensionSettings = {};
-          migrateLegacyServerSettings();
-          if (!Player.ExtensionSettings[MOD_NS]) Player.ExtensionSettings[MOD_NS] = {};
-          return Player.ExtensionSettings[MOD_NS];
-        } catch (e) {
-          return null;
+      var normalizedQiStores = /* @__PURE__ */ new WeakSet();
+      var pendingQiMigrations = /* @__PURE__ */ new WeakMap();
+      function migrateLegacyServerSettings() {
+        var raw = Player.ExtensionSettings[MOD_NS];
+        var legacyContainer = Player.OnlineSettings && Player.OnlineSettings.ExtensionSettings;
+        var legacy = legacyContainer && legacyContainer[MOD_NS];
+        var root = decodeQiStore(raw);
+        if (!normalizedQiStores.has(root)) {
+          var old = legacy ? decodeQiStore(legacy) : {};
+          var flat = Object.assign({}, old, root);
+          var settings = Object.assign({}, old.QiSettings || {}, root.QiSettings || {});
+          Object.keys(flat).forEach(function(key2) {
+            if (key2 !== "QiSettings" && key2 !== "QiAction" && key2 !== S_CUSTOM && !(key2 in settings)) settings[key2] = flat[key2];
+          });
+          try {
+            for (var i = 0; i < localStorage.length; i++) {
+              var key = localStorage.key(i);
+              if (key && key.indexOf("xsact_qa_") === 0 && key !== S_CUSTOM && !(key in settings)) {
+                var value = loadStorage(key, void 0);
+                if (value !== void 0) settings[key] = value;
+              }
+            }
+            if (!("QiActLang" in settings)) {
+              var language = localStorage.getItem("QiActLang");
+              if (language) {
+                try {
+                  language = JSON.parse(language);
+                } catch (_) {
+                }
+                settings.QiActLang = language;
+              }
+            }
+          } catch (_) {
+          }
+          var actions = Object.assign({}, old.QiAction || {}, root.QiAction || {});
+          var split = splitQiActions(migrateCustomActionRecords(flat[S_CUSTOM] === void 0 ? loadStorage(S_CUSTOM, []) : flat[S_CUSTOM]));
+          Object.keys(split).forEach(function(key2) {
+            var source = key2 === "act_echo" ? "echo" : key2 === "act_xs" ? "xiaosu" : "native";
+            actions[key2] = key2 in actions ? migrateCustomActionRecords(actions[key2], source) : split[key2];
+          });
+          var previous = root;
+          root = { QiSettings: settings, QiAction: actions };
+          var reset = typeof raw === "string" || Object.keys(previous).some(function(key2) {
+            return key2 !== "QiSettings" && key2 !== "QiAction";
+          });
+          var updates = qiStoreUpdates(reset ? null : previous, root);
+          if (reset) {
+            var clear = {};
+            clear["ExtensionSettings." + MOD_NS] = {};
+            updates.unshift(prepareAccountUpdate(clear));
+          }
+          pendingQiMigrations.set(root, updates);
+          normalizedQiStores.add(root);
+          Player.ExtensionSettings[MOD_NS] = root;
         }
-      }
-      function saveToServer(key, val) {
-        var store = getServerStore();
-        if (!store) return;
-        store[key] = val;
         try {
-          if (typeof ServerAccountUpdate !== "undefined" && ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === "function") {
-            ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings });
+          var pending = pendingQiMigrations.get(root);
+          if (pending) {
+            pending.forEach(sendAccountUpdate);
+            pendingQiMigrations.delete(root);
+          }
+          if (legacy && typeof ServerSend === "function") {
+            delete legacyContainer[MOD_NS];
+            try {
+              sendAccountUpdate({ OnlineSettings: Player.OnlineSettings });
+            } catch (e) {
+              legacyContainer[MOD_NS] = legacy;
+              throw e;
+            }
           }
         } catch (e) {
           warnServerSync(e);
         }
-      }
-      function loadFromServer(key, fallback) {
-        var store = getServerStore();
-        if (!store || !(key in store)) return fallback;
-        return store[key];
-      }
-      function persist(key, val) {
-        saveStorage(key, val);
-        saveToServer(key, val);
-      }
-      function loadSetting(key, fallback) {
-        try {
-          var s = loadFromServer(key, void 0);
-          if (s !== void 0) return s;
-          return loadStorage(key, fallback);
-        } catch (e) {
-          console.error("[QiAct] 读取设置失败 " + key + ":", e);
-          return fallback;
-        }
+        return root;
       }
       function migrateFavorites() {
         if (!Array.isArray(state.favorites)) {
@@ -965,42 +1109,22 @@ One of mods you are using is using an old version of SDK. It will work for now b
         });
         persist(S_FAVS, state.favorites);
       }
-      function applyTheme(themeId) {
-        var t = getTheme(themeId);
-        state.theme = t.id;
-        document.documentElement.setAttribute("data-xsact-theme", t.id);
-      }
-      function toggleTheme() {
-        var next = state.theme === "dark" ? "light" : "dark";
-        applyTheme(next);
-        persist(S_THEME, next);
-        toast(QiActT("ui.theme_switched", { theme: next === "dark" ? QiActT("ui.theme_dark") : QiActT("ui.theme_light") }), accentColor());
-      }
-      function migrateLegacyServerSettings() {
-        var legacy = Player.OnlineSettings && Player.OnlineSettings.ExtensionSettings;
-        if (!legacy || !Object.prototype.hasOwnProperty.call(legacy, MOD_NS)) return;
-        if (typeof ServerAccountUpdate === "undefined" || !ServerAccountUpdate || typeof ServerAccountUpdate.QueueData !== "function") return;
-        try {
-          Object.keys(legacy).forEach(function(namespace) {
-            var previous = legacy[namespace];
-            var current = Player.ExtensionSettings[namespace];
-            if (!Object.prototype.hasOwnProperty.call(Player.ExtensionSettings, namespace)) {
-              Object.defineProperty(Player.ExtensionSettings, namespace, { value: previous, writable: true, enumerable: true, configurable: true });
-            } else if (previous && current && typeof previous === "object" && typeof current === "object" && !Array.isArray(previous) && !Array.isArray(current)) {
-              Player.ExtensionSettings[namespace] = Object.assign({}, previous, current);
-            }
-          });
-          ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings });
-          delete Player.OnlineSettings.ExtensionSettings;
-          try {
-            ServerAccountUpdate.QueueData({ OnlineSettings: Player.OnlineSettings }, true);
-          } catch (e) {
-            Player.OnlineSettings.ExtensionSettings = legacy;
-            throw e;
-          }
-        } catch (e) {
-          warnServerSync(e);
-        }
+      function migrateCustomActionRecords(records, source) {
+        var echoNames = /* @__PURE__ */ new Set();
+        var ext = typeof Player !== "undefined" && Player && Player.ExtensionSettings;
+        var echoData = ext && ext["ECHO动作拓展"] && ext["ECHO动作拓展"]["动作数据"];
+        if (echoData && typeof echoData === "object") Object.keys(echoData).forEach(function(key) {
+          echoNames.add(key);
+          if (echoData[key] && echoData[key].Name) echoNames.add(echoData[key].Name);
+        });
+        return (Array.isArray(records) ? records : []).filter(function(action) {
+          return action && typeof action === "object" && !Array.isArray(action);
+        }).map(function(action) {
+          var copy = Object.assign({}, action);
+          if (typeof copy.visible !== "boolean") copy.visible = true;
+          copy.source = source || copy.source || (copy.echoName || echoNames.has(copy.name) ? "echo" : copy.xiaosuName ? "xiaosu" : "native");
+          return copy;
+        });
       }
       function getActionsForPart(partGroup, targetChar) {
         targetChar = targetChar || state.selectedTarget;
@@ -1372,7 +1496,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function recordLastAction(name, targetMN, part, dict) {
         state.lastAction = { name, targetMN, part, time: Date.now() };
-        saveStorage(S_LAST, state.lastAction);
+        persist(S_LAST, state.lastAction);
       }
       function findAllowedActivity(char, group, name) {
         if (typeof ActivityAllowedForGroup !== "function") return null;
@@ -1819,23 +1943,6 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function loadCustomActions() {
         state.customActions = loadSetting(S_CUSTOM, []);
         if (!Array.isArray(state.customActions)) state.customActions = [];
-        var echoNames = /* @__PURE__ */ new Set();
-        try {
-          var ext = Player && Player.ExtensionSettings;
-          var echoKey = ext && Object.keys(ext).find(function(k) {
-            return k.indexOf("ECHO") === 0;
-          });
-          var echoData = echoKey && ext[echoKey] && ext[echoKey]["动作数据"];
-          if (echoData) Object.values(echoData).forEach(function(item) {
-            if (item && item.Name) echoNames.add(item.Name);
-          });
-        } catch (e) {
-          console.warn("[QiAct] 读取 echo 动作数据失败（已忽略）:", e && e.message);
-        }
-        state.customActions.forEach(function(a) {
-          if (typeof a.visible !== "boolean") a.visible = true;
-          if (!a.source) a.source = echoNames.has(a.name) ? "echo" : "native";
-        });
         rebuildEchoSuppressed();
         caRemoveSuppressedEchoActivities();
         setTimeout(function() {
@@ -1977,9 +2084,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function caGetEchoData() {
         try {
           var ext = Player && Player.ExtensionSettings;
-          var echoKey = ext && Object.keys(ext).find(function(k) {
-            return k.indexOf("ECHO") === 0;
-          });
+          var echoKey = ext && "ECHO动作拓展";
           return echoKey && ext[echoKey] && ext[echoKey]["动作数据"];
         } catch (e) {
           return null;
@@ -2109,9 +2214,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function caCleanupEchoData() {
         try {
           var ext = Player && Player.ExtensionSettings;
-          var echoKey = ext && Object.keys(ext).find(function(k) {
-            return k.indexOf("ECHO") === 0;
-          });
+          var echoKey = ext && "ECHO动作拓展";
           if (!echoKey || !ext[echoKey]) {
             toast(QiActT("toast.echo_notfound"), "#FF5C5C");
             return;
@@ -2152,16 +2255,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
           caRemoveSuppressedEchoActivities();
           echoObj["动作数据"] = {};
           try {
-            if (typeof PreferenceSetExtensionSettings === "function") {
-              PreferenceSetExtensionSettings(echoKey, echoObj);
-            } else if (typeof ServerAccountUpdate === "function") {
-              ServerAccountUpdate();
-            } else if (ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === "function" && typeof ServerAccountUpdate.SyncToServer === "function") {
-              ServerAccountUpdate.QueueData("ExtensionSettings", Player.ExtensionSettings);
-              ServerAccountUpdate.SyncToServer();
-            }
+            syncExtensionField(echoKey, "动作数据", {});
           } catch (e) {
-            console.warn("[QiAct] 持久化 echo 设置失败（已忽略）:", e && e.message);
+            echoObj["动作数据"] = data;
+            throw e;
           }
           rebuildEchoSuppressed();
           caRemoveSuppressedEchoActivities();
@@ -2880,9 +2977,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
             toast(QiActT("toast.read_ext_failed"), "#FF5C5C");
             return;
           }
-          var echoKey = Object.keys(ext).find(function(k) {
-            return k.indexOf("ECHO") === 0;
-          });
+          var echoKey = "ECHO动作拓展";
           if (!echoKey || !ext[echoKey] || !ext[echoKey]["动作数据"]) {
             toast(QiActT("toast.import_echo_notfound"), "#FF5C5C");
             return;
@@ -6120,7 +6215,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
                 part: group && group.Name || state.selectedPart || "",
                 time: Date.now()
               };
-              saveStorage(S_LAST, state.lastAction);
+              persist(S_LAST, state.lastAction);
             }
           } catch (e) {
             console.warn("[QiAct] ActivityRun hook 记录失败:", e.message);
@@ -6598,6 +6693,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
         } catch (e) {
           console.warn("[QiAct] patchActivityDictionaryText 失败:", e);
         }
+        window.QiActI18n.readSetting = function() {
+          return loadSetting("QiActLang", "auto");
+        };
+        window.QiActI18n.writeSetting = function(code) {
+          persist("QiActLang", code || "auto");
+        };
         state.isActive = loadSetting(S_ENABLED, false);
         state.selfModeActive = loadSetting(S_SELF, false);
         state.interactionGridActive = loadSetting(S_INTERACTION_GRID, true) !== false;
@@ -6617,30 +6718,14 @@ One of mods you are using is using an old version of SDK. It will work for now b
         applyBlockedActions();
         migrateFavorites();
         state.presets = loadSetting(S_PRESETS, []);
-        state.lastAction = loadStorage(S_LAST, null);
+        state.lastAction = loadSetting(S_LAST, null);
         state.combos = loadSetting(S_COMBOS, []);
         loadCustomActions();
         state.xiaosuPack = loadSetting(S_XIAOSU_PACK, true);
-        (function() {
-          var VALID = { all: 1, xiaosu: 1, native: 1, echo: 1 };
-          var v;
-          try {
-            v = localStorage.getItem(S_CA_FILTER);
-            if (v) v = JSON.parse(v);
-          } catch (e) {
-            v = void 0;
-          }
-          if (typeof v !== "string" || !VALID[v]) {
-            try {
-              var sv = loadFromServer(S_CA_FILTER, void 0);
-              v = typeof sv === "string" && VALID[sv] ? sv : "all";
-            } catch (e) {
-              v = "all";
-            }
-          }
-          state.caFilter = v;
-        })();
+        var savedFilter = loadSetting(S_CA_FILTER, "all");
+        state.caFilter = ["all", "xiaosu", "native", "echo"].indexOf(savedFilter) >= 0 ? savedFilter : "all";
         syncXiaosuPack();
+        saveCustomActions();
         registerAllCustomActions();
         state.theme = loadSetting(S_THEME, "dark");
         state.floatingButtonVisible = loadSetting(S_FLOATING_BUTTON, true) !== false;
