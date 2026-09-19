@@ -492,22 +492,41 @@
     // ── 服务器（游戏账号）持久化：写入 Player.ExtensionSettings ──
     // 注意：BC 的 ServerAccountUpdate 是 AccountUpdater 实例，不是函数；
     // 正确同步方式是 ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings })，
+    var _storeObj = null, _storeRaw, _storeMember;
+
     function getServerStore() {
         try {
             if (typeof Player === 'undefined' || !Player) return null;
             if (!Player.ExtensionSettings) Player.ExtensionSettings = {};
             migrateLegacyServerSettings();
-            if (!Player.ExtensionSettings[MOD_NS]) Player.ExtensionSettings[MOD_NS] = {};
-            return Player.ExtensionSettings[MOD_NS];
+            var raw = Player.ExtensionSettings[MOD_NS];
+            if (_storeObj && raw === _storeRaw && _storeMember === Player.MemberNumber) return _storeObj;
+            var obj = {};
+            if (typeof raw === 'string') {
+                try { obj = JSON.parse(LZString.decompressFromBase64(raw)) || {}; }
+                catch (e) { obj = {}; }
+            } else if (raw && typeof raw === 'object') {
+                obj = raw;   // 舊格式:讀出來,下次保存時轉成字串
+            }
+            _storeObj = obj; _storeRaw = raw; _storeMember = Player.MemberNumber;
+            return _storeObj;
         } catch (e) { return null; }
     }
+
     function saveToServer(key, val) {
         var store = getServerStore();
-        if (!store) return; // 玩家未登录或无法访问账号：仅落 localStorage（persist 已做）
+        if (!store) return;
         store[key] = val;
         try {
-            if (typeof ServerAccountUpdate !== 'undefined' && ServerAccountUpdate && typeof ServerAccountUpdate.QueueData === 'function') {
-                ServerAccountUpdate.QueueData({ ExtensionSettings: Player.ExtensionSettings });
+            var packed = LZString.compressToBase64(JSON.stringify(store));
+            Player.ExtensionSettings[MOD_NS] = packed;
+            _storeRaw = packed;
+            if (typeof ServerPlayerExtensionSettingsSync === 'function') {
+                ServerPlayerExtensionSettingsSync(MOD_NS);
+            } else if (typeof ServerAccountUpdate !== 'undefined' && ServerAccountUpdate
+                       && typeof ServerAccountUpdate.QueueData === 'function') {
+                var d = {}; d[MOD_NS] = packed;
+                ServerAccountUpdate.QueueData({ ExtensionSettings: d });
             }
         } catch (e) { warnServerSync(e); }
     }
