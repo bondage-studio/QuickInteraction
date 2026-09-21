@@ -64,14 +64,7 @@ var ServerAccountUpdate = new class AccountUpdater {
 	}
 };
 
-function ServerPlayerExtensionSettingsSync(dataKeyName, _force = false) {
-	if (Player.ExtensionSettings[dataKeyName] === undefined) {
-		throw new Error(`Invalid key '${dataKeyName}' attempting to save 'undefined'`);
-	}
-	const obj = { [`ExtensionSettings.${dataKeyName}`]: Player.ExtensionSettings[dataKeyName] };
 
-	ServerSend("AccountUpdate", obj);
-}
 
 var ServerSendRateLimit = 14;
 /** Ratelimit: Length of the rate-limit window, in msec */

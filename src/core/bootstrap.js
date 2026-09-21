@@ -90,8 +90,7 @@
         try { patchActivityDictionaryText(); } catch (e) { console.warn('[QiAct] patchActivityDictionaryText 失败:', e); }
 
         // Language uses the same account settings as the rest of the UI.
-        window.QiActI18n.readSetting = function() { return loadSetting('QiActLang', 'auto'); };
-        window.QiActI18n.writeSetting = function(code) { persist('QiActLang', code || 'auto'); };
+        window.QiActI18n.setStorage({ load: loadSetting, save: persist });
         // 加载存储
         state.isActive = loadSetting(S_ENABLED, false);
         state.selfModeActive = loadSetting(S_SELF, false);

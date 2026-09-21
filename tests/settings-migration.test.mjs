@@ -55,7 +55,7 @@ test('sync failure retains legacy data and retries; unavailable player and inval
     const player = { OnlineSettings: { ExtensionSettings: { QiAct: { theme: 'dark' } } } };
     const { context, read } = setup(player);
     context.ServerSend = null;
-    assert.equal(read().QiSettings.theme, 'dark');
+    assert.equal(read(), null);
     assert.ok(player.OnlineSettings.ExtensionSettings.QiAct);
     context.ServerSend = (event, data) => { if (data.OnlineSettings) throw Error('offline'); };
     read(); assert.ok(player.OnlineSettings.ExtensionSettings.QiAct);
@@ -197,4 +197,31 @@ test('normalized stores do not upload again on reload, and oversized edits retai
     assert.equal(player.ExtensionSettings.QiAct.QiSettings.large, undefined);
     assert.equal(JSON.parse(context.localStorage.getItem('large')).length, 61000);
     assert.equal(warnings.length, 1);
+});
+
+test('partial migration failure leaves the original source intact for retry', () => {
+    const original = { first: 1, second: 2 };
+    const player = { ExtensionSettings: { QiAct: original } };
+    const { context, read } = setup(player);
+    let count = 0;
+    context.ServerSend = () => { if (++count === 2) throw Error('offline'); };
+    assert.equal(read(), null);
+    assert.equal(player.ExtensionSettings.QiAct, original);
+    context.ServerSend = () => {};
+    assert.equal(read().QiSettings.second, 2);
+});
+
+test('language storage uses the shared adapter and preserves automatic game language', () => {
+    const { context } = setup({ ExtensionSettings: {} }, { QiActLang: 'TW' });
+    Object.assign(context, { window: {}, TranslationLanguage: 'EN' });
+    vm.runInContext(fs.readFileSync(new URL('../src/i18n/runtime.js', import.meta.url), 'utf8'), context);
+    const i18n = context.window.QiActI18n;
+    assert.equal(i18n.getSelectedLang(), 'TW');
+    i18n.setStorage({ load: context.loadSetting, save: context.persist });
+    i18n.setLang('JA');
+    assert.equal(context.loadSetting('QiActLang', null), 'JA');
+    assert.equal(i18n.getCurrentLang(), 'JA');
+    i18n.setLang('auto');
+    assert.equal(i18n.getSelectedLang(), 'auto');
+    assert.equal(i18n.getCurrentLang(), 'EN');
 });

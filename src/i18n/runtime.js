@@ -56,11 +56,18 @@
         }
     }
 
+    var settingStorage = null;
+    function getSelectedLang() {
+        try {
+            var code = settingStorage ? settingStorage.load('QiActLang', 'auto') : localStorage.getItem('QiActLang');
+            return LANGS.indexOf(code) >= 0 ? code : 'auto';
+        } catch (e) { return 'auto'; }
+    }
+
     // 解析当前语言：手动覆盖(QiSettings，启动前回退本地) > BC TranslationLanguage(auto) > 浏览器 > EN
     function resolveLang() {
         try {
-            var ov = null;
-            try { ov = window.QiActI18n && window.QiActI18n.readSetting ? window.QiActI18n.readSetting() : localStorage.getItem('QiActLang'); } catch (e) { /* localStorage 不可用：跳过 */ }
+            var ov = getSelectedLang();
             if (ov && ov !== 'auto' && LANGS.indexOf(ov) >= 0) return ov;
             // auto：跟随 BC 游戏语言（与 liko 一致）
             var bc = (typeof TranslationLanguage !== 'undefined' && TranslationLanguage)
@@ -115,7 +122,7 @@
     // 手动设置语言（设置面板调用）：'auto' 或具体语言码；写入 QiSettings（启动前回退本地）
     function setLang(code) {
         try {
-            if (window.QiActI18n.writeSetting) { window.QiActI18n.writeSetting(code || 'auto'); return; }
+            if (settingStorage) { settingStorage.save('QiActLang', code || 'auto'); return; }
             if (!code || code === 'auto') { try { localStorage.removeItem('QiActLang'); } catch (e) {} }
             else localStorage.setItem('QiActLang', code);
         } catch (e) { /* 忽略：存储不可用时保持 auto */ }
@@ -131,10 +138,8 @@
                 ? '<img class="xsact-lang-flag" src="' + flags[code] + '" width="24" height="18" alt="" aria-hidden="true">'
                 : '<span class="xsact-lang-flag" aria-hidden="true">◎</span>';
         },
-        getSelectedLang: function() {
-            try { var code = window.QiActI18n.readSetting ? window.QiActI18n.readSetting() : localStorage.getItem('QiActLang'); return LANGS.indexOf(code) >= 0 ? code : 'auto'; }
-            catch (e) { return 'auto'; }
-        },
+        setStorage: function(storage) { settingStorage = storage; },
+        getSelectedLang: getSelectedLang,
         register: register,
         registerLocale: registerLocale,
         t: QiActT,

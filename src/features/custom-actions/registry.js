@@ -360,8 +360,7 @@
     function caGetEchoData() {
         try {
             var ext = Player && Player.ExtensionSettings;
-            var echoKey = ext && 'ECHO动作拓展';
-            return echoKey && ext[echoKey] && ext[echoKey]['动作数据'];
+            return ext && ext[ECHO_SETTINGS_KEY] && ext[ECHO_SETTINGS_KEY]['动作数据'];
         } catch (e) { return null; }
     }
     /** 在 echo 动作数据中查找与指定名字对应的条目（key 或 Name 匹配） */
@@ -506,9 +505,8 @@
     function caCleanupEchoData() {
         try {
             var ext = Player && Player.ExtensionSettings;
-            var echoKey = ext && 'ECHO动作拓展';
-            if (!echoKey || !ext[echoKey]) { toast(QiActT('toast.echo_notfound'), '#FF5C5C'); return; }
-            var echoObj = ext[echoKey];
+            var echoObj = ext && ext[ECHO_SETTINGS_KEY];
+            if (!echoObj) { toast(QiActT('toast.echo_notfound'), '#FF5C5C'); return; }
             var data = echoObj['动作数据'];
             var before = (data && typeof data === 'object') ? Object.keys(data).length : 0;
 
@@ -550,9 +548,9 @@
             // 清空 echo 扩展设置中的动作数据
             echoObj['动作数据'] = {};
 
-            // 持久化回 BC（优先专用 API，回退到整账户保存）
+            // 仅上传 ECHO 动作数据字段，发送失败时恢复本地来源
             try {
-                syncExtensionField(echoKey, '动作数据', {});
+                syncExtensionField(ECHO_SETTINGS_KEY, '动作数据', {});
             } catch (e) { echoObj['动作数据'] = data; throw e; }
 
             // 清空 echoData 后再次重建屏蔽集合并移除残留；延迟再扫一次防止 echo 异步回写

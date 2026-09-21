@@ -11,13 +11,8 @@
     /** 从 echo/回声(echo-activity-ext) 导入动作数据 */
     function importCustomFromEcho() {
         try {
-            var ext = Player && Player.ExtensionSettings;
-            if (!ext) { toast(QiActT('toast.read_ext_failed'), '#FF5C5C'); return; }
-            var echoKey = 'ECHO动作拓展';
-            if (!echoKey || !ext[echoKey] || !ext[echoKey]['动作数据']) {
-                toast(QiActT('toast.import_echo_notfound'), '#FF5C5C'); return;
-            }
-            var data = ext[echoKey]['动作数据'];
+            var data = caGetEchoData();
+            if (!data) { toast(QiActT('toast.import_echo_notfound'), '#FF5C5C'); return; }
             var keys = Object.keys(data);
             var imported = 0;
             keys.forEach(function(k) {

@@ -1,6 +1,5 @@
     // Normalize only our namespace. Existing nested values, including empty arrays, win.
     var normalizedQiStores = new WeakSet();
-    var pendingQiMigrations = new WeakMap();
     function migrateLegacyServerSettings() {
         var raw = Player.ExtensionSettings[MOD_NS];
         var legacyContainer = Player.OnlineSettings && Player.OnlineSettings.ExtensionSettings;
@@ -33,7 +32,7 @@
             var actions = Object.assign({}, old.QiAction || {}, root.QiAction || {});
             var split = splitQiActions(migrateCustomActionRecords(flat[S_CUSTOM] === undefined ? loadStorage(S_CUSTOM, []) : flat[S_CUSTOM]));
             Object.keys(split).forEach(function(key) {
-                var source = key === 'act_echo' ? 'echo' : key === 'act_xs' ? 'xiaosu' : 'native';
+                var source = QI_ACTION_SOURCES[key];
                 actions[key] = key in actions ? migrateCustomActionRecords(actions[key], source) : split[key];
             });
             var previous = root;
@@ -41,73 +40,56 @@
             // A compressed string or flat legacy container must be initialized before dotted writes.
             var reset = typeof raw === 'string' || Object.keys(previous).some(function(key) { return key !== 'QiSettings' && key !== 'QiAction'; });
             var updates = qiStoreUpdates(reset ? null : previous, root);
-            if (reset) { var clear = {}; clear['ExtensionSettings.' + MOD_NS] = {}; updates.unshift(prepareAccountUpdate(clear)); }
-            // Validate every packet before replacing anything locally or sending the reset.
-            pendingQiMigrations.set(root, updates);
+            if (reset) { var clear = {}; clear['ExtensionSettings.' + MOD_NS] = {}; updates.unshift(clear); }
+            // Failed sends leave the original container available for a full retry.
+            sendAccountUpdates(updates);
             normalizedQiStores.add(root);
             Player.ExtensionSettings[MOD_NS] = root;
         }
         try {
-            var pending = pendingQiMigrations.get(root);
-            if (pending) { pending.forEach(sendAccountUpdate); pendingQiMigrations.delete(root); }
             // Remove only the migrated QiAct entry; unrelated namespaces remain untouched.
             if (legacy && typeof ServerSend === 'function') {
+                var online = Object.assign({}, Player.OnlineSettings, { ExtensionSettings: Object.assign({}, legacyContainer) });
+                delete online.ExtensionSettings[MOD_NS];
+                sendAccountUpdates([{ OnlineSettings: online }]);
                 delete legacyContainer[MOD_NS];
-                try { sendAccountUpdate({ OnlineSettings: Player.OnlineSettings }); }
-                catch (e) { legacyContainer[MOD_NS] = legacy; throw e; }
             }
         } catch (e) { warnServerSync(e); }
         return root;
     }
 
-    /** 收藏数据迁移：旧版 favorites 为纯动作名数组（不区分部位），升级为「部位Group|动作名」复合键。
-     *  迁移策略：将遗留裸名展开到玩家当前所有包含该动作的部位，一次性持久化，避免静默丢失收藏。 */
+    // Expand old bare names, normalize part aliases, and retain unresolved names.
     function migrateFavorites() {
-        if (!Array.isArray(state.favorites)) { state.favorites = []; return; }
-        var needMigrate = state.favorites.some(function(f) {
-            return typeof f === 'string' && f.indexOf('|') === -1;
-        });
-        if (!needMigrate) {
-            var normalized = state.favorites.map(function(key) {
-                var p = key.indexOf('|');
-                return p < 0 ? key : canonicalPartGroup(key.slice(0, p)) + key.slice(p);
-            }).filter(function(key, i, arr) { return arr.indexOf(key) === i; });
-            if (JSON.stringify(normalized) !== JSON.stringify(state.favorites)) { state.favorites = normalized; persist(S_FAVS, state.favorites); }
-            return;
-        }
-        var groups = BODY_PARTS.map(function(p) { return p.group; });
-        var out = [];
-        state.favorites.forEach(function(f) {
-            if (typeof f !== 'string') return;
-            if (f.indexOf('|') !== -1) { out.push(f); return; } // 已是新格式
-            var name = f;
-            var expanded = false;
+        var previous = state.favorites;
+        var normalized = [];
+        (Array.isArray(previous) ? previous : []).forEach(function(key) {
+            if (typeof key !== 'string') return;
+            var separator = key.indexOf('|');
+            if (separator >= 0) {
+                normalized.push(canonicalPartGroup(key.slice(0, separator)) + key.slice(separator));
+                return;
+            }
+            var matches = [];
             if (typeof ActivityAllowedForGroup === 'function' && Player) {
-                groups.forEach(function(g) {
+                BODY_PARTS.forEach(function(part) {
                     try {
-                        var acts = activitiesAllowedForGroup(Player, g);
-                        if (acts.some(function(a) { return a.Activity && a.Activity.Name === name; })) {
-                            out.push(g + '|' + name);
-                            expanded = true;
-                        }
-                    } catch (_) { /* 忽略单个部位枚举失败 */ }
+                        if (activitiesAllowedForGroup(Player, part.group).some(function(action) {
+                            return action.Activity && action.Activity.Name === key;
+                        })) matches.push(canonicalPartGroup(part.group) + '|' + key);
+                    } catch (e) { silent(e, 'favorites.migrate'); }
                 });
             }
-            if (!expanded) out.push(name); // 兜底：无法展开则保留裸名
+            normalized.push.apply(normalized, matches.length ? matches : [key]);
         });
-        state.favorites = out.map(function(key) {
-            var p = key.indexOf('|');
-            return p < 0 ? key : canonicalPartGroup(key.slice(0, p)) + key.slice(p);
-        }).filter(function(key, i, arr) { return arr.indexOf(key) === i; });
-        persist(S_FAVS, state.favorites);
+        state.favorites = Array.from(new Set(normalized));
+        if (JSON.stringify(previous) !== JSON.stringify(state.favorites)) persist(S_FAVS, state.favorites);
     }
-
 
     // Upgrade action records before source-based partitioning; bucket source is authoritative.
     function migrateCustomActionRecords(records, source) {
         var echoNames = new Set();
         var ext = typeof Player !== 'undefined' && Player && Player.ExtensionSettings;
-        var echoData = ext && ext['ECHO动作拓展'] && ext['ECHO动作拓展']['动作数据'];
+        var echoData = ext && ext[ECHO_SETTINGS_KEY] && ext[ECHO_SETTINGS_KEY]['动作数据'];
         if (echoData && typeof echoData === 'object') Object.keys(echoData).forEach(function(key) {
             echoNames.add(key);
             if (echoData[key] && echoData[key].Name) echoNames.add(echoData[key].Name);
@@ -120,4 +102,14 @@
             copy.source = source || copy.source || (copy.echoName || echoNames.has(copy.name) ? 'echo' : copy.xiaosuName ? 'xiaosu' : 'native');
             return copy;
         });
+    }
+
+    function decodeQiStore(raw) {
+        if (typeof raw === 'string') {
+            try { raw = JSON.parse(raw); }
+            catch (_) { raw = JSON.parse(LZString.decompressFromBase64(raw)); }
+        }
+        if (raw == null) return {};
+        if (typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Invalid QiAct settings');
+        return raw;
     }
