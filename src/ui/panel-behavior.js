@@ -1,13 +1,58 @@
     /* Panel position, resize and event bindings. */
+    function isPanelMobile() {
+        return typeof CommonIsMobile === 'function' ? !!CommonIsMobile() : window.innerWidth <= 480;
+    }
+
+    function panelViewport() {
+        var v = window.visualViewport;
+        return { left: v ? v.offsetLeft : 0, top: v ? v.offsetTop : 0,
+            width: v ? v.width : window.innerWidth, height: v ? v.height : window.innerHeight };
+    }
+
+    function constrainPanelToViewport(panel) {
+        if (!panel || panel.style.display === 'none') return;
+        panel.classList.toggle('xsact-mobile', isPanelMobile());
+        var v = panelViewport();
+        panel.style.setProperty('--xs-viewport-width', Math.max(0, v.width - 8) + 'px');
+        panel.style.setProperty('--xs-viewport-height', Math.max(0, v.height - 8) + 'px');
+        // offset coordinates are unaffected by the opening animation's transform.
+        var left = Math.max(v.left + 4, Math.min(panel.offsetLeft, v.left + v.width - panel.offsetWidth - 4));
+        var top = Math.max(v.top + 4, Math.min(panel.offsetTop, v.top + v.height - panel.offsetHeight - 4));
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+    }
+
+    var panelViewportBound = false;
+    function bindPanelViewport() {
+        if (panelViewportBound) return;
+        panelViewportBound = true;
+        var update = function() { constrainPanelToViewport(state.actionPanelEl); };
+        addRuntimeListener(window, 'resize', update);
+        if (window.visualViewport) {
+            addRuntimeListener(window.visualViewport, 'resize', update);
+            addRuntimeListener(window.visualViewport, 'scroll', update);
+        }
+    }
+
     function applyPanelPosition() {
         if (!state.actionPanelEl) return;
         var saved = loadSetting(S_POS, null);
-        if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+        if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
             state.actionPanelEl.style.right = 'auto';
             state.actionPanelEl.style.bottom = 'auto';
             state.actionPanelEl.style.left = saved.left + 'px';
             state.actionPanelEl.style.top = saved.top + 'px';
         }
+        constrainPanelToViewport(state.actionPanelEl);
+        if (!(saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) && isPanelMobile()) {
+            var v = panelViewport();
+            state.actionPanelEl.style.left = (v.left + (v.width - state.actionPanelEl.offsetWidth) / 2) + 'px';
+            state.actionPanelEl.style.top = (v.top + 8) + 'px';
+            constrainPanelToViewport(state.actionPanelEl);
+        }
+        bindPanelViewport();
     }
 
     /** 保存面板位置（拖拽结束调用） */
@@ -21,7 +66,7 @@
     function applyPanelSize() {
         if (!state.actionPanelEl) return;
         var saved = loadSetting(S_SIZE, null);
-        if (saved && typeof saved.width === 'number' && typeof saved.height === 'number') {
+        if (saved && Number.isFinite(saved.width) && Number.isFinite(saved.height)) {
             state.actionPanelEl.style.width = Math.max(220, Math.min(560, saved.width)) + 'px';
             state.actionPanelEl.style.height = Math.max(300, Math.min(Math.min(window.innerHeight - 60, 820), saved.height)) + 'px';
         }
@@ -37,78 +82,86 @@
     function makeResizable(panel) {
         var handle = panel.querySelector('#xsact-resize-handle');
         if (!handle) return;
+        var pointerId = null;
         var resizing = false, sx = 0, sy = 0, ow = 0, oh = 0;
 
         function onMove(e) {
-            if (!resizing) return;
+            if (!resizing || e.pointerId !== pointerId) return;
             var nw = ow + (e.clientX - sx);
             var nh = oh + (e.clientY - sy);
             nw = Math.max(220, Math.min(560, nw));
             nh = Math.max(300, Math.min(Math.min(window.innerHeight - 60, 820), nh));
             panel.style.width = nw + 'px';
             panel.style.height = nh + 'px';
+            constrainPanelToViewport(panel);
         }
-        function onUp() {
-            if (!resizing) return;
+        function onUp(e) {
+            if (!resizing || e.pointerId !== pointerId) return;
             resizing = false;
             handle.classList.remove('resizing');
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
+            if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+            pointerId = null;
             savePanelSize();
+            savePanelPosition();
         }
-        handle.addEventListener('mousedown', function(e) {
+        handle.addEventListener('pointerdown', function(e) {
+            if (resizing || e.isPrimary === false || e.button !== 0) return;
             resizing = true;
             sx = e.clientX; sy = e.clientY;
             ow = panel.offsetWidth; oh = panel.offsetHeight;
             handle.classList.add('resizing');
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
+            pointerId = e.pointerId;
+            handle.setPointerCapture(pointerId);
             e.preventDefault();
             e.stopPropagation();
         });
+        handle.addEventListener('pointermove', onMove);
+        handle.addEventListener('pointerup', onUp);
+        handle.addEventListener('pointercancel', onUp);
+        handle.addEventListener('lostpointercapture', onUp);
     }
 
     /** 让面板标题栏可拖拽 */
     function makeDraggable(panel) {
         var header = panel.querySelector('#xsact-panel-header');
         if (!header) return;
+        var pointerId = null;
         var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
 
         function onMove(e) {
-            if (!dragging) return;
+            if (!dragging || e.pointerId !== pointerId) return;
             var nx = ox + (e.clientX - sx);
             var ny = oy + (e.clientY - sy);
-            // 限制在视口内
-            var w = panel.offsetWidth, h = panel.offsetHeight;
-            nx = Math.max(4, Math.min(nx, window.innerWidth - w - 4));
-            ny = Math.max(4, Math.min(ny, window.innerHeight - h - 4));
             panel.style.left = nx + 'px';
             panel.style.top = ny + 'px';
             panel.style.right = 'auto';
             panel.style.bottom = 'auto';
+            constrainPanelToViewport(panel);
         }
-        function onUp() {
-            if (!dragging) return;
+        function onUp(e) {
+            if (!dragging || e.pointerId !== pointerId) return;
             dragging = false;
             header.classList.remove('dragging');
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
+            if (header.hasPointerCapture(pointerId)) header.releasePointerCapture(pointerId);
+            pointerId = null;
             savePanelPosition();
         }
-        header.addEventListener('mousedown', function(e) {
+        header.addEventListener('pointerdown', function(e) {
+            if (dragging || e.isPrimary === false || e.button !== 0) return;
             // 标题栏上的按钮/下拉不触发拖拽
             if (e.target.closest('button, select, input')) return;
             dragging = true;
             sx = e.clientX; sy = e.clientY;
-            var r = panel.getBoundingClientRect();
-            ox = r.left; oy = r.top;
-            panel.style.right = 'auto';
-            panel.style.bottom = 'auto';
+            ox = panel.offsetLeft; oy = panel.offsetTop;
             header.classList.add('dragging');
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
+            pointerId = e.pointerId;
+            header.setPointerCapture(pointerId);
             e.preventDefault();
         });
+        header.addEventListener('pointermove', onMove);
+        header.addEventListener('pointerup', onUp);
+        header.addEventListener('pointercancel', onUp);
+        header.addEventListener('lostpointercapture', onUp);
     }
 
     // 语言下拉的全局关闭监听只需绑定一次（rebuildPanel 会频繁重建面板）
