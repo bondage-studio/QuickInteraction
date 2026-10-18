@@ -1,5 +1,32 @@
     /* Activity packet construction and execution. */
-    function makeActivityPacket(targetChar, group, name, activityItem) {
+
+    /** R133：ActivityDictionary.csv 对应的 TextCache 未加载完成时 getOptional 恒返回 undefined，
+     *  ActivityDictionaryText 会对所有 key 返回 MISSING，导致误走 Action 兜底或选错 content key。
+     *  加载完成前不应发包。取不到 loader 或无 loaded 字段（旧版本）时视为就绪。 */
+    function isActivityDictionaryReady() {
+        try {
+            if (typeof ActivityDictionaryLoad !== 'function') return true;
+            var loader = ActivityDictionaryLoad();
+            if (!loader || typeof loader.loaded !== 'boolean') return true;
+            return loader.loaded;
+        } catch (_) {
+            return true;
+        }
+    }
+
+    /** R133 原生 Action 写法：{Tag:'SourceCharacter', Text:昵称, MemberNumber}（见 ChatRoom.js 的原生 Action 发送）。
+     *  旧的 {Tag:{MemberNumber,Name,Nickname}} 的 Tag 是对象，R133 所有解析器都要求 Tag 为字符串，会被静默忽略。 */
+    function sourceCharacterEntry(c) {
+        return {
+            Tag: 'SourceCharacter',
+            Text: (c && (c.Nickname || c.Name || c.AccountName)) || '某人',
+            MemberNumber: (c && c.MemberNumber) || 0
+        };
+    }
+
+    /** @param {string} [nativeGroup] 可选：ActivityAllowedForGroup 返回的镜像解析后 Group（如 ItemMouth2 → ItemMouth），
+     *  用于 FocusAssetGroup，与 R133 原生 ActivityRun 一致；缺省回退 group。 */
+    function makeActivityPacket(targetChar, group, name, activityItem, nativeGroup) {
         var targetMN = targetChar && targetChar.MemberNumber;
         var contentKey = resolveContentKey(group, name, targetChar);
         var isSelfAction = contentKey.indexOf('ChatSelf-') === 0;
@@ -51,7 +78,7 @@
                     Content: 'QiAct_ChatFallback',
                     Type: 'Action',
                     Dictionary: [
-                        charTagForAction(Player),
+                        sourceCharacterEntry(Player),
                         { Tag: 'MISSING TEXT IN "Interface.csv": QiAct_ChatFallback', Text: caDialog }
                     ]
                 };
@@ -120,7 +147,7 @@
                 Content: fbKey,
                 Type: 'Action',
                 Dictionary: [
-                    actorTag,
+                    sourceCharacterEntry(actor),
                     { Tag: 'MISSING TEXT IN "Interface.csv": ' + fbKey, Text: sentence }
                 ]
             };
@@ -133,7 +160,7 @@
             Dictionary: [
                 { SourceCharacter: isTargetSelf ? targetMN : Player.MemberNumber },
                 { TargetCharacter: targetMN },
-                { Tag: 'FocusAssetGroup', FocusGroupName: group }
+                { Tag: 'FocusAssetGroup', FocusGroupName: nativeGroup || group }
             ]
         };
 
@@ -227,17 +254,21 @@
         if (!name || !group) return false;
 
         try {
+            // R133：字典未加载完成时不发包（否则 ActivityDictionaryText 全返回 MISSING，会误判为需要兜底）。
+            if (!isActivityDictionaryReady()) { toast(QiActT('toast.temporarily_unavailable'), '#FF5C5C'); return false; }
             // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）。
             // 强制可用白名单动作跳过校验、按当前部位强制执行（与显示端一致）。
             var resolved = resolveAllowedActivity(charObj, group, name);
+            var nativeGroup = null;
             if (!resolved) {
                 var _disp = (typeof getActivityLabelFallback === 'function') ? getActivityLabelFallback(name, group) : '';
                 if (!isForceAvailableActivity(name, _disp)) { toast(QiActT('toast.unavailable'), '#FF5C5C'); return false; }
             } else {
                 group = resolved.group;
+                nativeGroup = (resolved.activity && resolved.activity.Group) || null;
                 activityItem = activityItem || (resolved.activity && resolved.activity.Item) || null;
             }
-            var packet = makeActivityPacket(charObj, group, name, activityItem);
+            var packet = makeActivityPacket(charObj, group, name, activityItem, nativeGroup);
             if (!packet) { toast(QiActT('toast.need_item'), '#FF5C5C'); return false; }
 
             // 先执行 BC 原生 ActivityRun(..., false) 触发本地副作用：

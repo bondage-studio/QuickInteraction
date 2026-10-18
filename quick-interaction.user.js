@@ -1317,7 +1317,24 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var selfKey = firstExisting("ChatSelf");
         return otherKey || selfKey || "ChatOther-" + group + "-" + name;
       }
-      function makeActivityPacket(targetChar, group, name, activityItem) {
+      function isActivityDictionaryReady() {
+        try {
+          if (typeof ActivityDictionaryLoad !== "function") return true;
+          var loader = ActivityDictionaryLoad();
+          if (!loader || typeof loader.loaded !== "boolean") return true;
+          return loader.loaded;
+        } catch (_) {
+          return true;
+        }
+      }
+      function sourceCharacterEntry(c) {
+        return {
+          Tag: "SourceCharacter",
+          Text: c && (c.Nickname || c.Name || c.AccountName) || "某人",
+          MemberNumber: c && c.MemberNumber || 0
+        };
+      }
+      function makeActivityPacket(targetChar, group, name, activityItem, nativeGroup) {
         var targetMN = targetChar && targetChar.MemberNumber;
         var contentKey = resolveContentKey(group, name, targetChar);
         var isSelfAction = contentKey.indexOf("ChatSelf-") === 0;
@@ -1351,7 +1368,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
               Content: "QiAct_ChatFallback",
               Type: "Action",
               Dictionary: [
-                charTagForAction(Player),
+                sourceCharacterEntry(Player),
                 { Tag: 'MISSING TEXT IN "Interface.csv": QiAct_ChatFallback', Text: caDialog }
               ]
             };
@@ -1380,7 +1397,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
             Content: fbKey,
             Type: "Action",
             Dictionary: [
-              actorTag,
+              sourceCharacterEntry(actor),
               { Tag: 'MISSING TEXT IN "Interface.csv": ' + fbKey, Text: sentence }
             ]
           };
@@ -1391,7 +1408,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           Dictionary: [
             { SourceCharacter: isTargetSelf ? targetMN : Player.MemberNumber },
             { TargetCharacter: targetMN },
-            { Tag: "FocusAssetGroup", FocusGroupName: group }
+            { Tag: "FocusAssetGroup", FocusGroupName: nativeGroup || group }
           ]
         };
         var item = activityItem || null;
@@ -1467,7 +1484,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
         var group = String(groupOverride || state.selectedPart || "");
         if (!name || !group) return false;
         try {
+          if (!isActivityDictionaryReady()) {
+            toast(QiActT("toast.temporarily_unavailable"), "#FF5C5C");
+            return false;
+          }
           var resolved = resolveAllowedActivity(charObj, group, name);
+          var nativeGroup = null;
           if (!resolved) {
             var _disp = typeof getActivityLabelFallback === "function" ? getActivityLabelFallback(name, group) : "";
             if (!isForceAvailableActivity(name, _disp)) {
@@ -1476,9 +1498,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
             }
           } else {
             group = resolved.group;
+            nativeGroup = resolved.activity && resolved.activity.Group || null;
             activityItem = activityItem || resolved.activity && resolved.activity.Item || null;
           }
-          var packet = makeActivityPacket(charObj, group, name, activityItem);
+          var packet = makeActivityPacket(charObj, group, name, activityItem, nativeGroup);
           if (!packet) {
             toast(QiActT("toast.need_item"), "#FF5C5C");
             return false;
