@@ -300,5 +300,15 @@
   "settings.reset_toggle": "フローティングボタンをリセット",
   "settings.reset_toggle_hint": "ボタンが見つからない場合、右下の既定位置に戻します",
   "settings.reset_toggle_btn": "リセット",
-  "toast.toggle_reset": "ボタンを右下の既定位置に戻しました"
+  "toast.toggle_reset": "ボタンを右下の既定位置に戻しました",
+  "force.title": "全アクション · 強制モード（計 {n} 件）",
+  "force.close": "閉じる",
+  "force.target_self": "自分",
+  "force.target_selected": "選択中",
+  "force.target_all": "部屋全体",
+  "force.warn": "強制モード：アイテムや状態を無視して送信します。条件を満たさない場合、テキストのみで効果が出ないことがあります。",
+  "force.confirm_all_title": "全員実行の確認",
+  "force.confirm_all_body": "部屋の {n} 人に「{name}」を強制実行します。チャットが埋まる可能性があります。続けますか？",
+  "force.confirm_ok": "強制実行",
+  "force.executed": "{n} 対象に「{name}」を強制実行しました"
 }

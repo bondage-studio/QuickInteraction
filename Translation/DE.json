@@ -300,5 +300,15 @@
   "settings.reset_toggle": "Schwebende Schaltfläche zurücksetzen",
   "settings.reset_toggle_hint": "Schaltfläche in die untere rechte Standardposition zurückbringen, falls sie nicht auffindbar ist",
   "settings.reset_toggle_btn": "Zurücksetzen",
-  "toast.toggle_reset": "Schaltfläche in die untere rechte Ecke zurückgesetzt"
+  "toast.toggle_reset": "Schaltfläche in die untere rechte Ecke zurückgesetzt",
+  "force.title": "Alle Aktionen · Erzwungen ({n} gesamt)",
+  "force.close": "Schließen",
+  "force.target_self": "Selbst",
+  "force.target_selected": "Ausgewählt",
+  "force.target_all": "Ganzer Raum",
+  "force.warn": "Erzwungen: sendet ohne Gegenstands-/Zustandsprüfung. Manche Aktionen zeigen nur Text ohne Wirkung, wenn Voraussetzungen fehlen.",
+  "force.confirm_all_title": "Alle ausführen bestätigen",
+  "force.confirm_all_body": "Erzwungenes \"{name}\" auf {n} Personen im Raum? Das könnte den Chat überfluten.",
+  "force.confirm_ok": "Erzwungen ausführen",
+  "force.executed": "\"{name}\" auf {n} Ziel(e) erzwungen"
 }

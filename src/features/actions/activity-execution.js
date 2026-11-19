@@ -246,8 +246,9 @@
     }
 
     /** 执行动作（先 ActivityRun 本地副作用，再 ServerSend 发送 Activity 包）
-     * @param {string} [groupOverride] 指定部位 Group（全身模式逐部位执行时用），缺省用 state.selectedPart */
-    function executeAction(charObj, activityName, activityItem, groupOverride) {
+     * @param {string} [groupOverride] 指定部位 Group（全身模式逐部位执行时用），缺省用 state.selectedPart
+     * @param {boolean} [force] 强制执行：跳过可用性判定（仅供隐藏全量面板使用，普通路径不传） */
+    function executeAction(charObj, activityName, activityItem, groupOverride, force) {
         if (!charObj || !activityName) return false;
         var name = String(activityName || '');
         var group = String(groupOverride || state.selectedPart || '');
@@ -258,11 +259,12 @@
             if (!isActivityDictionaryReady()) { toast(QiActT('toast.temporarily_unavailable'), '#FF5C5C'); return false; }
             // 实时可用性预校验（findAllowedActivity 内部已处理 ActivityAllowedForGroup 缺失）。
             // 强制可用白名单动作跳过校验、按当前部位强制执行（与显示端一致）。
-            var resolved = resolveAllowedActivity(charObj, group, name);
+            // force=true 仅来自隐藏全量面板：完全跳过可用性判定，用调用方传入的部位直接发包。
+            var resolved = force ? null : resolveAllowedActivity(charObj, group, name);
             var nativeGroup = null;
             if (!resolved) {
                 var _disp = (typeof getActivityLabelFallback === 'function') ? getActivityLabelFallback(name, group) : '';
-                if (!isForceAvailableActivity(name, _disp)) { toast(QiActT('toast.unavailable'), '#FF5C5C'); return false; }
+                if (!force && !isForceAvailableActivity(name, _disp)) { toast(QiActT('toast.unavailable'), '#FF5C5C'); return false; }
             } else {
                 group = resolved.group;
                 nativeGroup = (resolved.activity && resolved.activity.Group) || null;

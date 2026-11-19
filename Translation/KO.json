@@ -300,5 +300,15 @@
   "settings.reset_toggle": "플로팅 버튼 초기화",
   "settings.reset_toggle_hint": "버튼을 찾을 수 없으면 오른쪽 아래 기본 위치로 이동합니다",
   "settings.reset_toggle_btn": "초기화",
-  "toast.toggle_reset": "플로팅 버튼을 오른쪽 아래로 초기화했습니다"
+  "toast.toggle_reset": "플로팅 버튼을 오른쪽 아래로 초기화했습니다",
+  "force.title": "전체 동작 · 강제 모드 (총 {n}개)",
+  "force.close": "닫기",
+  "force.target_self": "자신",
+  "force.target_selected": "선택한 캐릭터",
+  "force.target_all": "전체 방",
+  "force.warn": "강제 모드: 아이템/상태 제한을 무시하고 전송합니다. 조건이 부족하면 텍스트만 표시되고 효과가 없을 수 있습니다.",
+  "force.confirm_all_title": "전체 실행 확인",
+  "force.confirm_all_body": "방 안 {n}명에게 「{name}」를 강제 실행합니다. 채팅이 넘칠 수 있습니다. 계속할까요?",
+  "force.confirm_ok": "강제 실행",
+  "force.executed": "{n}개 대상에게 「{name}」 강제 실행 완료"
 }
