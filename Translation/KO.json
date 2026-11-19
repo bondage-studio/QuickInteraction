@@ -296,5 +296,9 @@
   "block.refreshed": "Blocked actions refreshed",
   "block.part": "Part",
   "block.filtering": "Block interactions",
-  "block.filtering_hint": "When off, keep the list but do not filter any actions"
+  "block.filtering_hint": "When off, keep the list but do not filter any actions",
+  "settings.reset_toggle": "플로팅 버튼 초기화",
+  "settings.reset_toggle_hint": "버튼을 찾을 수 없으면 오른쪽 아래 기본 위치로 이동합니다",
+  "settings.reset_toggle_btn": "초기화",
+  "toast.toggle_reset": "플로팅 버튼을 오른쪽 아래로 초기화했습니다"
 }

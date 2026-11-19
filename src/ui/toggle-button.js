@@ -6,6 +6,7 @@
         state.toggleBtnEl.innerHTML =
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
         state.toggleBtnEl.title = state.isActive ? QiActT('ui.toggle_off') : QiActT('ui.toggle_on');
+        var clickTimer = null;
         state.toggleBtnEl.addEventListener('click', function(e) {
             if (state.toggleDragged) {
                 e.stopPropagation();
@@ -14,13 +15,40 @@
                 return;
             }
             e.stopPropagation();
-            toggleActionMode();
-            updateToggleBtnStyle();
+            // 单击延迟执行、双击拦截：双击=归位，避免与「单击开关动作模式」冲突
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+                resetTogglePosition();
+                return;
+            }
+            clickTimer = setTimeout(function() {
+                clickTimer = null;
+                toggleActionMode();
+                updateToggleBtnStyle();
+            }, 260);
         });
         document.body.appendChild(state.toggleBtnEl);
         applyTogglePosition();
         makeToggleDraggable();
+        bindToggleViewport();
+        bindToggleShortcut();
         updateToggleBtnStyle();
+    }
+
+    /** 键盘快捷键 Alt+Shift+R：聊天室内一键归位（避开 BC 常用键，且不在输入框时生效） */
+    var toggleShortcutBound = false;
+    function bindToggleShortcut() {
+        if (toggleShortcutBound) return;
+        toggleShortcutBound = true;
+        addRuntimeListener(document, 'keydown', function(e) {
+            if (!e.altKey || !e.shiftKey || (e.key || '').toLowerCase() !== 'r') return;
+            if (typeof CurrentScreen !== 'undefined' && CurrentScreen !== 'ChatRoom') return;
+            var t = e.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+            e.preventDefault();
+            resetTogglePosition();
+        });
     }
 
     function createChatRoomToggleButton() {
@@ -62,25 +90,138 @@
         guardToggleVisibility();
     }
 
-    /** 读取并应用保存的闪电按钮位置 */
+    /** 读取并应用保存的闪电按钮位置。
+     *  新版存「贴哪条边 + 沿边比例」(dock/ratio)，天然跨屏幕尺寸；
+     *  旧版存绝对像素 {left,top}，首次读取时换算成比例并回写，老玩家无感升级。 */
     function applyTogglePosition() {
         var btn = state.toggleBtnEl;
         if (!btn) return;
         var pos = loadSetting(S_TOGGLE_POS, null);
-        if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
-            btn.style.left = pos.left + 'px';
-            btn.style.top = pos.top + 'px';
+        if (pos && typeof pos.dock === 'string' && Number.isFinite(pos.ratio)) {
+            applyDockPosition(btn, pos.dock, pos.ratio);
+        } else if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
+            // 旧绝对坐标：按当前可视区换算成最近的边 + 比例
+            var converted = legacyPositionToDock(pos.left, pos.top);
+            applyDockPosition(btn, converted.dock, converted.ratio);
+            persist(S_TOGGLE_POS, converted);
+        }
+        // 无记录时保留 CSS 默认（右下角），不写 left/top
+        constrainToggleToViewport(btn);
+    }
+
+    /** 可视区尺寸（复用面板逻辑，兼容 visualViewport 缩放/平移） */
+    function toggleViewport() {
+        var v = window.visualViewport;
+        return { left: v ? v.offsetLeft : 0, top: v ? v.offsetTop : 0,
+            width: v ? v.width : window.innerWidth, height: v ? v.height : window.innerHeight };
+    }
+
+    /** 把「贴边 + 比例」换算成实际 left/top 像素 */
+    function applyDockPosition(btn, dock, ratio) {
+        var v = toggleViewport();
+        var w = btn.offsetWidth || 44, h = btn.offsetHeight || 44;
+        var gap = 12;
+        var r = Math.max(0, Math.min(1, ratio));
+        var left, top;
+        if (dock === 'top')    { left = v.left + (v.width - w) * r;          top = v.top + gap; }
+        else if (dock === 'bottom') { left = v.left + (v.width - w) * r;     top = v.top + v.height - h - gap; }
+        else if (dock === 'left')   { left = v.left + gap;                    top = v.top + (v.height - h) * r; }
+        else /* right */            { left = v.left + v.width - w - gap;      top = v.top + (v.height - h) * r; }
+        btn.style.left = Math.round(left) + 'px';
+        btn.style.top = Math.round(top) + 'px';
+        btn.style.right = 'auto';
+        btn.style.bottom = 'auto';
+    }
+
+    /** 旧绝对坐标 → 最近的边 + 沿边比例（比例钳制在 0~1） */
+    function legacyPositionToDock(oldLeft, oldTop) {
+        var v = toggleViewport();
+        var w = 44, h = 44;
+        var clamp = function(x) { return Math.max(0, Math.min(1, x)); };
+        var cx = oldLeft - v.left + w / 2, cy = oldTop - v.top + h / 2;
+        var distTop = cy, distBottom = v.height - cy, distLeft = cx, distRight = v.width - cx;
+        var min = Math.min(distTop, distBottom, distLeft, distRight);
+        if (min === distTop)    return { dock: 'top',    ratio: v.width  > w ? clamp((oldLeft - v.left) / (v.width - w)) : 0.5 };
+        if (min === distBottom) return { dock: 'bottom', ratio: v.width  > w ? clamp((oldLeft - v.left) / (v.width - w)) : 0.5 };
+        if (min === distLeft)   return { dock: 'left',   ratio: v.height > h ? clamp((oldTop - v.top) / (v.height - h)) : 0.5 };
+        return { dock: 'right', ratio: v.height > h ? clamp((oldTop - v.top) / (v.height - h)) : 0.5 };
+    }
+
+    /** 兜底：把按钮拉回可视区（窗口变小 / 缩放 / 平移后调用） */
+    function constrainToggleToViewport(btn) {
+        if (!btn || btn.style.display === 'none') return;
+        var v = toggleViewport();
+        var w = btn.offsetWidth || 44, h = btn.offsetHeight || 44;
+        var cur = btn.getBoundingClientRect();
+        var left = Math.max(v.left + 2, Math.min(cur.left, v.left + v.width - w - 2));
+        var top = Math.max(v.top + 2, Math.min(cur.top, v.top + v.height - h - 2));
+        if (Math.round(left) !== Math.round(cur.left) || Math.round(top) !== Math.round(cur.top)) {
+            btn.style.left = Math.round(left) + 'px';
+            btn.style.top = Math.round(top) + 'px';
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
         }
     }
 
-    /** 持久化闪电按钮位置 */
+    /** 拖拽松手：吸附到最近的边并保存为「边 + 比例」 */
+    function dockToggleToNearestEdge(btn) {
+        var v = toggleViewport();
+        var w = btn.offsetWidth || 44, h = btn.offsetHeight || 44;
+        var rect = btn.getBoundingClientRect();
+        var cx = rect.left - v.left + w / 2, cy = rect.top - v.top + h / 2;
+        var distTop = cy, distBottom = v.height - cy, distLeft = cx, distRight = v.width - cx;
+        var min = Math.min(distTop, distBottom, distLeft, distRight);
+        var dock, ratio;
+        if (min === distTop)       { dock = 'top';    ratio = v.width  > w ? (rect.left - v.left) / (v.width - w) : 0.5; }
+        else if (min === distBottom){ dock = 'bottom'; ratio = v.width  > w ? (rect.left - v.left) / (v.width - w) : 0.5; }
+        else if (min === distLeft) { dock = 'left';   ratio = v.height > h ? (rect.top - v.top) / (v.height - h) : 0.5; }
+        else                       { dock = 'right';  ratio = v.height > h ? (rect.top - v.top) / (v.height - h) : 0.5; }
+        applyDockPosition(btn, dock, ratio);
+        persist(S_TOGGLE_POS, { dock: dock, ratio: ratio });
+    }
+
+    /** 一键归位：清除记忆，回到右下角默认位置 */
+    function resetTogglePosition() {
+        var btn = state.toggleBtnEl;
+        // ratio=1 → 贴右边、垂直方向到底 = 右下角（与 CSS 默认一致）
+        persist(S_TOGGLE_POS, { dock: 'right', ratio: 1 });
+        if (!btn) {
+            if (!state.floatingButtonVisible) setFloatingButtonVisible(true);
+            else createToggleButton();
+            btn = state.toggleBtnEl;
+        }
+        if (btn) {
+            btn.style.left = ''; btn.style.top = '';
+            btn.style.right = ''; btn.style.bottom = '';
+            applyDockPosition(btn, 'right', 1);
+        }
+        toast(QiActT('toast.toggle_reset'), accentColor());
+    }
+
+    /** 绑定尺寸变化监听：窗口或可视区一变就把按钮拉回可视区 */
+    var toggleViewportBound = false;
+    function bindToggleViewport() {
+        if (toggleViewportBound) return;
+        toggleViewportBound = true;
+        var update = function() {
+            var btn = state.toggleBtnEl;
+            if (!btn) return;
+            var pos = loadSetting(S_TOGGLE_POS, null);
+            if (pos && typeof pos.dock === 'string' && Number.isFinite(pos.ratio)) applyDockPosition(btn, pos.dock, pos.ratio);
+            else constrainToggleToViewport(btn);
+        };
+        addRuntimeListener(window, 'resize', update);
+        if (window.visualViewport) {
+            addRuntimeListener(window.visualViewport, 'resize', update);
+            addRuntimeListener(window.visualViewport, 'scroll', update);
+        }
+    }
+
+    /** 持久化闪电按钮位置（保留旧接口；新逻辑改由 dockToggleToNearestEdge 写入） */
     function persistTogglePosition() {
         var btn = state.toggleBtnEl;
         if (!btn) return;
-        var rect = btn.getBoundingClientRect();
-        persist(S_TOGGLE_POS, { left: Math.round(rect.left), top: Math.round(rect.top) });
+        dockToggleToNearestEdge(btn);
     }
 
     /** 让闪电按钮可拖拽；短按仍是打开/关闭，拖动则不触发打开 */
@@ -161,6 +302,10 @@
         }
         if (state.toggleBtnEl) {
             state.toggleBtnEl.style.display = state.floatingButtonVisible ? '' : 'none';
+            if (state.floatingButtonVisible) {
+                constrainToggleToViewport(state.toggleBtnEl);
+                bindToggleViewport();
+            }
         }
         updateToggleBtnStyle();
     }

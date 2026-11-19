@@ -296,5 +296,9 @@
   "block.refreshed": "已刷新禁止动作",
   "block.part": "部位",
   "block.filtering": "禁用互动",
-  "block.filtering_hint": "关闭时保留列表，但不过滤任何动作"
+  "block.filtering_hint": "关闭时保留列表，但不过滤任何动作",
+  "settings.reset_toggle": "悬浮按钮归位",
+  "settings.reset_toggle_hint": "按钮找不到时，把它移回右下角默认位置",
+  "settings.reset_toggle_btn": "归位",
+  "toast.toggle_reset": "悬浮按钮已归位到右下角"
 }

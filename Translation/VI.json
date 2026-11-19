@@ -296,5 +296,9 @@
   "block.refreshed": "Blocked actions refreshed",
   "block.part": "Part",
   "block.filtering": "Block interactions",
-  "block.filtering_hint": "When off, keep the list but do not filter any actions"
+  "block.filtering_hint": "When off, keep the list but do not filter any actions",
+  "settings.reset_toggle": "Đặt lại nút nổi",
+  "settings.reset_toggle_hint": "Đưa nút về vị trí mặc định góc dưới bên phải nếu bạn không tìm thấy",
+  "settings.reset_toggle_btn": "Đặt lại",
+  "toast.toggle_reset": "Đã đặt lại nút nổi về góc dưới bên phải"
 }

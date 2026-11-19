@@ -296,5 +296,9 @@
   "block.refreshed": "Blocked actions refreshed",
   "block.part": "Part",
   "block.filtering": "Block interactions",
-  "block.filtering_hint": "When off, keep the list but do not filter any actions"
+  "block.filtering_hint": "When off, keep the list but do not filter any actions",
+  "settings.reset_toggle": "Schwebende Schaltfläche zurücksetzen",
+  "settings.reset_toggle_hint": "Schaltfläche in die untere rechte Standardposition zurückbringen, falls sie nicht auffindbar ist",
+  "settings.reset_toggle_btn": "Zurücksetzen",
+  "toast.toggle_reset": "Schaltfläche in die untere rechte Ecke zurückgesetzt"
 }

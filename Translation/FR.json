@@ -296,5 +296,9 @@
   "block.refreshed": "Blocked actions refreshed",
   "block.part": "Part",
   "block.filtering": "Block interactions",
-  "block.filtering_hint": "When off, keep the list but do not filter any actions"
+  "block.filtering_hint": "When off, keep the list but do not filter any actions",
+  "settings.reset_toggle": "Réinitialiser le bouton flottant",
+  "settings.reset_toggle_hint": "Remettre le bouton en bas à droite s’il est introuvable",
+  "settings.reset_toggle_btn": "Réinitialiser",
+  "toast.toggle_reset": "Bouton flottant replacé en bas à droite"
 }
