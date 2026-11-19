@@ -110,7 +110,9 @@
         migrateFavorites(); // 旧版纯动作名 → 部位复合键（一次性迁移）
         state.presets = loadSetting(S_PRESETS, []);
         state.lastAction = loadSetting(S_LAST, null);
-        state.combos = loadSetting(S_COMBOS, []);
+        // 清洗历史存档：旧版可能把完整 BC 道具对象存进 items（含循环引用，
+        // 会让 JSON.stringify 抛错并使整个组合存档写入失败），压成纯数据快照后恢复正常。
+        state.combos = normalizeCombos(loadSetting(S_COMBOS, []));
         loadCustomActions();
         state.xiaosuPack = loadSetting(S_XIAOSU_PACK, true);
         var savedFilter = loadSetting(S_CA_FILTER, 'all');

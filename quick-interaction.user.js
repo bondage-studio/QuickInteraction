@@ -1586,13 +1586,41 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function generateId() {
         return "cmb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
       }
-      function saveCombos() {
-        persist(S_COMBOS, state.combos);
-      }
       function getCombo(id) {
         return state.combos.find(function(c) {
           return c.id === id;
         });
+      }
+      function snapshotComboItem(item) {
+        if (!item || typeof item !== "object") return null;
+        var asset = item.Asset || {};
+        var group = asset.Group || {};
+        var snap = { Asset: { Name: asset.Name || "", Group: { Name: group.Name || "" } } };
+        var craftName = item.CraftName || item.Craft && item.Craft.Name;
+        if (craftName) snap.CraftName = craftName;
+        return snap;
+      }
+      function normalizeCombos(list) {
+        if (!Array.isArray(list)) return [];
+        return list.filter(function(c) {
+          return c && typeof c === "object" && typeof c.id === "string";
+        }).map(function(c) {
+          var items = (Array.isArray(c.items) ? c.items : []).filter(function(it) {
+            return it && typeof it === "object" && typeof it.action === "string" && it.action;
+          }).map(function(it) {
+            return { group: it.group, action: it.action, label: it.label, item: snapshotComboItem(it.item) };
+          });
+          return {
+            id: c.id,
+            name: typeof c.name === "string" ? c.name : QiActT("combo.new_name"),
+            delay: typeof c.delay === "number" && c.delay >= 0 ? c.delay : 160,
+            items
+          };
+        });
+      }
+      function saveCombos() {
+        state.combos = normalizeCombos(state.combos);
+        persist(S_COMBOS, state.combos);
       }
       function addCombo(name) {
         var combo = { id: generateId(), name: String(name || QiActT("combo.new_name")), items: [], delay: 160 };
@@ -1617,7 +1645,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function addComboItem(comboId, group, action, label, item) {
         var c = getCombo(comboId);
         if (!c) return;
-        c.items.push({ group, action, label, item: item || null });
+        c.items.push({ group, action, label, item: snapshotComboItem(item) });
         saveCombos();
       }
       function removeComboItem(comboId, index) {
@@ -6847,7 +6875,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
         migrateFavorites();
         state.presets = loadSetting(S_PRESETS, []);
         state.lastAction = loadSetting(S_LAST, null);
-        state.combos = loadSetting(S_COMBOS, []);
+        state.combos = normalizeCombos(loadSetting(S_COMBOS, []));
         loadCustomActions();
         state.xiaosuPack = loadSetting(S_XIAOSU_PACK, true);
         var savedFilter = loadSetting(S_CA_FILTER, "all");

@@ -1,7 +1,48 @@
     /* ===== 自定义组合（CRUD + 执行） ===== */
     function generateId() { return 'cmb_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
-    function saveCombos() { persist(S_COMBOS, state.combos); }
     function getCombo(id) { return state.combos.find(function(c) { return c.id === id; }); }
+
+    /** 把 BC 道具对象压成纯数据快照（可 JSON 序列化）。
+     *  道具动作（如「捆绑」由绳子提供）的 Item 含对角色/Asset 的循环引用，
+     *  直接存进 localStorage 会让 JSON.stringify 抛错、整个组合存档写入失败，
+     *  表现为「保存后组合变空 / 动作消失」。这里只保留发包真正需要的标量，
+     *  形状与真实 Item 一致，makeActivityPacket 无需改动即可读取。 */
+    function snapshotComboItem(item) {
+        if (!item || typeof item !== 'object') return null;
+        var asset = item.Asset || {};
+        var group = asset.Group || {};
+        var snap = { Asset: { Name: asset.Name || '', Group: { Name: group.Name || '' } } };
+        var craftName = item.CraftName || (item.Craft && item.Craft.Name);
+        if (craftName) snap.CraftName = craftName;
+        return snap;
+    }
+
+    /** 清洗组合存档：把历史遗留的完整道具对象压成快照，剔除结构损坏的条目。
+     *  在加载后、保存前都调用，保证旧数据能被读取且不再毒化新存档。 */
+    function normalizeCombos(list) {
+        if (!Array.isArray(list)) return [];
+        return list.filter(function(c) {
+            return c && typeof c === 'object' && typeof c.id === 'string';
+        }).map(function(c) {
+            var items = (Array.isArray(c.items) ? c.items : []).filter(function(it) {
+                return it && typeof it === 'object' && typeof it.action === 'string' && it.action;
+            }).map(function(it) {
+                return { group: it.group, action: it.action, label: it.label, item: snapshotComboItem(it.item) };
+            });
+            return {
+                id: c.id,
+                name: typeof c.name === 'string' ? c.name : QiActT('combo.new_name'),
+                delay: typeof c.delay === 'number' && c.delay >= 0 ? c.delay : 160,
+                items: items
+            };
+        });
+    }
+
+    /** 保存前统一清洗 items，确保任何历史遗留的完整道具对象都不会毒化存档 */
+    function saveCombos() {
+        state.combos = normalizeCombos(state.combos);
+        persist(S_COMBOS, state.combos);
+    }
 
     function addCombo(name) {
         var combo = { id: generateId(), name: String(name || QiActT('combo.new_name')), items: [], delay: 160 };
@@ -21,7 +62,7 @@
     function addComboItem(comboId, group, action, label, item) {
         var c = getCombo(comboId);
         if (!c) return;
-        c.items.push({ group: group, action: action, label: label, item: item || null });
+        c.items.push({ group: group, action: action, label: label, item: snapshotComboItem(item) });
         saveCombos();
     }
     function removeComboItem(comboId, index) {
