@@ -4520,7 +4520,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           html = '<div class="xsact-qa-empty">' + QiActT("combo.empty") + "</div>";
         } else {
           state.combos.forEach(function(c) {
-            html += '<div class="xsact-combo-card" data-id="' + c.id + '"><div class="xsact-combo-info"><span class="xsact-combo-name">' + escapeHtml(c.name) + '</span><span class="xsact-combo-count">' + c.items.length + QiActT("combo.count", { n: c.items.length }) + '</span></div><div class="xsact-combo-btns"><button class="xsact-combo-run" title="' + QiActT("combo.exec") + '">' + svgIcon("play", 14) + '</button><button class="xsact-combo-edit" title="' + QiActT("combo.edit") + '">' + svgIcon("pencil", 14) + '</button><button class="xsact-combo-delete" title="' + QiActT("combo.item_del") + '" data-tooltip-type="danger">' + svgIcon("trash", 14) + "</button></div></div>";
+            html += '<div class="xsact-combo-card" data-id="' + c.id + '"><div class="xsact-combo-info"><span class="xsact-combo-name">' + escapeHtml(c.name) + '</span><span class="xsact-combo-count">' + QiActT("combo.count", { n: c.items.length }) + '</span></div><div class="xsact-combo-btns"><button class="xsact-combo-run" title="' + QiActT("combo.exec") + '">' + svgIcon("play", 14) + '</button><button class="xsact-combo-edit" title="' + QiActT("combo.edit") + '">' + svgIcon("pencil", 14) + '</button><button class="xsact-combo-delete" title="' + QiActT("combo.item_del") + '" data-tooltip-type="danger">' + svgIcon("trash", 14) + "</button></div></div>";
           });
         }
         html += '<button class="xsact-combo-new-btn" id="xsact-new-combo-btn">' + svgIcon("plus", 15) + " " + QiActT("combo.new_btn") + "</button>";

@@ -186,7 +186,7 @@
                 html += '<div class="xsact-combo-card" data-id="' + c.id + '">' +
                     '<div class="xsact-combo-info">' +
                     '<span class="xsact-combo-name">' + escapeHtml(c.name) + '</span>' +
-                    '<span class="xsact-combo-count">' + c.items.length + QiActT('combo.count', { n: c.items.length }) + '</span>' +
+                    '<span class="xsact-combo-count">' + QiActT('combo.count', { n: c.items.length }) + '</span>' +
                     '</div>' +
                     '<div class="xsact-combo-btns">' +
                     '<button class="xsact-combo-run" title="' + QiActT('combo.exec') + '">' + svgIcon('play', 14) + '</button>' +
