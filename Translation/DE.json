@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Schaltfläche in die untere rechte Standardposition zurückbringen, falls sie nicht auffindbar ist",
   "settings.reset_toggle_btn": "Zurücksetzen",
   "toast.toggle_reset": "Schaltfläche in die untere rechte Ecke zurückgesetzt",
-  "force.title": "Alle Aktionen · Erzwungen ({n} gesamt)",
+  "force.title": "Alle Aktionen · Erzwungen",
   "force.close": "Schließen",
   "force.target_self": "Selbst",
   "force.target_selected": "Ausgewählt",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Alle ausführen bestätigen",
   "force.confirm_all_body": "Erzwungenes \"{name}\" auf {n} Personen im Raum? Das könnte den Chat überfluten.",
   "force.confirm_ok": "Erzwungen ausführen",
-  "force.executed": "\"{name}\" auf {n} Ziel(e) erzwungen"
+  "force.executed": "\"{name}\" auf {n} Ziel(e) erzwungen",
+  "force.target_all_hint": "Ausgewählte Aktion im ganzen Raum erzwingen",
+  "force.action_count": "{n} gesamt",
+  "force.badge": "erzwungen",
+  "force.pick_char_part": "Erst links Person und Teil wählen",
+  "force.all_pick_first": "Erst eine Aktion wählen, dann alle ausführen"
 }

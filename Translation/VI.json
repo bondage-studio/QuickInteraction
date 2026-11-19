@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Đưa nút về vị trí mặc định góc dưới bên phải nếu bạn không tìm thấy",
   "settings.reset_toggle_btn": "Đặt lại",
   "toast.toggle_reset": "Đã đặt lại nút nổi về góc dưới bên phải",
-  "force.title": "Tất cả hành động · Chế độ cưỡng chế ({n})",
+  "force.title": "Tất cả hành động · Chế độ cưỡng chế",
   "force.close": "Đóng",
   "force.target_self": "Bản thân",
   "force.target_selected": "Đã chọn",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Xác nhận chạy tất cả",
   "force.confirm_all_body": "Cưỡng chế \"{name}\" trên {n} người trong phòng? Có thể làm tràn chat.",
   "force.confirm_ok": "Chạy cưỡng chế",
-  "force.executed": "Đã chạy \"{name}\" trên {n} mục tiêu"
+  "force.executed": "Đã chạy \"{name}\" trên {n} mục tiêu",
+  "force.target_all_hint": "Cưỡng chế hành động đã chọn lên cả phòng",
+  "force.action_count": "{n} hành động",
+  "force.badge": "cưỡng chế",
+  "force.pick_char_part": "Chọn nhân vật và bộ phận ở bên trái trước",
+  "force.all_pick_first": "Chọn một hành động trước, rồi chạy tất cả"
 }

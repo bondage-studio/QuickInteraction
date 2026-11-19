@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "버튼을 찾을 수 없으면 오른쪽 아래 기본 위치로 이동합니다",
   "settings.reset_toggle_btn": "초기화",
   "toast.toggle_reset": "플로팅 버튼을 오른쪽 아래로 초기화했습니다",
-  "force.title": "전체 동작 · 강제 모드 (총 {n}개)",
+  "force.title": "전체 동작 · 강제 모드",
   "force.close": "닫기",
   "force.target_self": "자신",
   "force.target_selected": "선택한 캐릭터",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "전체 실행 확인",
   "force.confirm_all_body": "방 안 {n}명에게 「{name}」를 강제 실행합니다. 채팅이 넘칠 수 있습니다. 계속할까요?",
   "force.confirm_ok": "강제 실행",
-  "force.executed": "{n}개 대상에게 「{name}」 강제 실행 완료"
+  "force.executed": "{n}개 대상에게 「{name}」 강제 실행 완료",
+  "force.target_all_hint": "선택한 동작을 전체 방에 강제 실행",
+  "force.action_count": "총 {n}개",
+  "force.badge": "강제",
+  "force.pick_char_part": "왼쪽에서 캐릭터와 부위를 먼저 선택",
+  "force.all_pick_first": "동작을 먼저 선택한 뒤 전체 실행"
 }

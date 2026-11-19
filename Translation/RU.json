@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Вернуть кнопку в правый нижний угол, если она не видна",
   "settings.reset_toggle_btn": "Сбросить",
   "toast.toggle_reset": "Кнопка возвращена в правый нижний угол",
-  "force.title": "Все действия · Принудительный режим (всего {n})",
+  "force.title": "Все действия · Принудительный режим",
   "force.close": "Закрыть",
   "force.target_self": "Себе",
   "force.target_selected": "Выбранный",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Подтвердить для всех",
   "force.confirm_all_body": "Принудительно выполнить «{name}» для {n} персонажей в комнате? Это может заспамить чат.",
   "force.confirm_ok": "Выполнить",
-  "force.executed": "«{name}» выполнено для {n} целей"
+  "force.executed": "«{name}» выполнено для {n} целей",
+  "force.target_all_hint": "Применить выбранное действие ко всей комнате",
+  "force.action_count": "всего {n}",
+  "force.badge": "принудительно",
+  "force.pick_char_part": "Сначала выберите персонажа и часть слева",
+  "force.all_pick_first": "Сначала выберите действие, затем выполнить для всех"
 }

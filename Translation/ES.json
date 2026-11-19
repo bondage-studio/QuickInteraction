@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Devuelve el botón a la esquina inferior derecha si no lo encuentras",
   "settings.reset_toggle_btn": "Restablecer",
   "toast.toggle_reset": "Botón flotante restablecido abajo a la derecha",
-  "force.title": "Todas las acciones · Modo forzado ({n} en total)",
+  "force.title": "Todas las acciones · Modo forzado",
   "force.close": "Cerrar",
   "force.target_self": "Uno mismo",
   "force.target_selected": "Seleccionado",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Confirmar ejecución a todos",
   "force.confirm_all_body": "¿Forzar «{name}» en {n} personas de la sala? Puede llenar el chat.",
   "force.confirm_ok": "Forzar",
-  "force.executed": "«{name}» forzado en {n} objetivo(s)"
+  "force.executed": "«{name}» forzado en {n} objetivo(s)",
+  "force.target_all_hint": "Forzar la acción seleccionada en toda la sala",
+  "force.action_count": "{n} en total",
+  "force.badge": "forzar",
+  "force.pick_char_part": "Primero elige personaje y parte a la izquierda",
+  "force.all_pick_first": "Elige una acción primero, luego ejecuta a todos"
 }
