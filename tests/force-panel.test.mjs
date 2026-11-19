@@ -7,8 +7,10 @@ const source = fs.readFileSync(new URL('../src/ui/force-panel.js', import.meta.u
 const BODY_PARTS = [
     { group: 'ItemArms', label: '手臂' },
     { group: 'ItemLegs', label: '腿' },
-    { group: 'ItemMisc', label: '其他' },
+    { group: 'ItemMouth', label: '口' },
 ];
+
+const DICT = { 'force.confirm_all_body': '对 {n} 人强制执行「{name}」' };
 
 function fixture(opts = {}) {
     const rawActions = opts.rawActions || [
@@ -18,17 +20,19 @@ function fixture(opts = {}) {
     ];
     const listeners = {};
     const timers = [];
-    const state = { selectedTarget: opts.selectedTarget || null };
+    const state = {};
     const ctx = vm.createContext({
         state,
         BODY_PARTS,
         caRawAllActivities: () => rawActions,
-        getActivityLabelFallback: (n) => n,
+        getPartGroupFamily: (g) => [g],
+        getActivityLabelFallback: (n) => '译-' + n,
         getRoomCharacters: () => opts.roomChars || [],
-        Player: opts.player || { MemberNumber: 1, Name: 'Player' },
+        Player: opts.player || { MemberNumber: 1 },
         CurrentScreen: opts.screen === undefined ? 'ChatRoom' : opts.screen,
-        QiActT: (k, v) => { let t = k; if (v) for (const x of Object.keys(v)) t = t.replace('{' + x + '}', v[x]); return t; },
+        QiActT: (k, v) => { let t = DICT[k] || k; if (v) for (const x of Object.keys(v)) t = t.replace('{' + x + '}', v[x]); return t; },
         escapeHtml: (s) => String(s),
+        characterDisplayName: (c) => c.name || ('P' + c.MemberNumber),
         toast() {},
         executeAction(...args) { ctx.execCalls.push(args); return true; },
         qiactConfirm: opts.confirm || (() => Promise.resolve(true)),
@@ -37,7 +41,7 @@ function fixture(opts = {}) {
         setTimeout(fn, ms) { timers.push({ fn, ms }); return timers.length; },
         clearTimeout() {},
         document: { createElement: () => stubEl(), body: { appendChild() {} } },
-        window: {},
+        window: { innerWidth: 1366, innerHeight: 768 },
         console,
     });
     ctx.execCalls = [];
@@ -47,40 +51,44 @@ function fixture(opts = {}) {
 
 function stubEl() {
     return {
-        id: '', className: '', innerHTML: '', dataset: {},
+        id: '', className: '', innerHTML: '', dataset: {}, style: {},
+        offsetWidth: 760, offsetLeft: 100, offsetTop: 50,
         querySelector() { return stubEl(); },
         querySelectorAll() { return []; },
         addEventListener() {},
+        setPointerCapture() {},
         parentNode: null,
     };
 }
 
-test('全量枚举按部位分组，无视当前可用性，同一动作可出现在多个部位', () => {
-    const f = fixture();
-    const groups = f.ctx.collectAllActionsForForcePanel();
-    const arms = groups.find(g => g.group === 'ItemArms');
-    const legs = groups.find(g => g.group === 'ItemLegs');
-    assert.ok(arms.actions.some(a => a.name === 'TieUp'));
-    assert.ok(legs.actions.some(a => a.name === 'TieUp'), 'TieUp 的 TargetSelf=ItemLegs 也应列出');
-    assert.ok(arms.actions.some(a => a.name === 'Caress'));
-    assert.equal(groups.find(g => g.group === 'ItemMouth'), undefined, '未定义的部位不建组');
+const ROOM = [
+    { MemberNumber: 1, name: '自己' },
+    { MemberNumber: 2, name: '他人A' },
+    { MemberNumber: 3, name: '他人B' },
+];
+
+test('全量动作按部位枚举，无视可用性；同一动作可在多个部位', () => {
+    const f = fixture({ roomChars: ROOM });
+    const arms = f.ctx.forceActionsForPart('ItemArms');
+    const legs = f.ctx.forceActionsForPart('ItemLegs');
+    const mouth = f.ctx.forceActionsForPart('ItemMouth');
+    assert.ok(arms.some(a => a.name === 'TieUp'));
+    assert.ok(legs.some(a => a.name === 'TieUp'), 'TargetSelf=ItemLegs 也应列出');
+    assert.ok(mouth.some(a => a.name === 'Kiss'));
+    assert.ok(!arms.some(a => a.name === 'Kiss'));
+    assert.equal(arms.length, 2, 'TieUp/Caress 各一次，不重复');
 });
 
-test('目标选择：自己/选中/全员（全员排除自己）', () => {
-    const selected = { MemberNumber: 2 };
-    const room = [selected, { MemberNumber: 1 }, { MemberNumber: 3 }];
-    const f = fixture({ selectedTarget: selected, roomChars: room });
-    f.ctx.forcePanelTarget = 'self';
-    assert.equal(f.ctx.forcePanelTargets()[0].MemberNumber, 1);
-    f.ctx.forcePanelTarget = 'selected';
-    assert.equal(f.ctx.forcePanelTargets()[0].MemberNumber, 2);
-    f.ctx.forcePanelTarget = 'all';
-    assert.deepEqual(f.ctx.forcePanelTargets().map(c => c.MemberNumber), [2, 3]);
+test('人物列表含自己与他人（与主面板同源 getRoomCharacters(true)）', () => {
+    const f = fixture({ roomChars: ROOM });
+    const chars = f.ctx.forceRoomCharacters();
+    assert.equal(chars.length, 3);
+    assert.ok(chars.some(c => c.MemberNumber === 1), '自己可选');
 });
 
-test('强制执行调用 executeAction 且 force=true', () => {
-    const f = fixture();
-    f.ctx.runForceAction([{ MemberNumber: 1 }], 'TieUp', 'ItemArms');
+test('点动作对选中角色强制执行的 force=true 参数正确', () => {
+    const f = fixture({ roomChars: ROOM });
+    f.ctx.runForceAction([ROOM[1]], 'TieUp', 'ItemArms');
     assert.equal(f.ctx.execCalls.length, 1);
     const [, name, item, group, force] = f.ctx.execCalls[0];
     assert.equal(name, 'TieUp');
@@ -89,20 +97,39 @@ test('强制执行调用 executeAction 且 force=true', () => {
     assert.equal(force, true);
 });
 
-test('Shift+Q 长按 3 秒才触发，输入框/非聊天室不触发', () => {
-    const f = fixture();
+test('Shift+Q 长按 3 秒触发，输入框/非聊天室不触发', () => {
+    const f = fixture({ roomChars: ROOM });
     f.ctx.bindForcePanelShortcut();
     const ev = (key, shift, target) => ({ key, shiftKey: shift, altKey: false, ctrlKey: false, metaKey: false, target: target || {} });
     f.listeners.keydown(ev('q', true));
     assert.equal(f.timers.length, 1);
     assert.equal(f.timers[0].ms, 3000);
     f.listeners.keyup(ev('q', false));
-    assert.equal(f.timers.length, 1, '松开只是取消，不新增计时器');
     f.ctx.longPressActive = false;
-    f.listeners.keydown(ev('q', true, { tagName: 'INPUT' }));
-    assert.equal(f.ctx.longPressActive, false, '输入框内不启动长按');
+    f.listeners.keydown(ev('q', true, { tagName: 'TEXTAREA' }));
+    assert.equal(f.ctx.longPressActive, false, '输入框不启动');
     f.ctx.longPressActive = false;
     f.ctx.CurrentScreen = 'Title';
     f.listeners.keydown(ev('q', true));
-    assert.equal(f.ctx.longPressActive, false, '非聊天室不启动长按');
+    assert.equal(f.ctx.longPressActive, false, '非聊天室不启动');
+});
+
+test('全员执行先弹确认，确认后对全房间（含自己）执行', async () => {
+    let confirmArgs = null;
+    const f = fixture({ roomChars: ROOM, confirm: (o) => { confirmArgs = o; return Promise.resolve(true); } });
+    f.ctx.forcePanelAction = 'TieUp';
+    f.ctx.forcePanelPart = 'ItemArms';
+    f.ctx.forceRunOnRoomAll();
+    assert.ok(confirmArgs, '应弹出确认框');
+    assert.match(confirmArgs.body, /3/);
+    await Promise.resolve(); await Promise.resolve();
+    assert.equal(f.ctx.execCalls.length, 3, '对全房间 3 人执行');
+    assert.ok(f.ctx.execCalls.every(c => c[4] === true), '全部 force=true');
+});
+
+test('未选动作时点全员只提示不执行', () => {
+    const f = fixture({ roomChars: ROOM });
+    f.ctx.forcePanelAction = null;
+    f.ctx.forceRunOnRoomAll();
+    assert.equal(f.ctx.execCalls.length, 0);
 });

@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Повернути кнопку у правий нижній кут, якщо її не видно",
   "settings.reset_toggle_btn": "Скинути",
   "toast.toggle_reset": "Кнопку повернуто у правий нижній кут",
-  "force.title": "Усі дії · Примусовий режим (всього {n})",
+  "force.title": "Усі дії · Примусовий режим",
   "force.close": "Закрити",
   "force.target_self": "Собі",
   "force.target_selected": "Обраний",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Підтвердити для всіх",
   "force.confirm_all_body": "Примусово виконати «{name}» для {n} персонажів у кімнаті? Це може заспамити чат.",
   "force.confirm_ok": "Виконати",
-  "force.executed": "«{name}» виконано для {n} цілей"
+  "force.executed": "«{name}» виконано для {n} цілей",
+  "force.target_all_hint": "Застосувати обрану дію до всієї кімнати",
+  "force.action_count": "всього {n}",
+  "force.badge": "примусово",
+  "force.pick_char_part": "Спочатку виберіть персонажа та частину зліва",
+  "force.all_pick_first": "Спочатку виберіть дію, потім виконати для всіх"
 }

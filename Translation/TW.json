@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "按鈕找不到時，把它移回右下角預設位置",
   "settings.reset_toggle_btn": "歸位",
   "toast.toggle_reset": "懸浮按鈕已歸位到右下角",
-  "force.title": "全量動作 · 強制模式（共 {n} 個）",
+  "force.title": "全量動作 · 強制模式",
   "force.close": "關閉",
   "force.target_self": "自己",
   "force.target_selected": "選中角色",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "確認全員執行",
   "force.confirm_all_body": "將對房間內 {n} 名角色強制執行「{name}」，可能洗頻，確定繼續？",
   "force.confirm_ok": "強制執行",
-  "force.executed": "已對 {n} 個目標強制執行「{name}」"
+  "force.executed": "已對 {n} 個目標強制執行「{name}」",
+  "force.target_all_hint": "對全房間強制執行當前選中的動作",
+  "force.action_count": "共 {n} 個",
+  "force.badge": "強制",
+  "force.pick_char_part": "請先在左側選人物和部位",
+  "force.all_pick_first": "請先點選一個動作，再執行全員"
 }

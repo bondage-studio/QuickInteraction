@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "ボタンが見つからない場合、右下の既定位置に戻します",
   "settings.reset_toggle_btn": "リセット",
   "toast.toggle_reset": "ボタンを右下の既定位置に戻しました",
-  "force.title": "全アクション · 強制モード（計 {n} 件）",
+  "force.title": "全アクション · 強制モード",
   "force.close": "閉じる",
   "force.target_self": "自分",
   "force.target_selected": "選択中",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "全員実行の確認",
   "force.confirm_all_body": "部屋の {n} 人に「{name}」を強制実行します。チャットが埋まる可能性があります。続けますか？",
   "force.confirm_ok": "強制実行",
-  "force.executed": "{n} 対象に「{name}」を強制実行しました"
+  "force.executed": "{n} 対象に「{name}」を強制実行しました",
+  "force.target_all_hint": "選択中のアクションを部屋全体に強制実行",
+  "force.action_count": "計 {n} 件",
+  "force.badge": "強制",
+  "force.pick_char_part": "まず左で人物と部位を選択",
+  "force.all_pick_first": "まずアクションを選んでから全員実行"
 }

@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Remettre le bouton en bas à droite s’il est introuvable",
   "settings.reset_toggle_btn": "Réinitialiser",
   "toast.toggle_reset": "Bouton flottant replacé en bas à droite",
-  "force.title": "Toutes actions · Mode forcé ({n} au total)",
+  "force.title": "Toutes actions · Mode forcé",
   "force.close": "Fermer",
   "force.target_self": "Soi-même",
   "force.target_selected": "Sélectionné",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Confirmer exécution tous",
   "force.confirm_all_body": "Forcer « {name} » sur {n} personnes de la salle ? Cela peut inonder le chat.",
   "force.confirm_ok": "Forcer",
-  "force.executed": "« {name} » forcé sur {n} cible(s)"
+  "force.executed": "« {name} » forcé sur {n} cible(s)",
+  "force.target_all_hint": "Forcer l’action sélectionnée sur toute la salle",
+  "force.action_count": "{n} au total",
+  "force.badge": "forcé",
+  "force.pick_char_part": "Choisissez d’abord une personne et une partie à gauche",
+  "force.all_pick_first": "Choisissez d’abord une action, puis exécutez sur tous"
 }

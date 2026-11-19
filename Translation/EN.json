@@ -301,7 +301,7 @@
   "settings.reset_toggle_hint": "Move the button back to the bottom-right if you cannot find it",
   "settings.reset_toggle_btn": "Reset",
   "toast.toggle_reset": "Floating button reset to bottom-right",
-  "force.title": "All actions · Force mode ({n} total)",
+  "force.title": "All actions · Force mode",
   "force.close": "Close",
   "force.target_self": "Self",
   "force.target_selected": "Selected",
@@ -310,5 +310,10 @@
   "force.confirm_all_title": "Confirm force to all",
   "force.confirm_all_body": "Force \"{name}\" on {n} characters in the room? This may spam the chat.",
   "force.confirm_ok": "Force run",
-  "force.executed": "Force ran \"{name}\" on {n} target(s)"
+  "force.executed": "Force ran \"{name}\" on {n} target(s)",
+  "force.target_all_hint": "Force the selected action on the whole room",
+  "force.action_count": "{n} total",
+  "force.badge": "force",
+  "force.pick_char_part": "Pick a character and part on the left first",
+  "force.all_pick_first": "Pick an action first, then run on all"
 }
