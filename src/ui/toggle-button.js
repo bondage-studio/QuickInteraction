@@ -6,7 +6,6 @@
         state.toggleBtnEl.innerHTML =
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>';
         state.toggleBtnEl.title = state.isActive ? QiActT('ui.toggle_off') : QiActT('ui.toggle_on');
-        var clickTimer = null;
         state.toggleBtnEl.addEventListener('click', function(e) {
             if (state.toggleDragged) {
                 e.stopPropagation();
@@ -15,40 +14,14 @@
                 return;
             }
             e.stopPropagation();
-            // 单击延迟执行、双击拦截：双击=归位，避免与「单击开关动作模式」冲突
-            if (clickTimer) {
-                clearTimeout(clickTimer);
-                clickTimer = null;
-                resetTogglePosition();
-                return;
-            }
-            clickTimer = setTimeout(function() {
-                clickTimer = null;
-                toggleActionMode();
-                updateToggleBtnStyle();
-            }, 260);
+            toggleActionMode();
+            updateToggleBtnStyle();
         });
         document.body.appendChild(state.toggleBtnEl);
         applyTogglePosition();
         makeToggleDraggable();
         bindToggleViewport();
-        bindToggleShortcut();
         updateToggleBtnStyle();
-    }
-
-    /** 键盘快捷键 Alt+Shift+R：聊天室内一键归位（避开 BC 常用键，且不在输入框时生效） */
-    var toggleShortcutBound = false;
-    function bindToggleShortcut() {
-        if (toggleShortcutBound) return;
-        toggleShortcutBound = true;
-        addRuntimeListener(document, 'keydown', function(e) {
-            if (!e.altKey || !e.shiftKey || (e.key || '').toLowerCase() !== 'r') return;
-            if (typeof CurrentScreen !== 'undefined' && CurrentScreen !== 'ChatRoom') return;
-            var t = e.target;
-            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-            e.preventDefault();
-            resetTogglePosition();
-        });
     }
 
     function createChatRoomToggleButton() {
