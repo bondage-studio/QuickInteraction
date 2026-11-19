@@ -300,5 +300,15 @@
   "settings.reset_toggle": "Réinitialiser le bouton flottant",
   "settings.reset_toggle_hint": "Remettre le bouton en bas à droite s’il est introuvable",
   "settings.reset_toggle_btn": "Réinitialiser",
-  "toast.toggle_reset": "Bouton flottant replacé en bas à droite"
+  "toast.toggle_reset": "Bouton flottant replacé en bas à droite",
+  "force.title": "Toutes actions · Mode forcé ({n} au total)",
+  "force.close": "Fermer",
+  "force.target_self": "Soi-même",
+  "force.target_selected": "Sélectionné",
+  "force.target_all": "Toute la salle",
+  "force.warn": "Mode forcé : envoie sans vérifier objets/états. Certaines actions peuvent n'afficher que du texte sans effet si les conditions manquent.",
+  "force.confirm_all_title": "Confirmer exécution tous",
+  "force.confirm_all_body": "Forcer « {name} » sur {n} personnes de la salle ? Cela peut inonder le chat.",
+  "force.confirm_ok": "Forcer",
+  "force.executed": "« {name} » forcé sur {n} cible(s)"
 }

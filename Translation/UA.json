@@ -300,5 +300,15 @@
   "settings.reset_toggle": "Скинути плаваючу кнопку",
   "settings.reset_toggle_hint": "Повернути кнопку у правий нижній кут, якщо її не видно",
   "settings.reset_toggle_btn": "Скинути",
-  "toast.toggle_reset": "Кнопку повернуто у правий нижній кут"
+  "toast.toggle_reset": "Кнопку повернуто у правий нижній кут",
+  "force.title": "Усі дії · Примусовий режим (всього {n})",
+  "force.close": "Закрити",
+  "force.target_self": "Собі",
+  "force.target_selected": "Обраний",
+  "force.target_all": "Уся кімната",
+  "force.warn": "Примусовий режим: надсилання без перевірки предметів/станів. Деякі дії можуть показувати лише текст без ефекту.",
+  "force.confirm_all_title": "Підтвердити для всіх",
+  "force.confirm_all_body": "Примусово виконати «{name}» для {n} персонажів у кімнаті? Це може заспамити чат.",
+  "force.confirm_ok": "Виконати",
+  "force.executed": "«{name}» виконано для {n} цілей"
 }

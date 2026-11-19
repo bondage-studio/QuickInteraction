@@ -28,6 +28,7 @@ export const COMPAT_SOURCE_FILES = [
     'ui/render/panel-renderer.js',
     'ui/render/action-renderers.js',
     'ui/panel-behavior.js',
+    'ui/force-panel.js',
     'ui/styles.js',
     'integrations/bc-hooks.js',
     'services/update-service.js',

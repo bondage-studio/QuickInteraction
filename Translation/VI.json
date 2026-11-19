@@ -300,5 +300,15 @@
   "settings.reset_toggle": "Đặt lại nút nổi",
   "settings.reset_toggle_hint": "Đưa nút về vị trí mặc định góc dưới bên phải nếu bạn không tìm thấy",
   "settings.reset_toggle_btn": "Đặt lại",
-  "toast.toggle_reset": "Đã đặt lại nút nổi về góc dưới bên phải"
+  "toast.toggle_reset": "Đã đặt lại nút nổi về góc dưới bên phải",
+  "force.title": "Tất cả hành động · Chế độ cưỡng chế ({n})",
+  "force.close": "Đóng",
+  "force.target_self": "Bản thân",
+  "force.target_selected": "Đã chọn",
+  "force.target_all": "Cả phòng",
+  "force.warn": "Chế độ cưỡng chế: gửi bỏ qua yêu cầu vật phẩm/trạng thái. Một số hành động có thể chỉ hiện chữ không có tác dụng.",
+  "force.confirm_all_title": "Xác nhận chạy tất cả",
+  "force.confirm_all_body": "Cưỡng chế \"{name}\" trên {n} người trong phòng? Có thể làm tràn chat.",
+  "force.confirm_ok": "Chạy cưỡng chế",
+  "force.executed": "Đã chạy \"{name}\" trên {n} mục tiêu"
 }

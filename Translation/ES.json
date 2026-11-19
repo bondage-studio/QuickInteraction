@@ -300,5 +300,15 @@
   "settings.reset_toggle": "Restablecer botón flotante",
   "settings.reset_toggle_hint": "Devuelve el botón a la esquina inferior derecha si no lo encuentras",
   "settings.reset_toggle_btn": "Restablecer",
-  "toast.toggle_reset": "Botón flotante restablecido abajo a la derecha"
+  "toast.toggle_reset": "Botón flotante restablecido abajo a la derecha",
+  "force.title": "Todas las acciones · Modo forzado ({n} en total)",
+  "force.close": "Cerrar",
+  "force.target_self": "Uno mismo",
+  "force.target_selected": "Seleccionado",
+  "force.target_all": "Toda la sala",
+  "force.warn": "Modo forzado: envía ignorando objetos/estados. Algunas acciones pueden mostrar solo texto sin efecto si falta algún requisito.",
+  "force.confirm_all_title": "Confirmar ejecución a todos",
+  "force.confirm_all_body": "¿Forzar «{name}» en {n} personas de la sala? Puede llenar el chat.",
+  "force.confirm_ok": "Forzar",
+  "force.executed": "«{name}» forzado en {n} objetivo(s)"
 }

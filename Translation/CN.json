@@ -300,5 +300,15 @@
   "settings.reset_toggle": "悬浮按钮归位",
   "settings.reset_toggle_hint": "按钮找不到时，把它移回右下角默认位置",
   "settings.reset_toggle_btn": "归位",
-  "toast.toggle_reset": "悬浮按钮已归位到右下角"
+  "toast.toggle_reset": "悬浮按钮已归位到右下角",
+  "force.title": "全量动作 · 强制模式（共 {n} 个）",
+  "force.close": "关闭",
+  "force.target_self": "自己",
+  "force.target_selected": "选中角色",
+  "force.target_all": "全房间",
+  "force.warn": "强制模式：无视道具与状态限制直接发包。部分动作可能因缺少道具/前置状态只有文字、无实际效果。",
+  "force.confirm_all_title": "确认全员执行",
+  "force.confirm_all_body": "将对房间内 {n} 名角色强制执行「{name}」，可能刷屏，确定继续？",
+  "force.confirm_ok": "强制执行",
+  "force.executed": "已对 {n} 个目标强制执行「{name}」"
 }

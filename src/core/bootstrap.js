@@ -145,6 +145,9 @@
             try { startVisibilityGuard(); guardToggleVisibility(); } catch (e) { console.warn('[QiAct] 启动浮动开关守卫失败:', e); }
         }
 
+        // 隐藏全量面板：Shift+Q 长按 3 秒唤出（零 UI 入口，仅聊天室/非输入框生效）
+        try { bindForcePanelShortcut(); } catch (e) { console.warn('[QiAct] 启动全量面板快捷键失败:', e); }
+
         // 启动更新/公告检测（脚本内 5 分钟轮询，玩家端收到，无需刷新页面）
         try { startUpdateChecker(); } catch (e) { console.warn('[QiAct] 启动更新检测失败:', e); }
         // 更新成功通知：若本机版本高于上次记录，提示「已更新到 vX」（加载即触发，不依赖轮询）
