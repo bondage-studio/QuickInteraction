@@ -296,5 +296,9 @@
   "block.refreshed": "Blocked actions refreshed",
   "block.part": "Part",
   "block.filtering": "Block interactions",
-  "block.filtering_hint": "When off, keep the list but do not filter any actions"
+  "block.filtering_hint": "When off, keep the list but do not filter any actions",
+  "settings.reset_toggle": "フローティングボタンをリセット",
+  "settings.reset_toggle_hint": "ボタンが見つからない場合、右下の既定位置に戻します",
+  "settings.reset_toggle_btn": "リセット",
+  "toast.toggle_reset": "ボタンを右下の既定位置に戻しました"
 }

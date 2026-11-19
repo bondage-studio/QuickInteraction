@@ -296,5 +296,9 @@
   "block.refreshed": "Blocked actions refreshed",
   "block.part": "Part",
   "block.filtering": "Block interactions",
-  "block.filtering_hint": "When off, keep the list but do not filter any actions"
+  "block.filtering_hint": "When off, keep the list but do not filter any actions",
+  "settings.reset_toggle": "Скинути плаваючу кнопку",
+  "settings.reset_toggle_hint": "Повернути кнопку у правий нижній кут, якщо її не видно",
+  "settings.reset_toggle_btn": "Скинути",
+  "toast.toggle_reset": "Кнопку повернуто у правий нижній кут"
 }

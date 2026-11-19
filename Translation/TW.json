@@ -296,5 +296,9 @@
   "block.refreshed": "已重新整理禁止動作",
   "block.part": "部位",
   "block.filtering": "禁用互動",
-  "block.filtering_hint": "關閉時保留清單，但不過濾任何動作"
+  "block.filtering_hint": "關閉時保留清單，但不過濾任何動作",
+  "settings.reset_toggle": "懸浮按鈕歸位",
+  "settings.reset_toggle_hint": "按鈕找不到時，把它移回右下角預設位置",
+  "settings.reset_toggle_btn": "歸位",
+  "toast.toggle_reset": "懸浮按鈕已歸位到右下角"
 }
