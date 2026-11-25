@@ -270,6 +270,12 @@
         var charPop = panel.querySelector('#xsact-char-popover');
         if (charPop) charPop.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: true });
 
+        // 触屏统一兜底：面板内任何滚动容器（人物浮层、语言下拉、组合编辑、设置页、
+        // block 表格、自定义动作编辑器等）的 touchmove 都不冒泡到 BC 文档层。
+        // BC 在 document 层的全局手势监听会 preventDefault，吞掉原生滚动导致「手指滑不动」；
+        // 在面板根节点 stopPropagation 一次，覆盖全部子容器，逐容器补漏容易遗漏。
+        panel.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+
         // 右侧动作选择面板需要更积极的滚动保护：BC 页面全局可能在 capture 阶段
         // preventDefault 滚动，因此直接拦截动作列表的 wheel 事件并手动滚动。
         var actionList = panel.querySelector('#xsact-action-list');
