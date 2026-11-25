@@ -2,7 +2,7 @@
 // @name         快捷互动 (QiAct)
 // @name:zh      快捷互动
 // @namespace    https://github.com/bondage-studio/QuickInteraction
-// @version      1.5.0
+// @version      1.5.1
 // @description  Bondage Club - 统一动作操作台。一键进入动作模式，在聊天室场景内直接点人物部位选动作，绕过原生5步嵌套菜单。
 // @author       Tao MUSE
 // @homepageURL  https://github.com/bondage-studio/QuickInteraction
@@ -413,7 +413,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
       function silent(e, ctx) {
         return;
       }
-      const VERSION = "1.5.0";
+      const VERSION = "1.5.1";
       const S_ENABLED = "xsact_qa_enabled";
       const S_FAVS = "xsact_qa_favorites";
       const S_PRESETS = "xsact_qa_presets";
@@ -6910,6 +6910,15 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function handleVersionInfo(info) {
         if (!info || !info.version) return;
+        if (info.silent === true) {
+          try {
+            persist(S_LAST_ANNOUNCE, info.announcement && info.announcement.id || "");
+            persist(S_LAST_ANNOUNCE_VER, info.version);
+            persist(S_UPDATE_DISMISSED, info.version);
+          } catch (_) {
+          }
+          return;
+        }
         if (compareVersion(info.version, VERSION) > 0) {
           var dismissed = loadSetting(S_UPDATE_DISMISSED, "");
           if (dismissed !== info.version) showUpdateBanner(info);
@@ -6933,15 +6942,20 @@ One of mods you are using is using an old version of SDK. It will work for now b
         }
         if (compareVersion(VERSION, last) !== 0) {
           if (compareVersion(VERSION, last) > 0) {
-            try {
-              toast("QiAct " + QiActT("update.title", { VERSION }), "#46E0A0");
-            } catch (_) {
-            }
             fetchVersionJson(VERSION_INFO_URL, 0).then(function(info) {
+              if (info && info.silent === true) return;
+              try {
+                toast("QiAct " + QiActT("update.title", { VERSION }), "#46E0A0");
+              } catch (_) {
+              }
               if (info && Array.isArray(info.summary) && info.summary.length) {
                 showAnnounceBanner({ id: "updated-" + VERSION, title: QiActT("update.title", { VERSION }), severity: "available", message: info.summary.join("\n"), detailsUrl: info.detailsUrl });
               }
             }).catch(function() {
+              try {
+                toast("QiAct " + QiActT("update.title", { VERSION }), "#46E0A0");
+              } catch (_) {
+              }
             });
           }
           persist(S_LAST_SEEN_VERSION, VERSION);

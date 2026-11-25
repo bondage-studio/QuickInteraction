@@ -1,12 +1,13 @@
 {
-  "version": "1.5.0",
+  "version": "1.5.1",
   "date": "2026-11-25",
+  "silent": true,
   "severity": "normal",
   "summary": [
     "修复手机与触屏设备上部分界面无法用手指滑动的问题，覆盖自定义动作编辑器、人物列表、组合编辑、设置页等所有可滚动界面",
     "滚动到边界时不再穿透到游戏页面，触屏滑动手感与桌面滚轮一致"
   ],
-  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.5.0",
+  "detailsUrl": "https://github.com/bondage-studio/QuickInteraction/releases/tag/v1.5.1",
   "announcement": {
     "id": "2026-11-25-touch-scroll-fix",
     "title": "QiAct v1.5.0 · 手机触屏滚动修复",
