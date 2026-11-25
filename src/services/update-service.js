@@ -113,6 +113,16 @@
 
     function handleVersionInfo(info) {
         if (!info || !info.version) return;
+        // 静默发布：该版本仅用于推送代码修复（如紧急回归），不弹任何版本横幅/公告。
+        // 仍照常记录已读版本，避免下次轮询或未来版本把它当作「未看过的公告」重弹。
+        if (info.silent === true) {
+            try {
+                persist(S_LAST_ANNOUNCE, (info.announcement && info.announcement.id) || '');
+                persist(S_LAST_ANNOUNCE_VER, info.version);
+                persist(S_UPDATE_DISMISSED, info.version);
+            } catch (_) {}
+            return;
+        }
         // 1) 版本更新横幅
         if (compareVersion(info.version, VERSION) > 0) {
             var dismissed = loadSetting(S_UPDATE_DISMISSED, '');
@@ -139,13 +149,17 @@
         if (!last) { persist(S_LAST_SEEN_VERSION, VERSION); return; } // 首次运行不提示
         if (compareVersion(VERSION, last) !== 0) {
             if (compareVersion(VERSION, last) > 0) {
-                try { toast('QiAct ' + QiActT('update.title', { VERSION: VERSION }), '#46E0A0'); } catch (_) {}
-                // 轻量拉取本次更新摘要，用公告横幅补充展示（失败不影响已显示的 toast）
+                // 轻量拉取版本信息：静默版本(silent=true)完全不提示（不弹 toast/摘要横幅）；
+                // 拉取失败无法判断时退回原行为，避免异常情况下玩家不知道自己升级了。
                 fetchVersionJson(VERSION_INFO_URL, 0).then(function (info) {
+                    if (info && info.silent === true) return;
+                    try { toast('QiAct ' + QiActT('update.title', { VERSION: VERSION }), '#46E0A0'); } catch (_) {}
                     if (info && Array.isArray(info.summary) && info.summary.length) {
                         showAnnounceBanner({ id: 'updated-' + VERSION, title: QiActT('update.title', { VERSION: VERSION }), severity: 'available', message: info.summary.join('\n'), detailsUrl: info.detailsUrl });
                     }
-                }).catch(function () {});
+                }).catch(function () {
+                    try { toast('QiAct ' + QiActT('update.title', { VERSION: VERSION }), '#46E0A0'); } catch (_) {}
+                });
             }
             persist(S_LAST_SEEN_VERSION, VERSION); // 降级也静默记录，保证后续升级能正确提示
         }
