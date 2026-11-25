@@ -42,6 +42,17 @@ test('自定义动作列表与隐藏面板均有 touchmove 保护', () => {
     assert.match(forcePanel, /forcePanelEl\.addEventListener\('touchmove'/, '隐藏面板左右栏保护');
 });
 
+test('面板底部操作栏与模式标签不会被内容区压缩（flex-shrink:0）', () => {
+    const footer = styles.split('\n').find(l => l.includes('.xsact-qa-panel-footer{'));
+    assert.ok(footer, '存在 footer 规则块');
+    // 规则跨行：footer 声明行下一行才是属性
+    const lines = styles.split('\n');
+    const idx = lines.findIndex(l => l.includes('.xsact-qa-panel-footer{'));
+    assert.match(lines[idx + 1], /flex-shrink:0/, 'footer 不可被压缩');
+    const tabsIdx = lines.findIndex(l => l.includes('.xsact-qa-mode-tabs{'));
+    assert.match(lines[tabsIdx + 1], /flex-shrink:0/, '模式标签栏不可被压缩');
+});
+
 test('所有纵向滚动容器都声明 overscroll-behavior:contain（隐藏面板除外单独处理）', () => {
     const scrollLines = styles.split('\n').filter(l => /overflow-y:\s*(auto|scroll)/.test(l));
     assert.ok(scrollLines.length >= 8, `应有多个滚动容器，实际 ${scrollLines.length}`);
