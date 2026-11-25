@@ -274,20 +274,32 @@
         // block 表格、自定义动作编辑器等）的 touchmove 都不冒泡到 BC 文档层。
         // BC 在 document 层的全局手势监听会 preventDefault，吞掉原生滚动导致「手指滑不动」；
         // 在面板根节点 stopPropagation 一次，覆盖全部子容器，逐容器补漏容易遗漏。
-        panel.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+        panel.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true, capture: true });
 
-        // 右侧动作选择面板需要更积极的滚动保护：BC 页面全局可能在 capture 阶段
-        // preventDefault 滚动，因此直接拦截动作列表的 wheel 事件并手动滚动。
+        // 右侧动作面板需要更积极的滚动保护：BC 全局可能在捕获阶段 preventDefault 滚轮，
+        // 因此这里接管 wheel 并「动态找到鼠标下真正可滚动的容器」来滚。
+        // 关键：不同模式的可滚动容器不同——动作模式是 actionList，编辑器是 .xsact-ca-editor，
+        // 自定义动作列表是 .xsact-ca-list，语言菜单是 [role=listbox]，写死任何一个都会导致其它模式卡死。
         var actionList = panel.querySelector('#xsact-action-list');
         if (actionList) {
+            function scrollableAncestor(node) {
+                var cur = node && node.closest ? node : null;
+                while (cur && cur !== actionList.parentNode) {
+                    if (cur.scrollHeight > cur.clientHeight + 1) {
+                        var oy = (window.getComputedStyle ? window.getComputedStyle(cur).overflowY : cur.style.overflowY);
+                        if (oy === 'auto' || oy === 'scroll') return cur;
+                    }
+                    cur = cur.parentElement;
+                }
+                return actionList.scrollHeight > actionList.clientHeight + 1 ? actionList : null;
+            }
             function onActionListWheel(e) {
+                var scroller = scrollableAncestor(e.target);
+                if (!scroller) return; // 无可滚容器：不吞事件，让 BC 正常处理
                 e.preventDefault();
                 e.stopPropagation();
-                // Nested language menus own their wheel events, including at either edge.
-                var languageMenu = e.target.closest && e.target.closest('.xsact-settings-language [role="listbox"]');
-                var scrollTarget = languageMenu && actionList.contains(languageMenu) ? languageMenu : actionList;
-                var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scrollTarget.clientHeight : 1;
-                scrollTarget.scrollTop += e.deltaY * unit;
+                var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scroller.clientHeight : 1;
+                scroller.scrollTop += e.deltaY * unit;
             }
             actionList.addEventListener('wheel', onActionListWheel, { passive: false });
             // 触屏设备：阻止 document 层 touchmove 被 preventDefault，保留容器内自然滚动

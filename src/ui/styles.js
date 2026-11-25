@@ -229,7 +229,7 @@
             '.xsact-combo-cancel-btn:hover{background:var(--xs-border-strong);}',
 
             /* ===== 自定义动作（我的动作 tab） ===== */
-            '#xsact-action-list.xsact-custom-mode{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;}',
+            '#xsact-action-list.xsact-custom-mode{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;min-height:0;flex:1 1 auto;}',
             '#xsact-action-list.xsact-custom-mode > *{width:100%;min-width:0;}',
             '.xsact-ca-view{display:flex;flex-direction:column;gap:0;width:100%;height:100%;min-width:0;min-height:0;padding:0;border:1px solid var(--xs-border);border-radius:12px;overflow:hidden;background:var(--xs-card-bg);}',
             '.xsact-ca-view,.xsact-ca-view *{box-sizing:border-box;}',
@@ -333,7 +333,7 @@
             '.xsact-ca-delete:hover{background:rgba(255,92,92,0.16);color:#FF9C9C;border-color:rgba(255,92,92,0.5);}',
             '.xsact-ca-empty{padding:36px 14px;}',
 
-            '.xsact-ca-editor{display:flex;flex-direction:column;gap:14px;width:100%;min-width:0;height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding:2px 2px 8px;box-sizing:border-box;-webkit-overflow-scrolling:touch;}',
+            '.xsact-ca-editor{display:flex;flex-direction:column;flex:1 1 auto;gap:14px;width:100%;min-width:0;height:auto;min-height:0;max-height:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding:10px 12px 16px;box-sizing:border-box;-webkit-overflow-scrolling:touch;}',
             '.xsact-ca-editor .xsact-combo-field{display:flex;flex-direction:column;gap:7px;padding:13px 14px;background:var(--xs-panel-bg-2);border:1px solid var(--xs-border);border-radius:10px;}',
             '.xsact-ca-editor .xsact-combo-field label{font-size:11px;font-weight:600;color:var(--xs-accent-text);letter-spacing:0.04em;text-transform:uppercase;}',
             '.xsact-ca-editor .xsact-combo-field input,.xsact-ca-editor .xsact-combo-field textarea,.xsact-ca-editor .xsact-combo-field select,.xsact-ca-editor .xsact-combo-field .xsact-ca-dialog-rich{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--xs-border-strong);background:var(--xs-input-bg);color:var(--xs-text);font-size:13px;box-sizing:border-box;font-family:inherit;}',
