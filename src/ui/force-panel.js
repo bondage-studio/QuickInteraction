@@ -147,6 +147,12 @@
 
     function bindForcePanelEvents() {
         if (!forcePanelEl) return;
+        // 触屏滚动兜底：左右栏各自 overflow-y:auto，阻止 touchmove 冒泡到 BC 文档层。
+        // 面板元素不随重渲染重建，用标记避免重复绑定。
+        if (!forcePanelEl._touchGuard) {
+            forcePanelEl._touchGuard = true;
+            forcePanelEl.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+        }
         var closeBtn = forcePanelEl.querySelector('.xsact-force-close');
         if (closeBtn) closeBtn.addEventListener('click', closeForcePanel);
         var allBtn = forcePanelEl.querySelector('.xsact-force-all');

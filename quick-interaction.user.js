@@ -2709,6 +2709,10 @@ One of mods you are using is using an old version of SDK. It will work for now b
         html += "</div>";
         html += '<div class="xsact-ca-part-picker hidden" id="xsact-ca-part-picker"><div class="xsact-ca-part-picker-backdrop" data-part-picker-close></div><div class="xsact-ca-part-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="xsact-ca-part-picker-title"><div class="xsact-ca-part-picker-head"><strong id="xsact-ca-part-picker-title">' + QiActT("editor.part_picker_title") + '</strong><button type="button" class="xsact-ca-part-picker-close" data-part-picker-close aria-label="' + QiActT("editor.part_picker_close") + '">×</button></div><div class="xsact-ca-part-map xsact-ca-part-map-large" id="xsact-ca-part-map-large"></div></div></div>';
         listEl.innerHTML = html;
+        var editorEl = listEl.querySelector(".xsact-ca-editor");
+        if (editorEl) editorEl.addEventListener("touchmove", function(e) {
+          e.stopPropagation();
+        }, { passive: true });
         listEl.querySelector("#xsact-ca-dialog");
         listEl.querySelector("#xsact-ca-dialog-raw");
         function trackFocus(el, rawId) {
@@ -5237,6 +5241,9 @@ One of mods you are using is using an old version of SDK. It will work for now b
         if (charPop) charPop.addEventListener("wheel", function(e) {
           e.stopPropagation();
         }, { passive: true });
+        panel.addEventListener("touchmove", function(e) {
+          e.stopPropagation();
+        }, { passive: true });
         var actionList = panel.querySelector("#xsact-action-list");
         if (actionList) {
           let onActionListWheel = function(e) {
@@ -5445,6 +5452,12 @@ One of mods you are using is using an old version of SDK. It will work for now b
       }
       function bindForcePanelEvents() {
         if (!forcePanelEl) return;
+        if (!forcePanelEl._touchGuard) {
+          forcePanelEl._touchGuard = true;
+          forcePanelEl.addEventListener("touchmove", function(e) {
+            e.stopPropagation();
+          }, { passive: true });
+        }
         var closeBtn = forcePanelEl.querySelector(".xsact-force-close");
         if (closeBtn) closeBtn.addEventListener("click", closeForcePanel);
         var allBtn = forcePanelEl.querySelector(".xsact-force-all");
@@ -5777,7 +5790,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-combo-delay #xsact-delay-label{color:var(--xs-accent);font-weight:700;}",
           ".xsact-combo-delay input[type=range]{width:100%;accent-color:var(--xs-accent);height:4px;cursor:pointer;}",
           ".xsact-combo-items{",
-          "  display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;",
+          "  display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;",
           "}",
           ".xsact-combo-item{",
           "  display:flex;align-items:center;gap:7px;padding:8px;",
@@ -5904,7 +5917,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-ca-run:hover{background:rgba(70,224,160,0.16);color:#5FE3B0;border-color:rgba(70,224,160,0.5);}",
           ".xsact-ca-delete:hover{background:rgba(255,92,92,0.16);color:#FF9C9C;border-color:rgba(255,92,92,0.5);}",
           ".xsact-ca-empty{padding:36px 14px;}",
-          ".xsact-ca-editor{display:flex;flex-direction:column;gap:14px;width:100%;min-width:0;}",
+          ".xsact-ca-editor{display:flex;flex-direction:column;gap:14px;width:100%;min-width:0;height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding:2px 2px 8px;box-sizing:border-box;-webkit-overflow-scrolling:touch;}",
           ".xsact-ca-editor .xsact-combo-field{display:flex;flex-direction:column;gap:7px;padding:13px 14px;background:var(--xs-panel-bg-2);border:1px solid var(--xs-border);border-radius:10px;}",
           ".xsact-ca-editor .xsact-combo-field label{font-size:11px;font-weight:600;color:var(--xs-accent-text);letter-spacing:0.04em;text-transform:uppercase;}",
           ".xsact-ca-editor .xsact-combo-field input,.xsact-ca-editor .xsact-combo-field textarea,.xsact-ca-editor .xsact-combo-field select,.xsact-ca-editor .xsact-combo-field .xsact-ca-dialog-rich{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--xs-border-strong);background:var(--xs-input-bg);color:var(--xs-text);font-size:13px;box-sizing:border-box;font-family:inherit;}",
@@ -6163,7 +6176,7 @@ One of mods you are using is using an old version of SDK. It will work for now b
           "  display:flex;flex-direction:column;min-height:0;",
           "}",
           ".xsact-char-popover-items{",
-          "  flex:1;overflow-y:auto;",
+          "  flex:1;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;",
           "  padding:6px;",
           "}",
           ".xsact-char-popover-empty{",
@@ -6458,8 +6471,8 @@ One of mods you are using is using an old version of SDK. It will work for now b
           ".xsact-force-close:hover{color:#FF5C7A;}",
           ".xsact-force-warn{padding:6px 14px;border-bottom:1px solid var(--xs-border);background:rgba(255,92,122,.06);color:#FFB3C6;font-size:11px;line-height:1.5;}",
           ".xsact-force-body{display:flex;flex:1;min-height:0;}",
-          ".xsact-force-left{width:46%;min-width:0;border-right:1px solid var(--xs-border);overflow-y:auto;padding:10px 12px;}",
-          ".xsact-force-right{flex:1;min-width:0;overflow-y:auto;padding:10px 12px;}",
+          ".xsact-force-left{width:46%;min-width:0;border-right:1px solid var(--xs-border);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px 12px;}",
+          ".xsact-force-right{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px 12px;}",
           ".xsact-force-subtitle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--xs-text-dim);margin-bottom:8px;}",
           ".xsact-force-back{border:0;background:transparent;color:var(--xs-accent-text);font-size:12px;cursor:pointer;padding:0 4px 0 0;}",
           ".xsact-force-chars{display:flex;flex-direction:column;gap:5px;}",

@@ -68,6 +68,11 @@
         html += '<div class="xsact-ca-part-picker hidden" id="xsact-ca-part-picker"><div class="xsact-ca-part-picker-backdrop" data-part-picker-close></div><div class="xsact-ca-part-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="xsact-ca-part-picker-title"><div class="xsact-ca-part-picker-head"><strong id="xsact-ca-part-picker-title">' + QiActT('editor.part_picker_title') + '</strong><button type="button" class="xsact-ca-part-picker-close" data-part-picker-close aria-label="' + QiActT('editor.part_picker_close') + '">×</button></div><div class="xsact-ca-part-map xsact-ca-part-map-large" id="xsact-ca-part-map-large"></div></div></div>';
         listEl.innerHTML = html;
 
+        // 触屏滚动保护：编辑器表单很长，容器自身可滚动；阻止 touchmove 冒泡到 BC 文档层，
+        // 否则 BC 的全局手势处理会 preventDefault 掉原生滚动，出现「手指滑不动」。
+        var editorEl = listEl.querySelector('.xsact-ca-editor');
+        if (editorEl) editorEl.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+
         var lastFocusedRich = listEl.querySelector('#xsact-ca-dialog');
         var lastFocusedRaw = listEl.querySelector('#xsact-ca-dialog-raw');
         function trackFocus(el, rawId) {
