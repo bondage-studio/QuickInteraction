@@ -27,6 +27,14 @@ test('编辑器的 touchmove 被拦截，不冒泡到 BC 文档层', () => {
 test('主面板有 touchmove 兜底，覆盖面板内所有滚动子容器', () => {
     assert.match(behavior, /panel\.addEventListener\('touchmove'/, '面板根节点统一兜底');
     assert.match(behavior, /actionList\.addEventListener\('touchmove'/, '动作列表额外保护');
+    assert.match(behavior, /capture:\s*true/, 'touchmove 在捕获阶段拦截，抢在 BC 之前');
+});
+
+test('滚轮动态查找真正可滚动的祖先容器，不再写死 actionList', () => {
+    assert.match(behavior, /function scrollableAncestor\(/, '存在动态滚动祖先查找');
+    assert.match(behavior, /scrollHeight > cur\.clientHeight/, '按实际溢出判断可滚动');
+    assert.match(behavior, /scroller\.scrollTop \+= e\.deltaY/, '滚的是找到的容器而非写死的 actionList');
+    assert.doesNotMatch(behavior, /scrollTarget\.scrollTop \+= e\.deltaY/, '旧的写死 scrollTarget 已移除');
 });
 
 test('自定义动作列表与隐藏面板均有 touchmove 保护', () => {
