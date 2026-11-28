@@ -87,7 +87,7 @@
 
             /* 模式切换标签 */
             '.xsact-qa-mode-tabs{',
-            '  display:flex;gap:6px;padding:9px 12px 5px;',
+            '  display:flex;gap:6px;padding:9px 12px 5px;flex-shrink:0;',
             '}',
             '.xsact-mode-tab{',
             '  flex:1;padding:8px 8px;font-size:12px;cursor:pointer;',
@@ -388,7 +388,7 @@
 
             /* 底部操作栏 */
             '.xsact-qa-panel-footer{',
-            '  display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:11px 12px;border-top:1px solid var(--xs-border);min-height:0;',
+            '  display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:11px 12px;border-top:1px solid var(--xs-border);min-height:0;flex-shrink:0;',
             '}',
             '.xsact-favorite-part-filter{display:flex;gap:5px;padding:7px 12px;border-top:1px solid var(--xs-border);border-bottom:1px solid var(--xs-border);overflow-x:auto;flex-shrink:0;}',
             '.xsact-favorite-part-filter button{flex:0 0 auto;padding:5px 9px;border-radius:999px;border:1px solid var(--xs-border);background:var(--xs-btn-bg);color:var(--xs-text-dim);font-size:11px;cursor:pointer;}',
